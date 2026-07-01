@@ -14,6 +14,7 @@ plugins {
     id("net.ltgt.errorprone") version "5.1.0"
     id("com.diffplug.spotless") version "8.7.0"
     id("io.freefair.lombok") version "9.5.0"
+    id("com.gradleup.shadow") version "9.4.3"
 }
 
 import net.ltgt.gradle.errorprone.errorprone
@@ -32,6 +33,7 @@ dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
     implementation("org.slf4j:slf4j-api:2.0.17")
+    implementation("org.springframework.boot:spring-boot:3.5.4")
     runtimeOnly("ch.qos.logback:logback-classic:1.5.37")
     runtimeOnly("ch.qos.logback:logback-core:1.5.37")
 
@@ -96,6 +98,16 @@ java {
 application {
     // Define the main class for the application.
     mainClass = "org.dersbian.App"
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = application.mainClass
+    }
+}
+
+tasks.shadowJar {
+    archiveBaseName.set(rootProject.name)
 }
 
 tasks.named<Test>("test") {

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Abilita colori ANSI -->
+    <property name="LOG_PATTERN"
+              value="%gray(%d{HH:mm:ss.SSS}) [%highlight(%level)] %logger{15} %green(▶) %msg%n%red(%throwable)"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <root level="TRACE">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

@@ -26,9 +26,22 @@ public class App {
    *
    * @param args command line arguments.
    */
+  @SuppressWarnings("PMD.MethodArgumentCouldBeFinal")
   public static void main(String[] args) {
+    if (args.length > 0) {
+      for (int i = 0; i < args.length; i++) {
+        if (log.isInfoEnabled()) {
+          log.info("arg[{}] = {}", i, args[i]);
+        }
+      }
+    }
+
     if (log.isInfoEnabled()) {
       log.info(new App().getGreeting());
     }
+    log.debug("Debug message");
+    log.trace("Trace message");
+    log.warn("Warning message");
+    log.error("Error message");
   }
 }
