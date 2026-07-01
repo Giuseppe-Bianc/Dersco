@@ -8,7 +8,15 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     application
+    checkstyle
+    pmd
+    id("com.github.spotbugs") version "6.5.7"
+    id("net.ltgt.errorprone") version "5.1.0"
+    id("com.diffplug.spotless") version "8.7.0"
+    id("io.freefair.lombok") version "9.5.0"
 }
+
+import net.ltgt.gradle.errorprone.errorprone
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -23,6 +31,59 @@ dependencies {
 
     // This dependency is used by the application.
     implementation(libs.guava)
+    implementation("org.slf4j:slf4j-api:2.0.17")
+    runtimeOnly("ch.qos.logback:logback-classic:1.5.37")
+    runtimeOnly("ch.qos.logback:logback-core:1.5.37")
+
+    errorprone("com.google.errorprone:error_prone_core:2.49.0")
+}
+
+checkstyle {
+    toolVersion = "13.7.0"
+    configFile = file("config/checkstyle/checkstyle.xml")
+    maxWarnings = 0
+    isIgnoreFailures = false
+}
+
+pmd {
+    toolVersion = "7.16.0"
+    isConsoleOutput = true
+    isIgnoreFailures = false
+    ruleSets = listOf() // usiamo un file esplicito sotto, non i preset stringa
+    ruleSetFiles = files("config/pmd/ruleset.xml")
+}
+
+spotbugs {
+    toolVersion.set("4.9.6")
+    effort.set(com.github.spotbugs.snom.Effort.MAX)
+    reportLevel.set(com.github.spotbugs.snom.Confidence.LOW)
+    ignoreFailures.set(false)
+}
+
+tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+    reports.create("html") { required.set(true) }
+    reports.create("xml") { required.set(true) }
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
+    options.errorprone {
+        disableWarningsInGeneratedCode.set(true)
+        allErrorsAsWarnings.set(false)
+    }
+}
+
+spotless {
+    java {
+        googleJavaFormat("1.35.0")
+        removeUnusedImports()
+        formatAnnotations()
+        target("src/*/java/**/*.java")
+    }
+}
+
+tasks.named("check") {
+    dependsOn("checkstyleMain", "pmdMain", "spotbugsMain", "spotlessCheck")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
