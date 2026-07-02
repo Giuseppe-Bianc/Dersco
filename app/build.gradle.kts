@@ -10,9 +10,9 @@ plugins {
     application
     checkstyle
     pmd
-    id("com.github.spotbugs") version "6.5.7"
+    id("com.github.spotbugs") version "6.5.8"
     id("net.ltgt.errorprone") version "5.1.0"
-    id("com.diffplug.spotless") version "8.7.0"
+    id("com.diffplug.spotless") version "8.8.0"
     id("io.freefair.lombok") version "9.5.0"
     id("com.gradleup.shadow") version "9.4.3"
 }
@@ -32,12 +32,12 @@ dependencies {
 
     // This dependency is used by the application.
     implementation(libs.guava)
-    implementation("org.slf4j:slf4j-api:2.0.17")
+    implementation("org.slf4j:slf4j-api:2.0.18")
     runtimeOnly("ch.qos.logback:logback-classic:1.5.37")
     runtimeOnly("ch.qos.logback:logback-core:1.5.37")
     runtimeOnly("org.fusesource.jansi:jansi:2.4.3")
 
-    errorprone("com.google.errorprone:error_prone_core:2.49.0")
+    errorprone("com.google.errorprone:error_prone_core:2.50.0")
 }
 
 checkstyle {
@@ -48,7 +48,7 @@ checkstyle {
 }
 
 pmd {
-    toolVersion = "7.16.0"
+    toolVersion = "7.26.0"
     isConsoleOutput = true
     isIgnoreFailures = false
     ruleSets = listOf() // usiamo un file esplicito sotto, non i preset stringa
@@ -56,7 +56,7 @@ pmd {
 }
 
 spotbugs {
-    toolVersion.set("4.9.6")
+    toolVersion.set("4.10.2")
     effort.set(com.github.spotbugs.snom.Effort.MAX)
     reportLevel.set(com.github.spotbugs.snom.Confidence.LOW)
     ignoreFailures.set(false)
