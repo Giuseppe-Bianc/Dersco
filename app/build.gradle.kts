@@ -5,8 +5,13 @@
  * For more details on building Java & JVM projects, please refer to https://docs.gradle.org/9.6.0/userguide/building_java_projects.html in the Gradle documentation.
  */
 
+
+import com.github.spotbugs.snom.Effort
+import com.github.spotbugs.snom.Confidence
+import com.github.spotbugs.snom.SpotBugsTask
+import net.ltgt.gradle.errorprone.errorprone
+
 plugins {
-    // Apply the application plugin to add support for building a CLI application in Java.
     application
     checkstyle
     pmd
@@ -17,7 +22,9 @@ plugins {
     id("com.gradleup.shadow") version "9.4.3"
 }
 
-import net.ltgt.gradle.errorprone.errorprone
+group = "org.dersbian"
+version = "0.1.0"
+description = "a modern compiler"
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -32,12 +39,16 @@ dependencies {
 
     // This dependency is used by the application.
     implementation(libs.guava)
-    implementation("org.slf4j:slf4j-api:2.0.18")
-    runtimeOnly("ch.qos.logback:logback-classic:1.5.37")
-    runtimeOnly("ch.qos.logback:logback-core:1.5.37")
-    runtimeOnly("org.fusesource.jansi:jansi:2.4.3")
+    implementation(libs.slf4j.api)
+    runtimeOnly(libs.logback.classic)
+    runtimeOnly(libs.logback.core)
+    runtimeOnly(libs.jansi)
 
-    errorprone("com.google.errorprone:error_prone_core:2.50.0")
+    errorprone(libs.errorprone.core)
+}
+
+tasks.withType<Javadoc>().configureEach {
+    options.encoding = "UTF-8"
 }
 
 checkstyle {
@@ -57,30 +68,37 @@ pmd {
 
 spotbugs {
     toolVersion.set("4.10.2")
-    effort.set(com.github.spotbugs.snom.Effort.MAX)
-    reportLevel.set(com.github.spotbugs.snom.Confidence.LOW)
+    effort.set(Effort.MAX)
+    reportLevel.set(Confidence.LOW)
     ignoreFailures.set(false)
 }
 
-tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+tasks.withType<SpotBugsTask>().configureEach {
     reports.create("html") { required.set(true) }
     reports.create("xml") { required.set(true) }
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.compilerArgs.addAll(listOf("-Xlint:all", "-Werror"))
+    options.encoding = "UTF-8"
+    options.compilerArgs.addAll(
+        listOf(
+            "-Xlint:all,-processing",
+            "-Werror"
+        )
+    )
     options.errorprone {
         disableWarningsInGeneratedCode.set(true)
         allErrorsAsWarnings.set(false)
+        excludedPaths.set(".*/build/generated/.*")
     }
 }
 
 spotless {
     java {
+        target("src/*/java/**/*.java")
         googleJavaFormat("1.35.0")
         removeUnusedImports()
         formatAnnotations()
-        target("src/*/java/**/*.java")
     }
 }
 
@@ -93,6 +111,8 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
+    withSourcesJar()
+    withJavadocJar()
 }
 
 application {
@@ -122,4 +142,9 @@ tasks.shadowJar {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = false
+    }
 }
