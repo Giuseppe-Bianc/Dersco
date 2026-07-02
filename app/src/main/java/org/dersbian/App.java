@@ -40,7 +40,6 @@ public class App {
       log.info(new App().getGreeting());
     }
     log.debug("Debug message");
-    log.trace("Trace message");
     log.warn("Warning message");
     log.error("Error message");
   }

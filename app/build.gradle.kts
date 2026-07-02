@@ -33,9 +33,9 @@ dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
     implementation("org.slf4j:slf4j-api:2.0.17")
-    implementation("org.springframework.boot:spring-boot:3.5.4")
     runtimeOnly("ch.qos.logback:logback-classic:1.5.37")
     runtimeOnly("ch.qos.logback:logback-core:1.5.37")
+    runtimeOnly("org.fusesource.jansi:jansi:2.4.3")
 
     errorprone("com.google.errorprone:error_prone_core:2.49.0")
 }
@@ -98,16 +98,25 @@ java {
 application {
     // Define the main class for the application.
     mainClass = "org.dersbian.App"
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
 tasks.jar {
     manifest {
-        attributes["Main-Class"] = application.mainClass
+        attributes(
+            "Main-Class" to application.mainClass.get(),
+            "Enable-Native-Access" to "ALL-UNNAMED"
+        )
     }
 }
 
 tasks.shadowJar {
     archiveBaseName.set(rootProject.name)
+    manifest {
+        attributes(
+            "Enable-Native-Access" to "ALL-UNNAMED"
+        )
+    }
 }
 
 tasks.named<Test>("test") {
