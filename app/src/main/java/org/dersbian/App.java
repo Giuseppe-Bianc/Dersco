@@ -4,21 +4,57 @@
 
 package org.dersbian;
 
+import java.io.File;
+import java.util.concurrent.Callable;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import picocli.CommandLine;
 
 /** Main application class. */
 @Slf4j
-@NoArgsConstructor
+@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 @SuppressWarnings("PMD.ShortClassName")
-public class App {
-  /**
-   * Gets a greeting message.
-   *
-   * @return A greeting message.
-   */
-  public String getGreeting() {
-    return "Hello World!";
+@CommandLine.Command(
+    name = "dersco",
+    mixinStandardHelpOptions = true,
+    version = "0.1.0",
+    description = "Compilatore moderno")
+
+public class App implements Callable<Integer> {
+
+  /** Verbose mode flag. */
+  @CommandLine.Option(
+      names = {"-v", "--verbose"},
+      description = "Enable verbose mode")
+  private boolean verbose;
+
+  /** Input file to process. */
+  @CommandLine.Parameters(index = "0", description = "Input file")
+  private File inputFile;
+
+  /* /** Version provider. #/
+  public static class Version implements CommandLine.IVersionProvider {
+    @Override
+    public String[] getVersion() {
+      final String version = System.getProperty("app.version");
+      return new String[] {version != null ? version : "unknown"};
+    }
+  }*/
+
+  @Override
+  public Integer call() throws Exception {
+    // Logica del comando ...
+    if (verbose && log.isInfoEnabled()) {
+      log.info("Verbose mode attivo");
+    }
+    if (inputFile == null) {
+      throw new CommandLine.ParameterException(new CommandLine(this), "Input file is required");
+    }
+
+    if (log.isInfoEnabled()) {
+      log.info("input file: {}", inputFile.getCanonicalFile());
+    }
+    return 0;
   }
 
   /**
@@ -28,19 +64,7 @@ public class App {
    */
   @SuppressWarnings("PMD.MethodArgumentCouldBeFinal")
   public static void main(String[] args) {
-    if (args.length > 0) {
-      for (int i = 0; i < args.length; i++) {
-        if (log.isInfoEnabled()) {
-          log.info("arg[{}] = {}", i, args[i]);
-        }
-      }
-    }
-
-    if (log.isInfoEnabled()) {
-      log.info(new App().getGreeting());
-    }
-    log.debug("Debug message");
-    log.warn("Warning message");
-    log.error("Error message");
+    final int exitCode = new CommandLine(new App()).execute(args);
+    System.exit(exitCode);
   }
 }

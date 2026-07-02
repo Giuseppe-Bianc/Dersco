@@ -5,6 +5,7 @@ logback = "1.5.37"
 jansi = "2.4.3"
 errorprone-core = "2.50.0"
 junit-jupiter = "6.0.1"
+picocli = "4.7.7"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
@@ -14,3 +15,5 @@ logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback"
 jansi = { module = "org.fusesource.jansi:jansi", version.ref = "jansi" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone-core" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+picocli-codegen = { module = "info.picocli:picocli-codegen", version.ref = "picocli" }

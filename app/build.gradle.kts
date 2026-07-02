@@ -40,9 +40,11 @@ dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
     implementation(libs.slf4j.api)
+    implementation(libs.picocli)
     runtimeOnly(libs.logback.classic)
     runtimeOnly(libs.logback.core)
     runtimeOnly(libs.jansi)
+    annotationProcessor(libs.picocli.codegen)
 
     errorprone(libs.errorprone.core)
 }
@@ -134,7 +136,7 @@ tasks.shadowJar {
     archiveBaseName.set(rootProject.name)
     manifest {
         attributes(
-            "Enable-Native-Access" to "ALL-UNNAMED"
+            "Enable-Native-Access" to "ALL-UNNAMED",
         )
     }
 }
