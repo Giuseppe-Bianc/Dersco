@@ -4,67 +4,50 @@
 
 package org.dersbian;
 
-import java.io.File;
-import java.util.concurrent.Callable;
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.dersbian.cli.CliExecutionExceptionHandler;
+import org.dersbian.cli.RootCommand;
+// import org.fusesource.jansi.AnsiConsole;
 import picocli.CommandLine;
 
-/** Main application class. */
-@Slf4j
-@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-@SuppressWarnings("PMD.ShortClassName")
-@CommandLine.Command(
-    name = "dersco",
-    mixinStandardHelpOptions = true,
-    version = "0.1.0",
-    description = "Compilatore moderno")
-
-public class App implements Callable<Integer> {
-
-  /** Verbose mode flag. */
-  @CommandLine.Option(
-      names = {"-v", "--verbose"},
-      description = "Enable verbose mode")
-  private boolean verbose;
-
-  /** Input file to process. */
-  @CommandLine.Parameters(index = "0", description = "Input file")
-  private File inputFile;
-
-  /* /** Version provider. #/
-  public static class Version implements CommandLine.IVersionProvider {
-    @Override
-    public String[] getVersion() {
-      final String version = System.getProperty("app.version");
-      return new String[] {version != null ? version : "unknown"};
-    }
-  }*/
-
-  @Override
-  public Integer call() throws Exception {
-    // Logica del comando ...
-    if (verbose && log.isInfoEnabled()) {
-      log.info("Verbose mode attivo");
-    }
-    if (inputFile == null) {
-      throw new CommandLine.ParameterException(new CommandLine(this), "Input file is required");
-    }
-
-    if (log.isInfoEnabled()) {
-      log.info("input file: {}", inputFile.getCanonicalFile());
-    }
-    return 0;
-  }
+/**
+ * Application entry point.
+ *
+ * <p>Contains only bootstrap logic: building {@link CommandLine}, installing cross-platform ANSI
+ * support (Jansi, required on Windows cmd.exe) and mapping the exit code to {@link
+ * System#exit(int)}. No domain logic is present here, in keeping with the Single Responsibility
+ * Principle.
+ */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@SuppressWarnings({"PMD.ShortClassName", "PMD.CommentSize"})
+public final class App {
 
   /**
-   * Main application entry point.
+   * Application entry point.
    *
-   * @param args command line arguments.
+   * @param args command-line arguments.
    */
   @SuppressWarnings("PMD.MethodArgumentCouldBeFinal")
   public static void main(String[] args) {
-    final int exitCode = new CommandLine(new App()).execute(args);
+    final int exitCode = createCommandLine().execute(args);
     System.exit(exitCode);
+  }
+
+  /**
+   * Builds and configures the {@link CommandLine} instance used by the application.
+   *
+   * <p>Extracted into a package-private method (rather than inlined in {@code main}) to favor
+   * testability: tests can obtain the same production configuration and redirect stdout/stderr with
+   * {@link CommandLine#setOut} / {@link CommandLine#setErr} without calling {@link
+   * System#exit(int)}.
+   *
+   * @return a {@link CommandLine} ready to execute.
+   */
+  private static CommandLine createCommandLine() {
+    return new CommandLine(new RootCommand())
+        .setExecutionExceptionHandler(new CliExecutionExceptionHandler())
+        .setCaseInsensitiveEnumValuesAllowed(true)
+        .setUsageHelpAutoWidth(true);
   }
 }

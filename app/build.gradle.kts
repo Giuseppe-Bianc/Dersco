@@ -41,7 +41,7 @@ dependencies {
     implementation(libs.guava)
     implementation(libs.slf4j.api)
     implementation(libs.picocli)
-    runtimeOnly(libs.logback.classic)
+    implementation(libs.logback.classic)
     runtimeOnly(libs.logback.core)
     runtimeOnly(libs.jansi)
     annotationProcessor(libs.picocli.codegen)
@@ -123,21 +123,24 @@ application {
     applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
+val manifestAttributes =
+    mapOf(
+        "Main-Class" to application.mainClass.get(),
+        "Implementation-Version" to project.version.toString(),
+        "Implementation-Title" to project.name,
+        "Enable-Native-Access" to "ALL-UNNAMED",
+    )
+
 tasks.jar {
     manifest {
-        attributes(
-            "Main-Class" to application.mainClass.get(),
-            "Enable-Native-Access" to "ALL-UNNAMED"
-        )
+        attributes(manifestAttributes)
     }
 }
 
 tasks.shadowJar {
     archiveBaseName.set(rootProject.name)
     manifest {
-        attributes(
-            "Enable-Native-Access" to "ALL-UNNAMED",
-        )
+        attributes(manifestAttributes)
     }
 }
 
