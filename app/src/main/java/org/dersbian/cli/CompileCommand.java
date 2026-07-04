@@ -112,7 +112,7 @@ public final class CompileCommand implements Callable<Integer> {
    * standard picocli parsing errors.
    */
   private void validateInputFile() {
-    File inputFileFile = inputFile.toFile();
+    final File inputFileFile = inputFile.toFile();
     if (!inputFileFile.isFile() || !inputFileFile.canRead()) {
       throw new ParameterException(
           spec.commandLine(), "Invalid or unreadable input file: " + inputFileFile);

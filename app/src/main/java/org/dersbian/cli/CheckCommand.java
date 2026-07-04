@@ -53,7 +53,7 @@ public final class CheckCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     loggingMixin.applyLogLevel();
-    File inputFileFile = inputFile.toFile();
+    final File inputFileFile = inputFile.toFile();
     if (!inputFileFile.isFile() || !inputFileFile.canRead()) {
       throw new ParameterException(
           spec.commandLine(), "Invalid or unreadable input file: " + inputFile);
