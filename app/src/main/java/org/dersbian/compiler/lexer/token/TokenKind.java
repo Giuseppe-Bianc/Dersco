@@ -5,6 +5,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.dersbian.compiler.lexer.token.number.INumber;
 
 /** Rappresenta tutti i possibili tipi di token del linguaggio. */
 @SuppressWarnings("PMD")
@@ -239,7 +240,7 @@ public sealed interface TokenKind {
   }
 
   /** Letterale numerico (interi, float, notazione scientifica, suffissi). */
-  record Numeric(Number value) implements TokenKind {
+  record Numeric(INumber value) implements TokenKind {
     @Override
     public String toString() {
       return "number '" + value + "'";
@@ -247,7 +248,7 @@ public sealed interface TokenKind {
   }
 
   /** Letterale binario (es. {@code #b1010u}). */
-  record Binary(Number value) implements TokenKind {
+  record Binary(INumber value) implements TokenKind {
     @Override
     public String toString() {
       return "binary '" + value + "'";
@@ -255,7 +256,7 @@ public sealed interface TokenKind {
   }
 
   /** Letterale ottale (es. {@code #o755}). */
-  record Octal(Number value) implements TokenKind {
+  record Octal(INumber value) implements TokenKind {
     @Override
     public String toString() {
       return "octal '" + value + "'";
@@ -263,7 +264,7 @@ public sealed interface TokenKind {
   }
 
   /** Letterale esadecimale (es. {@code #xdeadbeefu}). */
-  record Hexadecimal(Number value) implements TokenKind {
+  record Hexadecimal(INumber value) implements TokenKind {
     @Override
     public String toString() {
       return "hexadecimal '" + value + "'";
