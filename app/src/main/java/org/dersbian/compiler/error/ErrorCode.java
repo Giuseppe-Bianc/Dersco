@@ -1,0 +1,968 @@
+package org.dersbian.compiler.error;
+
+import java.util.List;
+
+/**
+ * Standardized compiler error codes.
+ *
+ * <p>Rust's enum variants map to Java enum constants, while the structured metadata is kept in a
+ * single internal descriptor so the public API stays compact and predictable.
+ */
+@SuppressWarnings("PMD.CyclomaticComplexity")
+public enum ErrorCode {
+  E0001,
+  E0002,
+  E0003,
+  E0004,
+  E0005,
+  E0006,
+  E0007,
+  E0008,
+  E0009,
+  E0010,
+  E1001,
+  E1002,
+  E1003,
+  E1004,
+  E1005,
+  E1006,
+  E1007,
+  E1008,
+  E1009,
+  E1010,
+  E1011,
+  E1012,
+  E1013,
+  E1014,
+  E1015,
+  E2001,
+  E2002,
+  E2003,
+  E2004,
+  E2005,
+  E2006,
+  E2007,
+  E2008,
+  E2009,
+  E2010,
+  E2011,
+  E2012,
+  E2013,
+  E2014,
+  E2015,
+  E2016,
+  E2017,
+  E2018,
+  E2019,
+  E2020,
+  E2021,
+  E2022,
+  E2023,
+  E2024,
+  E2025,
+  E2026,
+  E2027,
+  E2028,
+  E2029,
+  E2030,
+  E2031,
+  E2032,
+  E3001,
+  E3002,
+  E3003,
+  E3004,
+  E3005,
+  E3006,
+  E3007,
+  E3008,
+  E4001,
+  E4002,
+  E4003,
+  E4004,
+  E4005,
+  E5001,
+  E5002,
+  E5003,
+  E5004,
+  E5005;
+
+  private record Metadata(
+      String code,
+      int numericCode,
+      Severity severity,
+      CompilerPhase phase,
+      String message,
+      String explanation,
+      List<String> suggestions) {
+
+    private Metadata {
+      suggestions = List.copyOf(suggestions);
+    }
+  }
+
+  /** Returns the error code as a string, for example E0001. */
+  public String code() {
+    return metadata().code();
+  }
+
+  /** Returns the numeric portion of the error code. */
+  public int numericCode() {
+    return metadata().numericCode();
+  }
+
+  /** Returns the severity level of this error. */
+  public Severity severity() {
+    return metadata().severity();
+  }
+
+  /** Returns the compiler phase where this error occurs. */
+  public CompilerPhase phase() {
+    return metadata().phase();
+  }
+
+  /** Returns a brief message describing this error. */
+  public String message() {
+    return metadata().message();
+  }
+
+  /** Returns a detailed explanation of this error. */
+  public String explanation() {
+    return metadata().explanation();
+  }
+
+  /** Returns suggested fixes for this error, if available. */
+  public List<String> suggestions() {
+    return metadata().suggestions();
+  }
+
+  @Override
+  public String toString() {
+    return code() + ": " + message();
+  }
+
+  private Metadata metadata() {
+    return switch (this) {
+      case E0001 ->
+          new Metadata(
+              "E0001",
+              1,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "invalid or unrecognized token",
+              """
+              The lexer encountered a character sequence that doesn't match any valid token pattern.
+              Check for typos or unsupported characters. Valid tokens include identifiers,
+              keywords, operators, and literals.
+              """,
+              List.of());
+      case E0002 ->
+          new Metadata(
+              "E0002",
+              2,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "malformed binary number literal",
+              """
+              Binary literals must have at least one binary digit (0 or 1) after `#b`.
+              Example: `#b1010` for decimal 10.
+              """,
+              List.of(
+                  "Add binary digits after #b: #b1010",
+                  "Check for invalid digits (only 0 and 1 allowed)"));
+      case E0003 ->
+          new Metadata(
+              "E0003",
+              3,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "malformed octal number literal",
+              """
+              Octal literals must have at least one octal digit (0-7) after `#o`.
+              Example: `#o755` for decimal 493.
+              """,
+              List.of(
+                  "Add octal digits after #o: #o755",
+                  "Check for invalid digits (only 0-7 allowed)"));
+      case E0004 ->
+          new Metadata(
+              "E0004",
+              4,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "malformed hexadecimal number literal",
+              """
+              Hexadecimal literals must have at least one hex digit (0-9, a-f, A-F) after `#x`.
+              Example: `#xDEAD` for decimal 57005.
+              """,
+              List.of(
+                  "Add hexadecimal digits after #x: #xDEAD",
+                  "Check for invalid digits (only 0-9, a-f, A-F allowed)"));
+      case E0005 ->
+          new Metadata(
+              "E0005",
+              5,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "unterminated string literal",
+              """
+              String literals must be closed with a matching double quote before the end of the line.
+              Example: `\"hello world\"` instead of `\"hello world`.
+              """,
+              List.of(
+                  "Add a closing double quote: \"hello\"",
+                  "Use escape sequence for embedded quotes: \"say \\\"hello\\\"\""));
+      case E0006 ->
+          new Metadata(
+              "E0006",
+              6,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "unterminated character literal",
+              """
+              Character literals must be closed with a matching single quote.
+              Example: `'x'` instead of `'x`.
+              """,
+              List.of());
+      case E0007 ->
+          new Metadata(
+              "E0007",
+              7,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "invalid escape sequence",
+              """
+              The escape sequence is not recognized. Valid escape sequences include:
+              \\n (newline), \\r (carriage return), \\t (tab), \\\\ (backslash),
+              \\' (single quote), \\\" (double quote), \\0 (null), \\u{XXXX} (unicode).
+              """,
+              List.of());
+      case E0008 ->
+          new Metadata(
+              "E0008",
+              8,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "unterminated multi-line comment",
+              """
+              Multi-line comments opened with `/*` must be closed with `*/`.
+              Check for missing closing markers or accidental nesting.
+              """,
+              List.of());
+      case E0009 ->
+          new Metadata(
+              "E0009",
+              9,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "invalid number suffix",
+              """
+              The suffix on the numeric literal is not recognized.
+              Valid suffixes: i8, i16, i32, i64, u8, u16, u32, u64, f32, f64.
+              """,
+              List.of());
+      case E0010 ->
+          new Metadata(
+              "E0010",
+              10,
+              Severity.ERROR,
+              CompilerPhase.LEXER,
+              "number literal overflow",
+              """
+              The numeric value exceeds the range of the target type.
+              Use a larger type or reduce the value.
+              """,
+              List.of());
+      case E1001 ->
+          new Metadata(
+              "E1001",
+              1001,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "maximum recursion depth exceeded",
+              """
+              The parser has exceeded its recursion limit due to deeply nested expressions.
+              Simplify the expression or break it into smaller parts.
+              """,
+              List.of());
+      case E1002 ->
+          new Metadata(
+              "E1002",
+              1002,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "invalid type specification",
+              """
+              Expected a valid type but found something else.
+              Valid types: i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, char, string, bool,
+              or custom type identifiers.
+              """,
+              List.of());
+      case E1003 ->
+          new Metadata(
+              "E1003",
+              1003,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "invalid assignment target",
+              """
+              Only variables and array elements can be assigned to.
+              Examples: `x = 5` or `arr[0] = 1`.
+              """,
+              List.of());
+      case E1004 ->
+          new Metadata(
+              "E1004",
+              1004,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "unexpected token",
+              """
+              The parser encountered a token it didn't expect in this context.
+              Example: `fun foo( { }` expected `)` not `{`.
+              """,
+              List.of());
+      case E1005 ->
+          new Metadata(
+              "E1005",
+              1005,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "invalid binary operator",
+              """
+              The token cannot be used as a binary operator.
+              Use a valid binary operator: `+`, `-`, `*`, `/`, `%`, `==`, `!=`, etc.
+              """,
+              List.of());
+      case E1006 ->
+          new Metadata(
+              "E1006",
+              1006,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "expected expression",
+              """
+              An expression was expected but not found.
+              Example: `var x: i32 =` is missing an initializer expression.
+              """,
+              List.of());
+      case E1007 ->
+          new Metadata(
+              "E1007",
+              1007,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "expected statement",
+              "A statement was expected but not found.",
+              List.of());
+      case E1008 ->
+          new Metadata(
+              "E1008",
+              1008,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "expected identifier",
+              """
+              An identifier (variable or function name) was expected.
+              Example: `var 123: i32 = 0` is invalid because 123 is not an identifier.
+              """,
+              List.of());
+      case E1009 ->
+          new Metadata(
+              "E1009",
+              1009,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "expected type annotation",
+              """
+              A type annotation was expected after `:`.
+              Example: `var x: = 0` is missing a type after the colon.
+              """,
+              List.of());
+      case E1010 ->
+          new Metadata(
+              "E1010",
+              1010,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "unmatched parenthesis",
+              "Opening `(` without matching `)` or vice versa.",
+              List.of());
+      case E1011 ->
+          new Metadata(
+              "E1011",
+              1011,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "unmatched brace",
+              "Opening `{` without matching `}` or vice versa.",
+              List.of());
+      case E1012 ->
+          new Metadata(
+              "E1012",
+              1012,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "unmatched bracket",
+              "Opening `[` without matching `]` or vice versa.",
+              List.of());
+      case E1013 ->
+          new Metadata(
+              "E1013",
+              1013,
+              Severity.WARNING,
+              CompilerPhase.PARSER,
+              "missing semicolon",
+              "A semicolon may be missing. This is currently a warning as semicolons are optional in many contexts.",
+              List.of());
+      case E1014 ->
+          new Metadata(
+              "E1014",
+              1014,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "invalid function signature",
+              "The function declaration has an invalid structure.",
+              List.of());
+      case E1015 ->
+          new Metadata(
+              "E1015",
+              1015,
+              Severity.ERROR,
+              CompilerPhase.PARSER,
+              "invalid parameter list",
+              "The function parameter list is malformed.",
+              List.of());
+      case E2001 ->
+          new Metadata(
+              "E2001",
+              2001,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "initializer count mismatch",
+              """
+              The number of initializers doesn't match the number of variables.
+              Example: `var a, b: i32 = 1` has 2 variables but only 1 initializer.
+              """,
+              List.of());
+      case E2002 ->
+          new Metadata(
+              "E2002",
+              2002,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "type mismatch in assignment",
+              """
+              Cannot assign a value of one type to a variable of an incompatible type.
+              Example: `var x: i32 = \"hello\"` is invalid because string is not assignable to i32.
+              """,
+              List.of());
+      case E2003 ->
+          new Metadata(
+              "E2003",
+              2003,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "missing return in some code paths",
+              """
+              A function with a non-void return type may not return a value in all code paths.
+              Example: a branch without a return leaves the function incomplete.
+              """,
+              List.of());
+      case E2004 ->
+          new Metadata(
+              "E2004",
+              2004,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "condition must be boolean",
+              """
+              Conditions in if, while, and for must be boolean expressions.
+              Example: `if (42) { }` is invalid because i64 is not bool.
+              """,
+              List.of());
+      case E2005 ->
+          new Metadata(
+              "E2005",
+              2005,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "return outside function",
+              "A return statement was found outside of a function body.",
+              List.of());
+      case E2006 ->
+          new Metadata(
+              "E2006",
+              2006,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "cannot return value from void function",
+              """
+              A void function cannot return a value.
+              Example: `fun foo() { return 42 }` is invalid for an implicit void function.
+              """,
+              List.of());
+      case E2007 ->
+          new Metadata(
+              "E2007",
+              2007,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "return type mismatch",
+              """
+              The returned value's type doesn't match the function's declared return type.
+              Example: returning a string from a function declared to return i32.
+              """,
+              List.of());
+      case E2008 ->
+          new Metadata(
+              "E2008",
+              2008,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "missing return value",
+              """
+              A non-void function returned without a value.
+              Example: `return` is missing the expression that the function must produce.
+              """,
+              List.of());
+      case E2009 ->
+          new Metadata(
+              "E2009",
+              2009,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "break outside loop",
+              "A break statement was found outside of a loop.",
+              List.of(
+                  "Move the statement inside a while or for loop",
+                  "Use return to exit a function instead"));
+      case E2010 ->
+          new Metadata(
+              "E2010",
+              2010,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "continue outside loop",
+              "A continue statement was found outside of a loop.",
+              List.of(
+                  "Move the statement inside a while or for loop",
+                  "Use return to exit a function instead"));
+      case E2011 ->
+          new Metadata(
+              "E2011",
+              2011,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "bitwise operator requires integer operands",
+              """
+              Bitwise operators (&, |, ^, <<, >>) require integer operands.
+              Example: `var x = 1.5 & 2.5` is invalid because f64 is not allowed.
+              """,
+              List.of());
+      case E2012 ->
+          new Metadata(
+              "E2012",
+              2012,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "logical operator requires boolean operands",
+              """
+              Logical operators (&&, ||) require boolean operands.
+              Example: `var x = 1 && 2` is invalid because i64 is not allowed.
+              """,
+              List.of());
+      case E2013 ->
+          new Metadata(
+              "E2013",
+              2013,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "arithmetic operator requires numeric operands",
+              """
+              Arithmetic operators (+, -, *, /, %) require numeric operands.
+              Example: `\"a\" + \"b\"` is not supported.
+              """,
+              List.of());
+      case E2014 ->
+          new Metadata(
+              "E2014",
+              2014,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "incompatible types in comparison",
+              """
+              Comparison operators require compatible types.
+              Example: `1 < \"hello\"` compares i64 with string.
+              """,
+              List.of());
+      case E2015 ->
+          new Metadata(
+              "E2015",
+              2015,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "type mismatch in binary operation",
+              "The types in a binary expression are incompatible.",
+              List.of());
+      case E2016 ->
+          new Metadata(
+              "E2016",
+              2016,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "unsupported arithmetic operation",
+              "The arithmetic operation is not supported for this type.",
+              List.of());
+      case E2017 ->
+          new Metadata(
+              "E2017",
+              2017,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "logical operation requires boolean",
+              "Logical operations require boolean operands.",
+              List.of());
+      case E2018 ->
+          new Metadata(
+              "E2018",
+              2018,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "negation requires numeric type",
+              """
+              Unary negation (-) requires a numeric operand.
+              Example: `var x = -true` is invalid because bool cannot be negated.
+              """,
+              List.of());
+      case E2019 ->
+          new Metadata(
+              "E2019",
+              2019,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "logical NOT requires boolean type",
+              """
+              Logical NOT (!) requires a boolean operand.
+              Example: `var x = !42` is invalid because i64 cannot be NOTted.
+              """,
+              List.of());
+      case E2020 ->
+          new Metadata(
+              "E2020",
+              2020,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "empty array literal",
+              """
+              Array literals must have at least one element for type inference.
+              Example: `var arr: i32[] = {}` is invalid because the array is empty.
+              """,
+              List.of());
+      case E2021 ->
+          new Metadata(
+              "E2021",
+              2021,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "mixed types in array literal",
+              """
+              All elements in an array literal must have the same type.
+              Example: `var arr = {1, \"hello\", 3}` mixes i64 and string.
+              """,
+              List.of());
+      case E2022 ->
+          new Metadata(
+              "E2022",
+              2022,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "function cannot be used as variable",
+              """
+              A function name cannot be used where a variable is expected.
+              Example: `var x = foo` treats foo as a value instead of a callable.
+              """,
+              List.of());
+      case E2023 ->
+          new Metadata(
+              "E2023",
+              2023,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "undefined variable",
+              """
+              The variable has not been declared in the current scope or any outer scope.
+              Declare the variable with `var` or `const` before using it.
+              """,
+              List.of(
+                  "Declare the variable: var x: i32 = 0",
+                  "Check for typos in the variable name",
+                  "Ensure the variable is in scope"));
+      case E2024 ->
+          new Metadata(
+              "E2024",
+              2024,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "cannot assign to immutable variable",
+              """
+              Variables declared with `const` cannot be reassigned.
+              Use `var` for mutable variables or remove the reassignment.
+              """,
+              List.of(
+                  "Use 'var' instead of 'const' for mutable variables",
+                  "Remove the reassignment"));
+      case E2025 ->
+          new Metadata(
+              "E2025",
+              2025,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "undefined variable in assignment",
+              "Attempting to assign to an undefined variable.",
+              List.of());
+      case E2026 ->
+          new Metadata(
+              "E2026",
+              2026,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "callee must be a function",
+              """
+              The expression being called is not a function.
+              Example: `var x = 42; x()` is invalid because x is not callable.
+              """,
+              List.of());
+      case E2027 ->
+          new Metadata(
+              "E2027",
+              2027,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "undefined function",
+              """
+              The function has not been declared.
+              Define the function before calling it.
+              """,
+              List.of());
+      case E2028 ->
+          new Metadata(
+              "E2028",
+              2028,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "wrong number of arguments",
+              """
+              The number of arguments doesn't match the function's parameter count.
+              Example: `add(1)` is invalid when the function expects two arguments.
+              """,
+              List.of());
+      case E2029 ->
+          new Metadata(
+              "E2029",
+              2029,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "argument type mismatch",
+              """
+              An argument's type doesn't match the expected parameter type.
+              Example: `foo(\"hello\")` is invalid when x expects i32.
+              """,
+              List.of());
+      case E2030 ->
+          new Metadata(
+              "E2030",
+              2030,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "array index must be integer",
+              """
+              Array indices must be integer types.
+              Example: `arr[1.5]` is invalid because f64 is not allowed.
+              """,
+              List.of());
+      case E2031 ->
+          new Metadata(
+              "E2031",
+              2031,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "cannot index non-array type",
+              """
+              Cannot use array indexing on a non-array type.
+              Example: `var y = x[0]` is invalid when x is i32.
+              """,
+              List.of());
+      case E2032 ->
+          new Metadata(
+              "E2032",
+              2032,
+              Severity.ERROR,
+              CompilerPhase.SEMANTIC,
+              "duplicate declaration",
+              "An identifier with this name already exists in the current scope.",
+              List.of());
+      case E3001 ->
+          new Metadata(
+              "E3001",
+              3001,
+              Severity.ERROR,
+              CompilerPhase.IR_GENERATION,
+              "break outside loop in IR generation",
+              "Internal error: break control flow encountered outside loop context.",
+              List.of());
+      case E3002 ->
+          new Metadata(
+              "E3002",
+              3002,
+              Severity.ERROR,
+              CompilerPhase.IR_GENERATION,
+              "continue outside loop in IR generation",
+              "Internal error: continue control flow encountered outside loop context.",
+              List.of());
+      case E3003 ->
+          new Metadata(
+              "E3003",
+              3003,
+              Severity.ERROR,
+              CompilerPhase.IR_GENERATION,
+              "invalid IR instruction",
+              "The IR generator attempted to create an invalid instruction.",
+              List.of());
+      case E3004 ->
+          new Metadata(
+              "E3004",
+              3004,
+              Severity.ERROR,
+              CompilerPhase.IR_GENERATION,
+              "undefined variable in IR",
+              "Reference to an undefined variable during IR generation.",
+              List.of());
+      case E3005 ->
+          new Metadata(
+              "E3005",
+              3005,
+              Severity.ERROR,
+              CompilerPhase.IR_GENERATION,
+              "invalid basic block",
+              "Malformed basic block in the control flow graph.",
+              List.of());
+      case E3006 ->
+          new Metadata(
+              "E3006",
+              3006,
+              Severity.ERROR,
+              CompilerPhase.IR_GENERATION,
+              "invalid block terminator",
+              "Basic block has an invalid or missing terminator.",
+              List.of());
+      case E3007 ->
+          new Metadata(
+              "E3007",
+              3007,
+              Severity.ERROR,
+              CompilerPhase.IR_GENERATION,
+              "SSA transformation error",
+              "Error during Static Single Assignment transformation.",
+              List.of());
+      case E3008 ->
+          new Metadata(
+              "E3008",
+              3008,
+              Severity.ERROR,
+              CompilerPhase.IR_GENERATION,
+              "CFG construction error",
+              "Error during Control Flow Graph construction.",
+              List.of());
+      case E4001 ->
+          new Metadata(
+              "E4001",
+              4001,
+              Severity.ERROR,
+              CompilerPhase.CODE_GENERATION,
+              "invalid assembly instruction",
+              "Cannot generate valid assembly for this operation.",
+              List.of());
+      case E4002 ->
+          new Metadata(
+              "E4002",
+              4002,
+              Severity.ERROR,
+              CompilerPhase.CODE_GENERATION,
+              "register allocation failed",
+              "Unable to allocate registers for the operation.",
+              List.of());
+      case E4003 ->
+          new Metadata(
+              "E4003",
+              4003,
+              Severity.ERROR,
+              CompilerPhase.CODE_GENERATION,
+              "stack frame overflow",
+              "Stack frame exceeds maximum size.",
+              List.of());
+      case E4004 ->
+          new Metadata(
+              "E4004",
+              4004,
+              Severity.ERROR,
+              CompilerPhase.CODE_GENERATION,
+              "unsupported target platform",
+              "Target platform is not supported.",
+              List.of());
+      case E4005 ->
+          new Metadata(
+              "E4005",
+              4005,
+              Severity.ERROR,
+              CompilerPhase.CODE_GENERATION,
+              "ABI violation",
+              "Generated code violates the target ABI.",
+              List.of());
+      case E5001 ->
+          new Metadata(
+              "E5001",
+              5001,
+              Severity.ERROR,
+              CompilerPhase.SYSTEM,
+              "file not found",
+              "The specified source file could not be found.",
+              List.of());
+      case E5002 ->
+          new Metadata(
+              "E5002",
+              5002,
+              Severity.ERROR,
+              CompilerPhase.SYSTEM,
+              "permission denied",
+              "Insufficient permissions to access the file.",
+              List.of());
+      case E5003 ->
+          new Metadata(
+              "E5003",
+              5003,
+              Severity.ERROR,
+              CompilerPhase.SYSTEM,
+              "invalid file extension",
+              "Source files must have the `.vn` extension.",
+              List.of());
+      case E5004 ->
+          new Metadata(
+              "E5004",
+              5004,
+              Severity.ERROR,
+              CompilerPhase.SYSTEM,
+              "write error",
+              "Error writing output file.",
+              List.of());
+      case E5005 ->
+          new Metadata(
+              "E5005",
+              5005,
+              Severity.ERROR,
+              CompilerPhase.SYSTEM,
+              "read error",
+              "Error reading input file.",
+              List.of());
+    };
+  }
+}
