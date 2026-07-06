@@ -15,8 +15,8 @@ import java.nio.file.Path;
  */
 @SuppressWarnings({"PMD.CommentSize", "PMD.LongVariable"})
 public record CompilationRequest(
-    Path source,
-    Path output,
-    OptimizationLevel optimizationLevel,
-    boolean emitIntermediateCode,
-    boolean diagnostics) {}
+        Path source,
+        Path output,
+        OptimizationLevel optimizationLevel,
+        boolean emitIntermediateCode,
+        boolean diagnostics) {}

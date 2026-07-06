@@ -4,19 +4,21 @@ package org.dersbian.compiler.lexer.token.number;
 @SuppressWarnings({"AvoidCommonTypeNames", "checkstyle:AbbreviationAsWordInName"})
 public sealed interface INumber {
 
-  /** Valore intero. */
-  record IntegerValue(long value, String suffix) implements INumber {
-    @Override
-    public String toString() {
-      return suffix == null ? Long.toString(value) : value + suffix;
-    }
-  }
+    /** Valore intero. */
+    record IntegerValue(long value, String suffix) implements INumber {
 
-  /** Valore in virgola mobile. */
-  record FloatingValue(double value, String suffix) implements INumber {
-    @Override
-    public String toString() {
-      return suffix == null ? Double.toString(value) : value + suffix;
+        @Override
+        public String toString() {
+            return suffix == null ? Long.toString(value) : value + suffix;
+        }
     }
-  }
+
+    /** Valore in virgola mobile. */
+    record FloatingValue(double value, String suffix) implements INumber {
+
+        @Override
+        public String toString() {
+            return suffix == null ? Double.toString(value) : value + suffix;
+        }
+    }
 }

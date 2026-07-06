@@ -10,9 +10,9 @@ import picocli.CommandLine.IVersionProvider;
 @SuppressWarnings({"PMD.CommentSize", "PMD.AtLeastOneConstructor"})
 public final class ManifestVersionProvider implements IVersionProvider {
 
-  @Override
-  public String[] getVersion() {
-    final String version = getClass().getPackage().getImplementationVersion();
-    return new String[] {"dersco " + (version != null ? version : "development")};
-  }
+    @Override
+    public String[] getVersion() {
+        final String version = getClass().getPackage().getImplementationVersion();
+        return new String[] {"dersco " + (version != null ? version : "development")};
+    }
 }

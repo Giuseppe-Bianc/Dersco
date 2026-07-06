@@ -19,42 +19,44 @@ import picocli.CommandLine.Option;
  * with picocli"). It involves a deliberate coupling to Logback, confined to this single class.
  */
 @SuppressWarnings({
-  "PMD.CommentSize",
-  "PMD.AtLeastOneConstructor",
-  "PMD.ImmutableField",
-  "PMD.CommentRequired",
-  "PMD.OnlyOneReturn"
+    "PMD.CommentSize",
+    "PMD.AtLeastOneConstructor",
+    "PMD.ImmutableField",
+    "PMD.CommentRequired",
+    "PMD.OnlyOneReturn"
 })
 public final class LoggingMixin {
 
-  @Option(
-      names = {"-v", "--verbose"},
-      description = {
-        "Increase the verbosity of the log output. Repeatable (e.g. -v, -vv, -vvv).",
-        "  -v: INFO   -vv: DEBUG   -vvv: TRACE"
-      })
-  private boolean[] verbosity = {};
+    @Option(
+            names = {"-v", "--verbose"},
+            description = {
+                "Increase the verbosity of the log output. Repeatable (e.g. -v, -vv, -vvv).",
+                "  -v: INFO   -vv: DEBUG   -vvv: TRACE"
+            })
+    private boolean[] verbosity = {};
 
-  @Option(
-      names = {"-q", "--quiet"},
-      description = "Suppress non-essential output.")
-  private boolean quiet;
+    @Option(
+            names = {"-q", "--quiet"},
+            description = "Suppress non-essential output.")
+    private boolean quiet;
 
-  /** Applies the resolved log level to the root logger. Call at the beginning of {@code call()}. */
-  public void applyLogLevel() {
-    final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-    context.getLogger(Logger.ROOT_LOGGER_NAME).setLevel(resolveLevel());
-  }
-
-  private Level resolveLevel() {
-    if (quiet) {
-      return Level.ERROR;
+    /**
+     * Applies the resolved log level to the root logger. Call at the beginning of {@code call()}.
+     */
+    public void applyLogLevel() {
+        final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.getLogger(Logger.ROOT_LOGGER_NAME).setLevel(resolveLevel());
     }
-    return switch (verbosity.length) {
-      case 0 -> Level.WARN;
-      case 1 -> Level.INFO;
-      case 2 -> Level.DEBUG;
-      default -> Level.TRACE;
-    };
-  }
+
+    private Level resolveLevel() {
+        if (quiet) {
+            return Level.ERROR;
+        }
+        return switch (verbosity.length) {
+            case 0 -> Level.WARN;
+            case 1 -> Level.INFO;
+            case 2 -> Level.DEBUG;
+            default -> Level.TRACE;
+        };
+    }
 }

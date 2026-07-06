@@ -12,20 +12,20 @@ import picocli.CommandLine.Spec;
  * breaking the backward compatibility of existing options.
  */
 @Command(
-    name = "dersco",
-    mixinStandardHelpOptions = true,
-    versionProvider = ManifestVersionProvider.class,
-    description = "Modern compiler for the Dersco programming language.",
-    subcommands = {CompileCommand.class, CheckCommand.class, HelpCommand.class},
-    synopsisSubcommandLabel = "COMMAND")
+        name = "dersco",
+        mixinStandardHelpOptions = true,
+        versionProvider = ManifestVersionProvider.class,
+        description = "Modern compiler for the Dersco programming language.",
+        subcommands = {CompileCommand.class, CheckCommand.class, HelpCommand.class},
+        synopsisSubcommandLabel = "COMMAND")
 @SuppressWarnings({"PMD.CommentSize", "PMD.AtLeastOneConstructor", "PMD.CommentRequired"})
 public final class RootCommand implements Runnable {
 
-  @Spec private CommandSpec spec;
+    @Spec private CommandSpec spec;
 
-  @Override
-  public void run() {
-    // No subcommand specified: show help instead of exiting silently.
-    spec.commandLine().usage(spec.commandLine().getOut());
-  }
+    @Override
+    public void run() {
+        // No subcommand specified: show help instead of exiting silently.
+        spec.commandLine().usage(spec.commandLine().getOut());
+    }
 }

@@ -14,30 +14,30 @@ import picocli.CommandLine.ParseResult;
  */
 @Slf4j
 @SuppressWarnings({
-  "PMD.CommentSize",
-  "PMD.AtLeastOneConstructor",
-  "PMD.LongVariable",
-  "PMD.ShortVariable",
-  "PMD.MethodArgumentCouldBeFinal",
-  "PMD.LawOfDemeter",
-  "PMD.OnlyOneReturn"
+    "PMD.CommentSize",
+    "PMD.AtLeastOneConstructor",
+    "PMD.LongVariable",
+    "PMD.ShortVariable",
+    "PMD.MethodArgumentCouldBeFinal",
+    "PMD.LawOfDemeter",
+    "PMD.OnlyOneReturn"
 })
 public final class CliExecutionExceptionHandler implements IExecutionExceptionHandler {
 
-  /** BSD sysexits.h convention: EX_SOFTWARE. */
-  private static final int EXIT_SOFTWARE_ERROR = 70;
+    /** BSD sysexits.h convention: EX_SOFTWARE. */
+    private static final int EXIT_SOFTWARE_ERROR = 70;
 
-  @Override
-  public int handleExecutionException(
-      Exception ex, CommandLine commandLine, ParseResult parseResult) {
-    commandLine
-        .getErr()
-        .println(commandLine.getColorScheme().errorText("Error: " + ex.getMessage()));
-    log.error("Unhandled exception during command execution", ex);
+    @Override
+    public int handleExecutionException(
+            Exception ex, CommandLine commandLine, ParseResult parseResult) {
+        commandLine
+                .getErr()
+                .println(commandLine.getColorScheme().errorText("Error: " + ex.getMessage()));
+        log.error("Unhandled exception during command execution", ex);
 
-    if (ex instanceof ExecutionException) {
-      return commandLine.getCommandSpec().exitCodeOnExecutionException();
+        if (ex instanceof ExecutionException) {
+            return commandLine.getCommandSpec().exitCodeOnExecutionException();
+        }
+        return EXIT_SOFTWARE_ERROR;
     }
-    return EXIT_SOFTWARE_ERROR;
-  }
 }

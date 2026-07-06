@@ -34,6 +34,7 @@ repositories {
 dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
@@ -98,7 +99,8 @@ tasks.withType<JavaCompile>().configureEach {
 spotless {
     java {
         target("src/*/java/**/*.java")
-        googleJavaFormat("1.35.0")
+        googleJavaFormat("1.35.0").aosp() // This sets indentation to 4 spaces
+            .reflowLongStrings()
         removeUnusedImports()
         formatAnnotations()
     }
@@ -149,7 +151,11 @@ tasks.named<Test>("test") {
     useJUnitPlatform()
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
     testLogging {
-        events("passed", "skipped", "failed")
-        showStandardStreams = false
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        showStandardStreams = true
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
 }

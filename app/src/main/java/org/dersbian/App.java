@@ -23,31 +23,31 @@ import picocli.CommandLine;
 @SuppressWarnings({"PMD.ShortClassName", "PMD.CommentSize"})
 public final class App {
 
-  /**
-   * Application entry point.
-   *
-   * @param args command-line arguments.
-   */
-  @SuppressWarnings("PMD.MethodArgumentCouldBeFinal")
-  public static void main(String[] args) {
-    final int exitCode = createCommandLine().execute(args);
-    System.exit(exitCode);
-  }
+    /**
+     * Application entry point.
+     *
+     * @param args command-line arguments.
+     */
+    @SuppressWarnings("PMD.MethodArgumentCouldBeFinal")
+    public static void main(String[] args) {
+        final int exitCode = createCommandLine().execute(args);
+        System.exit(exitCode);
+    }
 
-  /**
-   * Builds and configures the {@link CommandLine} instance used by the application.
-   *
-   * <p>Extracted into a package-private method (rather than inlined in {@code main}) to favor
-   * testability: tests can obtain the same production configuration and redirect stdout/stderr with
-   * {@link CommandLine#setOut} / {@link CommandLine#setErr} without calling {@link
-   * System#exit(int)}.
-   *
-   * @return a {@link CommandLine} ready to execute.
-   */
-  private static CommandLine createCommandLine() {
-    return new CommandLine(new RootCommand())
-        .setExecutionExceptionHandler(new CliExecutionExceptionHandler())
-        .setCaseInsensitiveEnumValuesAllowed(true)
-        .setUsageHelpAutoWidth(true);
-  }
+    /**
+     * Builds and configures the {@link CommandLine} instance used by the application.
+     *
+     * <p>Extracted into a package-private method (rather than inlined in {@code main}) to favor
+     * testability: tests can obtain the same production configuration and redirect stdout/stderr
+     * with {@link CommandLine#setOut} / {@link CommandLine#setErr} without calling {@link
+     * System#exit(int)}.
+     *
+     * @return a {@link CommandLine} ready to execute.
+     */
+    private static CommandLine createCommandLine() {
+        return new CommandLine(new RootCommand())
+                .setExecutionExceptionHandler(new CliExecutionExceptionHandler())
+                .setCaseInsensitiveEnumValuesAllowed(true)
+                .setUsageHelpAutoWidth(true);
+    }
 }
