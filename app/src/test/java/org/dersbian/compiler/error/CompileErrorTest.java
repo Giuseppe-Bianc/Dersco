@@ -2,12 +2,16 @@ package org.dersbian.compiler.error;
 
 import java.io.IOException;
 import org.dersbian.compiler.CompilerException;
-import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.lexer.token.SourceLocation;
+import org.dersbian.compiler.lexer.token.Span;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.CommentRequired", "PMD.UnitTestAssertionsShouldIncludeMessage"})
+@SuppressWarnings({
+  "PMD.AtLeastOneConstructor",
+  "PMD.CommentRequired",
+  "PMD.UnitTestAssertionsShouldIncludeMessage"
+})
 class CompileErrorTest {
 
   @Test
@@ -38,14 +42,17 @@ class CompileErrorTest {
         () ->
             Assertions.assertEquals(
                 "[E1004] Syntax error: Unexpected token at 2:3-3", syntaxError.toString()),
-        () -> Assertions.assertEquals("[E4001] Assembly generation error: Invalid instruction", asmError.toString()));
+        () ->
+            Assertions.assertEquals(
+                "[E4001] Assembly generation error: Invalid instruction", asmError.toString()));
   }
 
   @Test
   void ioErrorsPreserveTheWrappedCauseAndCanFeedCompilerException() {
     final IOException ioException = new IOException("disk full");
     final CompileError.IoError ioError = CompileError.ioError(ioException);
-        final CompilerException compilerException = new CompilerException(ioError.toString(), ioError.cause());
+    final CompilerException compilerException =
+        new CompilerException(ioError.toString(), ioError.cause());
 
     Assertions.assertAll(
         () -> Assertions.assertSame(ioException, ioError.cause()),

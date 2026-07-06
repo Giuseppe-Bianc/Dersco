@@ -4,14 +4,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Immutable 1-based line lookup used to reproduce source-context error reports.
- *
- * <p>Rust's line-tracking helper has no direct standard-library equivalent in Java, so this class
- * stores a stable snapshot of source lines and exposes the closest semantic match: optional lookup
- * by 1-based line number.
- */
+/** Tracks source lines to support line-based lookups (e.g., for error reporting). */
 public final class LineTracker {
+
+  /** The source lines, 0-indexed internally but exposed as 1-based line numbers. */
   private final List<String> lines;
 
   private LineTracker(final List<String> lines) {
@@ -31,10 +27,13 @@ public final class LineTracker {
 
   /** Returns the line at the given 1-based index, if available. */
   public Optional<String> getLine(final int lineNumber) {
+    final Optional<String> result;
     if (lineNumber < 1 || lineNumber > lines.size()) {
-      return Optional.empty();
+      result = Optional.empty();
+    } else {
+      result = Optional.ofNullable(lines.get(lineNumber - 1));
     }
-    return Optional.ofNullable(lines.get(lineNumber - 1));
+    return result;
   }
 
   /** Returns the number of tracked lines. */

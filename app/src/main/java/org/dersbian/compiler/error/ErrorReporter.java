@@ -8,16 +8,35 @@ import org.dersbian.compiler.location.LineTracker;
 
 /** Enhanced error reporter with source context display. */
 public final class ErrorReporter {
+  /** ANSI escape code to reset console formatting. */
   private static final String RESET = "\u001B[0m";
+
+  /** ANSI escape code for red text color. */
   private static final String RED = "\u001B[31m";
+
+  /** ANSI escape code for green text color. */
   private static final String GREEN = "\u001B[32m";
+
+  /** ANSI escape code for yellow text color. */
   private static final String YELLOW = "\u001B[33m";
+
+  /** ANSI escape code for blue text color. */
   private static final String BLUE = "\u001B[34m";
+
+  /** ANSI escape code for cyan text color. */
   private static final String CYAN = "\u001B[36m";
+
+  /** ANSI escape code for bold text formatting. */
   private static final String BOLD = "\u001B[1m";
 
+  /** Line tracker used to resolve source lines and spans for error reporting. */
   private final LineTracker lineTracker;
 
+  /**
+   * Creates an {@link ErrorReporter} backed by the given {@link LineTracker}.
+   *
+   * @param lineTracker used when rendering span information; must not be null.
+   */
   public ErrorReporter(final LineTracker lineTracker) {
     this.lineTracker = Objects.requireNonNull(lineTracker, "lineTracker must not be null");
   }
@@ -26,40 +45,42 @@ public final class ErrorReporter {
   public String reportErrors(final List<CompileError> errors) {
     final StringBuilder output = new StringBuilder(errors.size() * 500);
     for (final CompileError error : errors) {
-      final String formatted = switch (error) {
-        case CompileError.LexerError lexerError ->
-            formatError(
-                "LEX",
-                lexerError.errorMessage(),
-                lexerError.errorSpan(),
-                lexerError.errorHelp().orElse(null),
-                lexerError.errorCode());
-        case CompileError.SyntaxError syntaxError ->
-            formatError(
-                "SYNTAX",
-                syntaxError.errorMessage(),
-                syntaxError.errorSpan(),
-                syntaxError.errorHelp().orElse(null),
-                syntaxError.errorCode());
-        case CompileError.TypeError typeError ->
-            formatError(
-                "TYPE",
-                typeError.errorMessage(),
-                typeError.errorSpan(),
-                typeError.errorHelp().orElse(null),
-                typeError.errorCode());
-        case CompileError.IrGeneratorError irGeneratorError ->
-            formatError(
-                "IR GEN",
-                irGeneratorError.errorMessage(),
-                irGeneratorError.errorSpan(),
-                irGeneratorError.errorHelp().orElse(null),
-                irGeneratorError.errorCode());
-        case CompileError.AsmGeneratorError asmGeneratorError ->
-            formatSimpleError("ASM GEN", asmGeneratorError.errorMessage(), asmGeneratorError.errorCode());
-        case CompileError.IoError ioError ->
-            formatSimpleError("I/O", ioMessage(ioError.cause()), Optional.empty());
-      };
+      final String formatted =
+          switch (error) {
+            case CompileError.LexerError lexerError ->
+                formatError(
+                    "LEX",
+                    lexerError.errorMessage(),
+                    lexerError.errorSpan(),
+                    lexerError.errorHelp().orElse(null),
+                    lexerError.errorCode());
+            case CompileError.SyntaxError syntaxError ->
+                formatError(
+                    "SYNTAX",
+                    syntaxError.errorMessage(),
+                    syntaxError.errorSpan(),
+                    syntaxError.errorHelp().orElse(null),
+                    syntaxError.errorCode());
+            case CompileError.TypeError typeError ->
+                formatError(
+                    "TYPE",
+                    typeError.errorMessage(),
+                    typeError.errorSpan(),
+                    typeError.errorHelp().orElse(null),
+                    typeError.errorCode());
+            case CompileError.IrGeneratorError irGeneratorError ->
+                formatError(
+                    "IR GEN",
+                    irGeneratorError.errorMessage(),
+                    irGeneratorError.errorSpan(),
+                    irGeneratorError.errorHelp().orElse(null),
+                    irGeneratorError.errorCode());
+            case CompileError.AsmGeneratorError asmGeneratorError ->
+                formatSimpleError(
+                    "ASM GEN", asmGeneratorError.errorMessage(), asmGeneratorError.errorCode());
+            case CompileError.IoError ioError ->
+                formatSimpleError("I/O", ioMessage(ioError.cause()), Optional.empty());
+          };
       output.append(formatted);
     }
     return output.toString();
@@ -100,12 +121,11 @@ public final class ErrorReporter {
               ? " ".repeat(startOffset) + "^".repeat(Math.max(endColumn - startColumn, 1))
               : " ".repeat(startOffset) + "^";
 
-      output.append('\n').append("     │ ").append(style(underline, RED, BOLD));
+      output.append("\n     │ ").append(style(underline, RED, BOLD));
 
       if (startLine != endLine) {
         output
-            .append('\n')
-            .append("     │ ")
+            .append("\n     │ ")
             .append(style("...", BLUE))
             .append(" (error spans lines ")
             .append(startLine)
@@ -125,11 +145,11 @@ public final class ErrorReporter {
   private static String formatSimpleError(
       final String errorType, final String message, final Optional<ErrorCode> code) {
     return style("ERROR", RED, BOLD)
-      + codePrefix(code)
-      + style(errorType, RED)
-      + ": "
-      + style(message, YELLOW)
-      + '\n';
+        + codePrefix(code)
+        + style(errorType, RED)
+        + ": "
+        + style(message, YELLOW)
+        + '\n';
   }
 
   private static String codePrefix(final Optional<ErrorCode> code) {

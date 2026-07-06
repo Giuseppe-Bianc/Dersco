@@ -1,15 +1,21 @@
 package org.dersbian.compiler.error;
 
+import static org.dersbian.compiler.error.CompilerErorFormater.formatWithSpan;
+import static org.dersbian.compiler.error.CompilerErorFormater.formatWithoutSpan;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import org.dersbian.compiler.lexer.token.Span;
 
 /**
- * Structured compiler errors translated from the Rust model.
+ * Sealed hierarchy of compile-time errors for each compiler pipeline phase.
  *
- * <p>Rust's {@code Arc<str>} maps to immutable {@link String} values here, and the Rust
- * {@code SourceSpan} equivalent is the existing {@link Span} type already used by the lexer.
+ * @see #code()
+ * @see #message()
+ * @see #span()
+ * @see #help()
  */
 public sealed interface CompileError
     permits CompileError.LexerError,
@@ -18,6 +24,18 @@ public sealed interface CompileError
         CompileError.IrGeneratorError,
         CompileError.AsmGeneratorError,
         CompileError.IoError {
+
+  /** Reusable null-check message for the error-code field. */
+  String MSG_CODE = "code must not be null";
+
+  /** Reusable null-check message for the human-readable message field. */
+  String MSG_MESSAGE = "message must not be null";
+
+  /** Reusable null-check message for the source-span field. */
+  String MSG_SPAN = "span must not be null";
+
+  /** Reusable null-check message for the help field. */
+  String MSG_HELP = "help must not be null";
 
   /** Returns the standardized error code, if one exists. */
   Optional<ErrorCode> code();
@@ -36,8 +54,8 @@ public sealed interface CompileError
       final ErrorCode code, final String message, final Span span, final String help) {
     return new LexerError(
         Optional.ofNullable(code),
-        Objects.requireNonNull(message, "message must not be null"),
-        Objects.requireNonNull(span, "span must not be null"),
+        Objects.requireNonNull(message, MSG_MESSAGE),
+        Objects.requireNonNull(span, MSG_SPAN),
         Optional.ofNullable(help));
   }
 
@@ -46,8 +64,8 @@ public sealed interface CompileError
       final ErrorCode code, final String message, final Span span, final String help) {
     return new SyntaxError(
         Optional.ofNullable(code),
-        Objects.requireNonNull(message, "message must not be null"),
-        Objects.requireNonNull(span, "span must not be null"),
+        Objects.requireNonNull(message, MSG_MESSAGE),
+        Objects.requireNonNull(span, MSG_SPAN),
         Optional.ofNullable(help));
   }
 
@@ -56,8 +74,8 @@ public sealed interface CompileError
       final ErrorCode code, final String message, final Span span, final String help) {
     return new TypeError(
         Optional.ofNullable(code),
-        Objects.requireNonNull(message, "message must not be null"),
-        Objects.requireNonNull(span, "span must not be null"),
+        Objects.requireNonNull(message, MSG_MESSAGE),
+        Objects.requireNonNull(span, MSG_SPAN),
         Optional.ofNullable(help));
   }
 
@@ -66,46 +84,20 @@ public sealed interface CompileError
       final ErrorCode code, final String message, final Span span, final String help) {
     return new IrGeneratorError(
         Optional.ofNullable(code),
-        Objects.requireNonNull(message, "message must not be null"),
-        Objects.requireNonNull(span, "span must not be null"),
+        Objects.requireNonNull(message, MSG_MESSAGE),
+        Objects.requireNonNull(span, MSG_SPAN),
         Optional.ofNullable(help));
   }
 
   /** Creates an assembly generation error. */
   static AsmGeneratorError asmGeneratorError(final ErrorCode code, final String message) {
     return new AsmGeneratorError(
-        Optional.ofNullable(code), Objects.requireNonNull(message, "message must not be null"));
+        Optional.ofNullable(code), Objects.requireNonNull(message, MSG_MESSAGE));
   }
 
   /** Creates an I/O error wrapper. */
   static IoError ioError(final IOException cause) {
     return new IoError(Objects.requireNonNull(cause, "cause must not be null"));
-  }
-
-  /** Formats the optional error code prefix. */
-  private static String codePrefix(final Optional<ErrorCode> code) {
-    return code.map(value -> "[" + value.code() + "] ").orElse("");
-  }
-
-  /** Formats the optional help suffix. */
-  private static String helpSuffix(final Optional<String> help) {
-    return help.map(value -> "\nhelp: " + value).orElse("");
-  }
-
-  /** Formats the display string for errors that include a span. */
-  private static String formatWithSpan(
-      final String label,
-      final Optional<ErrorCode> code,
-      final String message,
-      final Span span,
-      final Optional<String> help) {
-    return codePrefix(code) + label + message + " at " + span + helpSuffix(help);
-  }
-
-  /** Formats the display string for errors without span information. */
-  private static String formatWithoutSpan(
-      final String label, final Optional<ErrorCode> code, final String message) {
-    return codePrefix(code) + label + message;
   }
 
   /** Lexical analysis error indicating invalid token sequences. */
@@ -116,15 +108,23 @@ public sealed interface CompileError
       Optional<String> errorHelp)
       implements CompileError {
 
+    /**
+     * Creates a {@link LexerError} with validated fields.
+     *
+     * @param errorCode optional standardized error code
+     * @param errorMessage human-readable description of the error
+     * @param errorSpan source location associated with this error
+     * @param errorHelp optional guidance for the developer
+     */
     public LexerError(
         final Optional<ErrorCode> errorCode,
         final String errorMessage,
         final Span errorSpan,
         final Optional<String> errorHelp) {
-      this.errorCode = Objects.requireNonNull(errorCode, "code must not be null");
-      this.errorMessage = Objects.requireNonNull(errorMessage, "message must not be null");
-      this.errorSpan = Objects.requireNonNull(errorSpan, "span must not be null");
-      this.errorHelp = Objects.requireNonNull(errorHelp, "help must not be null");
+      this.errorCode = Objects.requireNonNull(errorCode, MSG_CODE);
+      this.errorMessage = Objects.requireNonNull(errorMessage, MSG_MESSAGE);
+      this.errorSpan = Objects.requireNonNull(errorSpan, MSG_SPAN);
+      this.errorHelp = Objects.requireNonNull(errorHelp, MSG_HELP);
     }
 
     @Override
@@ -161,15 +161,23 @@ public sealed interface CompileError
       Optional<String> errorHelp)
       implements CompileError {
 
+    /**
+     * Creates a {@link SyntaxError} with validated fields.
+     *
+     * @param errorCode optional standardized error code
+     * @param errorMessage human-readable description of the error
+     * @param errorSpan source location associated with this error
+     * @param errorHelp optional guidance for the developer
+     */
     public SyntaxError(
         final Optional<ErrorCode> errorCode,
         final String errorMessage,
         final Span errorSpan,
         final Optional<String> errorHelp) {
-      this.errorCode = Objects.requireNonNull(errorCode, "code must not be null");
-      this.errorMessage = Objects.requireNonNull(errorMessage, "message must not be null");
-      this.errorSpan = Objects.requireNonNull(errorSpan, "span must not be null");
-      this.errorHelp = Objects.requireNonNull(errorHelp, "help must not be null");
+      this.errorCode = Objects.requireNonNull(errorCode, MSG_CODE);
+      this.errorMessage = Objects.requireNonNull(errorMessage, MSG_MESSAGE);
+      this.errorSpan = Objects.requireNonNull(errorSpan, MSG_SPAN);
+      this.errorHelp = Objects.requireNonNull(errorHelp, MSG_HELP);
     }
 
     @Override
@@ -206,15 +214,23 @@ public sealed interface CompileError
       Optional<String> errorHelp)
       implements CompileError {
 
+    /**
+     * Creates a {@link TypeError} with validated fields.
+     *
+     * @param errorCode optional standardized error code
+     * @param errorMessage human-readable description of the error
+     * @param errorSpan source location associated with this error
+     * @param errorHelp optional guidance for the developer
+     */
     public TypeError(
         final Optional<ErrorCode> errorCode,
         final String errorMessage,
         final Span errorSpan,
         final Optional<String> errorHelp) {
-      this.errorCode = Objects.requireNonNull(errorCode, "code must not be null");
-      this.errorMessage = Objects.requireNonNull(errorMessage, "message must not be null");
-      this.errorSpan = Objects.requireNonNull(errorSpan, "span must not be null");
-      this.errorHelp = Objects.requireNonNull(errorHelp, "help must not be null");
+      this.errorCode = Objects.requireNonNull(errorCode, MSG_CODE);
+      this.errorMessage = Objects.requireNonNull(errorMessage, MSG_MESSAGE);
+      this.errorSpan = Objects.requireNonNull(errorSpan, MSG_SPAN);
+      this.errorHelp = Objects.requireNonNull(errorHelp, MSG_HELP);
     }
 
     @Override
@@ -251,15 +267,23 @@ public sealed interface CompileError
       Optional<String> errorHelp)
       implements CompileError {
 
+    /**
+     * Creates an {@link IrGeneratorError} with validated fields.
+     *
+     * @param errorCode optional standardized error code
+     * @param errorMessage human-readable description of the error
+     * @param errorSpan source location associated with this error
+     * @param errorHelp optional guidance for the developer
+     */
     public IrGeneratorError(
         final Optional<ErrorCode> errorCode,
         final String errorMessage,
         final Span errorSpan,
         final Optional<String> errorHelp) {
-      this.errorCode = Objects.requireNonNull(errorCode, "code must not be null");
-      this.errorMessage = Objects.requireNonNull(errorMessage, "message must not be null");
-      this.errorSpan = Objects.requireNonNull(errorSpan, "span must not be null");
-      this.errorHelp = Objects.requireNonNull(errorHelp, "help must not be null");
+      this.errorCode = Objects.requireNonNull(errorCode, MSG_CODE);
+      this.errorMessage = Objects.requireNonNull(errorMessage, MSG_MESSAGE);
+      this.errorSpan = Objects.requireNonNull(errorSpan, MSG_SPAN);
+      this.errorHelp = Objects.requireNonNull(errorHelp, MSG_HELP);
     }
 
     @Override
@@ -292,10 +316,15 @@ public sealed interface CompileError
   record AsmGeneratorError(Optional<ErrorCode> errorCode, String errorMessage)
       implements CompileError {
 
-    public AsmGeneratorError(
-        final Optional<ErrorCode> errorCode, final String errorMessage) {
-      this.errorCode = Objects.requireNonNull(errorCode, "code must not be null");
-      this.errorMessage = Objects.requireNonNull(errorMessage, "message must not be null");
+    /**
+     * Creates an {@link AsmGeneratorError} with validated fields.
+     *
+     * @param errorCode optional standardized error code
+     * @param errorMessage human-readable description of the error
+     */
+    public AsmGeneratorError(final Optional<ErrorCode> errorCode, final String errorMessage) {
+      this.errorCode = Objects.requireNonNull(errorCode, MSG_CODE);
+      this.errorMessage = Objects.requireNonNull(errorMessage, MSG_MESSAGE);
     }
 
     @Override
@@ -326,8 +355,26 @@ public sealed interface CompileError
 
   /** I/O operation failure during compilation. */
   record IoError(IOException cause) implements CompileError {
+
+    /**
+     * Creates an {@link IoError} wrapping the given {@link IOException}.
+     *
+     * @param cause the underlying I/O failure; must not be {@code null}
+     */
     public IoError(final IOException cause) {
       this.cause = Objects.requireNonNull(cause, "cause must not be null");
+    }
+
+    @Override
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification =
+            "IOException is an exception wrapper; defensive copying would "
+                + "discard the stack trace, cause chain and suppressed exceptions, which are "
+                + "required for accurate error reporting. IoError is an internal, immutable "
+                + "compiler-diagnostics value not exposed to untrusted callers.")
+    public IOException cause() {
+      return cause;
     }
 
     @Override

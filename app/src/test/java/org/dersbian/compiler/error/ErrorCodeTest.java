@@ -4,7 +4,11 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.CommentRequired", "PMD.UnitTestAssertionsShouldIncludeMessage"})
+@SuppressWarnings({
+  "PMD.AtLeastOneConstructor",
+  "PMD.CommentRequired",
+  "PMD.UnitTestAssertionsShouldIncludeMessage"
+})
 class ErrorCodeTest {
 
   @Test

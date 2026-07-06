@@ -1,8 +1,6 @@
 package org.dersbian.compiler.error;
 
-/**
- * Severity levels for compiler diagnostics.
- */
+/** Severity levels for compiler diagnostics. */
 public enum Severity {
   /** Informational note, does not affect compilation. */
   NOTE,

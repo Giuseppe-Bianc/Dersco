@@ -1,8 +1,6 @@
 package org.dersbian.compiler.error;
 
-/**
- * Compiler phase where an error occurred.
- */
+/** Compiler phase where an error occurred. */
 public enum CompilerPhase {
   /** Lexical analysis phase. */
   LEXER,
