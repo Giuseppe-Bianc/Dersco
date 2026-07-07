@@ -32,7 +32,7 @@ public class Lexer {
 
     /** Returns the number of source lines tracked by this lexer. */
     public int lineCount() {
-        return lineTracker.getLines().size() + 1;
+        return lineTracker.lineCount();
     }
-    // TODO: wire up the real lexer.
+    // TODO: wire up the real  lexer.
 }

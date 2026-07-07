@@ -40,6 +40,10 @@ public final class LineTracker {
 
     /** Returns the number of tracked lines. */
     public int lineCount() {
-        return lines.size();
+        int numLines = 0;
+        if (!this.lines.isEmpty()) {
+            numLines = this.lines.size() + 1;
+        }
+        return numLines;
     }
 }
