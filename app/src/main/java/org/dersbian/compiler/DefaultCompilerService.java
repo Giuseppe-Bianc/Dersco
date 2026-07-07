@@ -1,6 +1,7 @@
 package org.dersbian.compiler;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ public final class DefaultCompilerService implements ICompilerService {
         }
         final String sourceContent;
         try {
-            sourceContent = Files.readString(source);
+            sourceContent = Files.readString(source, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new CompilerException("Failed to read source file: " + source, e);
         }
