@@ -3,8 +3,10 @@ package org.dersbian.compiler.location;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import lombok.Getter;
 
 /** Tracks source lines to support line-based lookups (e.g., for error reporting). */
+@Getter
 public final class LineTracker {
 
     /** The source lines, 0-indexed internally but exposed as 1-based line numbers. */

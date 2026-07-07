@@ -48,7 +48,7 @@ public final class CompileCommand implements Callable<Integer> {
             names = {"-o", "--output"},
             paramLabel = "FILE",
             description = "Output file (default: ${DEFAULT-VALUE}).",
-            defaultValue = "a.dr")
+            defaultValue = "a.exe")
     private Path outputFile;
 
     @Option(
@@ -117,6 +117,7 @@ public final class CompileCommand implements Callable<Integer> {
      * help as standard picocli parsing errors.
      */
     private void validateInputFile() {
+        log.info("Validating input file: {}", inputFile);
         final File inputFileFile = inputFile.toFile();
         if (!inputFileFile.isFile() || !inputFileFile.canRead()) {
             throw new ParameterException(
