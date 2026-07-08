@@ -23,6 +23,7 @@ import org.dersbian.util.SizeSystems;
 public final class DefaultCompilerService implements ICompilerService {
 
     @Override
+    @SuppressWarnings("PMD.CyclomaticComplexity")
     public void checkSyntax(Path source) throws CompilerException {
         log.debug("Syntax check on {}", source);
         final FileSizeReport sizeReport =
@@ -55,10 +56,11 @@ public final class DefaultCompilerService implements ICompilerService {
                 log.error("Syntax error: {}", error);
             }
         }
-        for (final Token token : result.tokens()) {
-            log.info("Token: {}", token);
-        }
-        // TODO: wire up the real parser.
+        if (log.isDebugEnabled()) {
+            for (final Token token : result.tokens()) {
+                log.debug("Token: {}", token);
+            }
+        } // TODO: wire up the real parser.
     }
 
     @Override

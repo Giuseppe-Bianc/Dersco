@@ -52,7 +52,7 @@ public class Lexer {
     }
 
     private SourceLocation getCurrentLocation() {
-        return new SourceLocation(lineNumber, columnNumber, position, position, position, position);
+        return SourceLocation.create(lineNumber, columnNumber, position);
     }
 
     /** Creates a lexer for the given source file and text. */
