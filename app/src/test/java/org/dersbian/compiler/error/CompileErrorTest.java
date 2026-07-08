@@ -28,7 +28,8 @@ class CompileErrorTest {
                 () -> Assertions.assertEquals("Check the input", error.help().orElseThrow()),
                 () ->
                         Assertions.assertEquals(
-                                "[E0001] Invalid token at 1:1-6\nhelp: Check the input",
+                                "[E0001] Invalid token at line 1:column 1-line 1:column 6\n"
+                                        + "help: Check the input",
                                 error.toString()));
     }
 
@@ -43,7 +44,8 @@ class CompileErrorTest {
         Assertions.assertAll(
                 () ->
                         Assertions.assertEquals(
-                                "[E1004] Syntax error: Unexpected token at 2:3-3",
+                                "[E1004] Syntax error: Unexpected token at line 2:column 3-line"
+                                        + " 2:column 3",
                                 syntaxError.toString()),
                 () ->
                         Assertions.assertEquals(

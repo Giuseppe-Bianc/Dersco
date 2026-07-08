@@ -21,7 +21,6 @@ import picocli.CommandLine.Spec;
         mixinStandardHelpOptions = true,
         description = "Check the syntactic correctness of a source file without compiling it.")
 @SuppressWarnings({
-    "PMD.CommentRequired",
     "PMD.CommentDefaultAccessModifier",
     "PMD.MethodArgumentCouldBeFinal",
     "PMD.GuardLogStatement",
@@ -29,16 +28,23 @@ import picocli.CommandLine.Spec;
 })
 public final class CheckCommand implements Callable<Integer> {
 
+    /** Exit code indicating successful execution without syntax errors. */
     private static final int EXIT_OK = 0;
+
+    /** Exit code indicating that a syntax error was detected. */
     private static final int EXIT_SYNTAX_ERROR = 1;
 
+    /** The Picocli command specification, used for error reporting. */
     @Spec private CommandSpec spec;
 
+    /** Mixin for handling logging configuration via command line options. */
     @Mixin private LoggingMixin loggingMixin;
 
+    /** The source file to be checked for syntactic correctness. */
     @Parameters(index = "0", paramLabel = "FILE", description = "Source file to check.")
     private Path inputFile;
 
+    /** Service responsible for performing the compilation or syntax check. */
     private final ICompilerService compilerService;
 
     /** Default constructor. */

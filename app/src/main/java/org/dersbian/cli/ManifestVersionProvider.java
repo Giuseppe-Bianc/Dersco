@@ -7,7 +7,7 @@ import picocli.CommandLine.IVersionProvider;
  * manifest (populated by Gradle at build time), avoiding version duplication between {@code
  * build.gradle.kts} and source code.
  */
-@SuppressWarnings({"PMD.CommentSize", "PMD.AtLeastOneConstructor"})
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 public final class ManifestVersionProvider implements IVersionProvider {
 
     @Override

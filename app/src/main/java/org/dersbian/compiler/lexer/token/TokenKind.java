@@ -207,7 +207,7 @@ public sealed interface TokenKind {
                 case WHITESPACE -> "whitespace";
                 case COMMENT -> "comment";
                 case MULTILINE_COMMENT -> "multiline comment";
-                case EOF -> "end of file";
+                case EOF -> "EOF";
             };
         }
     }

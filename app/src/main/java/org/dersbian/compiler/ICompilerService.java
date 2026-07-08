@@ -4,7 +4,6 @@ import java.nio.file.Path;
 
 /** Compiler service interface. */
 @SuppressWarnings({
-    "PMD.CommentSize",
     "PMD.AvoidUncheckedExceptionsInSignatures",
     "checkstyle:AbbreviationAsWordInName"
 })

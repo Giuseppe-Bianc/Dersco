@@ -5,7 +5,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.extern.slf4j.Slf4j;
+import org.dersbian.compiler.error.CompileError;
 import org.dersbian.compiler.lexer.Lexer;
+import org.dersbian.compiler.lexer.LexerResult;
+import org.dersbian.compiler.lexer.token.Token;
 import org.dersbian.util.FileSizeInfo;
 import org.dersbian.util.FileSizeReport;
 import org.dersbian.util.SizeSystems;
@@ -40,6 +43,20 @@ public final class DefaultCompilerService implements ICompilerService {
         final int nLines = lexer.lineCount();
         if (log.isDebugEnabled()) {
             log.debug("Line count: {}", nLines);
+        }
+        final LexerResult result = lexer.tokenize();
+        if (result.errors().isEmpty()) {
+            log.debug("No syntax errors found.");
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Found {} syntax errors.", result.errors().size());
+            }
+            for (final CompileError error : result.errors()) {
+                log.error("Syntax error: {}", error);
+            }
+        }
+        for (final Token token : result.tokens()) {
+            log.info("Token: {}", token);
         }
         // TODO: wire up the real parser.
     }

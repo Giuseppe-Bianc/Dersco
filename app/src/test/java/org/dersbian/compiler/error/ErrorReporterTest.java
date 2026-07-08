@@ -30,7 +30,8 @@ class ErrorReporterTest {
                                 "\u001B[31m\u001B[1mERROR\u001B[0m"
                                     + " [\u001B[31m\u001B[1mE0001\u001B[0m] \u001B[31mLEX\u001B[0m:"
                                     + " \u001B[33mInvalid token\u001B[0m",
-                                "\u001B[34mLocation:\u001B[0m \u001B[36m1:5-10\u001B[0m",
+                                "\u001B[34mLocation:\u001B[0m \u001B[36mline 1:column 5-line"
+                                        + " 1:column 10\u001B[0m",
                                 "   1 │ let value = 42;",
                                 "     │ \u001B[31m\u001B[1m    ^^^^^\u001B[0m",
                                 "\u001B[34m\u001B[1mhelp:\u001B[0m \u001B[32mCheck the"
@@ -58,7 +59,8 @@ class ErrorReporterTest {
                                         + " [\u001B[31m\u001B[1mE1004\u001B[0m]"
                                         + " \u001B[31mSYNTAX\u001B[0m: \u001B[33mUnexpected"
                                         + " token\u001B[0m",
-                                "\u001B[34mLocation:\u001B[0m \u001B[36m1:3-2:4\u001B[0m",
+                                "\u001B[34mLocation:\u001B[0m \u001B[36mline 1:column 3-line"
+                                        + " 2:column 4\u001B[0m",
                                 "   1 │ first line",
                                 "     │ \u001B[31m\u001B[1m  ^\u001B[0m",
                                 "     │ \u001B[34m...\u001B[0m (error spans lines 1-2)"));

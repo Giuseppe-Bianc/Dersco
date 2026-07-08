@@ -23,7 +23,7 @@ class SpanTest {
                 () -> Assertions.assertTrue(span.contains(start)),
                 () -> Assertions.assertFalse(span.contains(end)),
                 () -> Assertions.assertEquals("alpha", span.extractFrom("alpha beta")),
-                () -> Assertions.assertEquals("1:1-6", span.toString()));
+                () -> Assertions.assertEquals("line 1:column 1-line 1:column 6", span.toString()));
     }
 
     @Test
@@ -58,7 +58,9 @@ class SpanTest {
                 () -> Assertions.assertEquals(second.start(), merged.start()),
                 () -> Assertions.assertEquals(second.end(), merged.end()),
                 () -> Assertions.assertTrue(merged.isMultiline()),
-                () -> Assertions.assertEquals("1:1-2:3", merged.toString()));
+                () ->
+                        Assertions.assertEquals(
+                                "line 1:column 1-line 2:column 3", merged.toString()));
     }
 
     @Test

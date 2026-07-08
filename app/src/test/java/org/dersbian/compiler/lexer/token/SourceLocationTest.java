@@ -23,7 +23,7 @@ class SourceLocationTest {
                 () -> Assertions.assertEquals(SourceLocation.UNKNOWN, location.codePointOffset()),
                 () -> Assertions.assertFalse(location.hasUtf8Offset()),
                 () -> Assertions.assertFalse(location.hasCodePointOffset()),
-                () -> Assertions.assertEquals("2:5", location.toString()));
+                () -> Assertions.assertEquals("line 2:column 5", location.toString()));
     }
 
     @Test

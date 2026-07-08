@@ -9,7 +9,6 @@ import org.dersbian.compiler.lexer.token.number.INumber;
  * Utility class providing static methods to parse numeric literal strings into {@link INumber}
  * instances, handling integer and floating-point types with optional type suffixes.
  */
-@SuppressWarnings("PMD.CommentSize")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class NumericParsers {
 

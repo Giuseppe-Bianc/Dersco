@@ -13,7 +13,7 @@ import java.nio.file.Path;
  *     (IR).
  * @param diagnostics if {@code true}, enables advanced diagnostics.
  */
-@SuppressWarnings({"PMD.CommentSize", "PMD.LongVariable"})
+@SuppressWarnings("PMD.LongVariable")
 public record CompilationRequest(
         Path source,
         Path output,

@@ -1,7 +1,5 @@
 package org.dersbian.cli;
 
-// import ch.qos.logback.classic.Level;
-// import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import org.slf4j.Logger;
@@ -18,15 +16,13 @@ import picocli.CommandLine.Option;
  * programmatic logging configuration from the command line (see picocli wiki: "Configuring logging
  * with picocli"). It involves a deliberate coupling to Logback, confined to this single class.
  */
-@SuppressWarnings({
-    "PMD.CommentSize",
-    "PMD.AtLeastOneConstructor",
-    "PMD.ImmutableField",
-    "PMD.CommentRequired",
-    "PMD.OnlyOneReturn"
-})
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.ImmutableField", "PMD.OnlyOneReturn"})
 public final class LoggingMixin {
 
+    /**
+     * Array used to capture the number of verbosity flags (e.g., -v, -vv, -vvv) passed on the
+     * command line. The length of this array determines the resulting log level.
+     */
     @Option(
             names = {"-v", "--verbose"},
             description = {
@@ -35,6 +31,10 @@ public final class LoggingMixin {
             })
     private boolean[] verbosity = {};
 
+    /**
+     * Flag to suppress all non-essential logging output (quiet mode). If set to true, it takes
+     * precedence over any verbosity settings.
+     */
     @Option(
             names = {"-q", "--quiet"},
             description = "Suppress non-essential output.")

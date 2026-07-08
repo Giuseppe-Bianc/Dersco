@@ -18,9 +18,13 @@ import picocli.CommandLine.Spec;
         description = "Modern compiler for the Dersco programming language.",
         subcommands = {CompileCommand.class, CheckCommand.class, HelpCommand.class},
         synopsisSubcommandLabel = "COMMAND")
-@SuppressWarnings({"PMD.CommentSize", "PMD.AtLeastOneConstructor", "PMD.CommentRequired"})
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 public final class RootCommand implements Runnable {
 
+    /**
+     * Injected picocli command metadata. Used to print the usage help message when no subcommand is
+     * specified.
+     */
     @Spec private CommandSpec spec;
 
     @Override

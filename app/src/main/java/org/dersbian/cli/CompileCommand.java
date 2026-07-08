@@ -23,27 +23,26 @@ import picocli.CommandLine.Spec;
         name = "compile",
         mixinStandardHelpOptions = true,
         description = "Compile a Dersco source file.")
-@SuppressWarnings({
-    "PMD.CommentRequired",
-    "PMD.LongVariable",
-    "PMD.CommentSize",
-    "PMD.CommentDefaultAccessModifier",
-    "PMD.MethodArgumentCouldBeFinal",
-    "PMD.GuardLogStatement",
-    "PMD.OnlyOneReturn"
-})
+@SuppressWarnings({"PMD.LongVariable", "PMD.GuardLogStatement", "PMD.OnlyOneReturn"})
 public final class CompileCommand implements Callable<Integer> {
 
+    /** Exit code indicating successful compilation. */
     private static final int EXIT_OK = 0;
+
+    /** Exit code indicating a compilation error occurred. */
     private static final int EXIT_COMPILATION_ERROR = 1;
 
+    /** Picocli command specification, injected at parse time for error reporting. */
     @Spec private CommandSpec spec;
 
+    /** Mixin that provides verbose/quiet logging level options to this command. */
     @Mixin private LoggingMixin loggingMixin;
 
+    /** Path to the Dersco source file to compile. */
     @Parameters(index = "0", paramLabel = "FILE", description = "Source file to compile.")
     private Path inputFile;
 
+    /** Path to the output file produced by the compiler. */
     @Option(
             names = {"-o", "--output"},
             paramLabel = "FILE",
@@ -51,6 +50,7 @@ public final class CompileCommand implements Callable<Integer> {
             defaultValue = "a.exe")
     private Path outputFile;
 
+    /** Optimization level applied during compilation. */
     @Option(
             names = {"-O", "--optimize"},
             paramLabel = "LEVEL",
@@ -59,9 +59,11 @@ public final class CompileCommand implements Callable<Integer> {
             defaultValue = "NONE")
     private OptimizationLevel optimizationLevel;
 
+    /** Whether to emit the intermediate representation (IR) alongside the compiled output. */
     @Option(names = "--emit-ir", description = "Also emit the intermediate code (IR).")
     private boolean emitIntermediateCode;
 
+    /** Whether to enable advanced diagnostics such as extended warnings and statistics. */
     @Option(
             names = "--diagnostics",
             description = "Enable advanced diagnostics (extended warnings, statistics).")
@@ -81,7 +83,7 @@ public final class CompileCommand implements Callable<Integer> {
      *
      * @param compilerService the implementation to use.
      */
-    CompileCommand(ICompilerService compilerService) {
+    public CompileCommand(final ICompilerService compilerService) {
         this.compilerService = compilerService;
     }
 

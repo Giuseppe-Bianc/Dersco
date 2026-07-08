@@ -91,6 +91,6 @@ public record SourceLocation(
 
     @Override
     public String toString() {
-        return line + ":" + column;
+        return "line %d:column %d".formatted(line, column);
     }
 }

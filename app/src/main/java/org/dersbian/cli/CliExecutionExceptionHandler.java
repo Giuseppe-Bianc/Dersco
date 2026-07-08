@@ -14,7 +14,6 @@ import picocli.CommandLine.ParseResult;
  */
 @Slf4j
 @SuppressWarnings({
-    "PMD.CommentSize",
     "PMD.AtLeastOneConstructor",
     "PMD.LongVariable",
     "PMD.ShortVariable",

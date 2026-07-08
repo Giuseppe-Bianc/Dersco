@@ -8,7 +8,6 @@ import org.dersbian.compiler.lexer.token.number.INumber;
  * Utility class providing static parser methods for non-decimal (binary, octal, hexadecimal)
  * numeric literals.
  */
-@SuppressWarnings("PMD.CommentSize")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class BaseParsers {
 

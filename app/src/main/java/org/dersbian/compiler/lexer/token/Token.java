@@ -46,6 +46,6 @@ public record Token(SourceId sourceId, TokenKind type, Span span) {
 
     @Override
     public String toString() {
-        return "Token[type=%s, span=%s, source=%s]".formatted(type, span, sourceId.identifier());
+        return "%s %s:%s".formatted(type, sourceId.identifier(), span);
     }
 }

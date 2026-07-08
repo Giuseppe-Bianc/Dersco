@@ -20,7 +20,7 @@ import picocli.CommandLine;
  * Principle.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@SuppressWarnings({"PMD.ShortClassName", "PMD.CommentSize"})
+@SuppressWarnings("PMD.ShortClassName")
 public final class App {
 
     /**
