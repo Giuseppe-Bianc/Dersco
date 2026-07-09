@@ -44,8 +44,7 @@ class CompileErrorTest {
         Assertions.assertAll(
                 () ->
                         Assertions.assertEquals(
-                                "[E1004] Syntax error: Unexpected token at line 2:column 3-line"
-                                        + " 2:column 3",
+                                "[E1004] Syntax error: Unexpected token at line 2:column 3",
                                 syntaxError.toString()),
                 () ->
                         Assertions.assertEquals(

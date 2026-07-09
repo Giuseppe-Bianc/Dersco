@@ -92,6 +92,12 @@ public record Span(SourceLocation start, SourceLocation end) {
 
     @Override
     public String toString() {
-        return "%s-%s".formatted(start, end);
+        final String result;
+        if (start.equals(end)) {
+            result = start.toString();
+        } else {
+            result = "%s-%s".formatted(start, end);
+        }
+        return result;
     }
 }
