@@ -93,7 +93,7 @@ public record Span(SourceLocation start, SourceLocation end) {
     @Override
     public String toString() {
         final String result;
-        if (start.equals(end)) {
+        if (this.isEmpty()) {
             result = start.toString();
         } else {
             result = "%s-%s".formatted(start, end);
