@@ -65,6 +65,9 @@ public final class CodePoints {
      * though the in-memory representation is a Java {@code String} (UTF-16).
      */
     public static int utf8ByteLength(final int codePoint) {
+        if (!Character.isValidCodePoint(codePoint)) {
+            throw new IllegalArgumentException("Invalid Unicode code point: " + codePoint);
+        }
         final int result;
         if (codePoint < Constants.UTF8_ONE_BYTE_LIMIT) {
             result = Constants.UTF8_ONE_BYTE_LENGTH;
@@ -80,9 +83,9 @@ public final class CodePoints {
 
     /** Returns {@code true} se il code point rientra nell'intervallo ASCII (un solo byte UTF-8). */
     public static boolean isAscii(final int codePoint) {
-        return codePoint < Constants.UTF8_ONE_BYTE_LIMIT;
+        return Character.isValidCodePoint(codePoint)
+                && codePoint < Constants.UTF8_ONE_BYTE_LIMIT;
     }
-
     /**
      * Returns {@code true} if the given code point is considered whitespace and should be skipped
      * between tokens. Combines {@link Character#isWhitespace(int)} with {@link
