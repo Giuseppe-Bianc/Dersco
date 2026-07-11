@@ -41,4 +41,10 @@ public final class Constants {
 
     /** Number of bytes used by a 4-byte UTF-8 encoding. */
     public static final int UTF8_FOUR_BYTE_LENGTH = 4;
+
+    /** Letterale booleano "true". */
+    public static final String TRUE_LITERAL = "true";
+
+    /** Letterale booleano "false". */
+    public static final String FALSE_LITERAL = "false";
 }

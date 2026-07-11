@@ -1,6 +1,7 @@
 package org.dersbian.compiler.lexer.token;
 
 import java.util.Comparator;
+import org.dersbian.util.PathUtils;
 
 /**
  * Unità lessicale fondamentale prodotta dall'analisi lessicale.
@@ -31,7 +32,7 @@ public record Token(SourceId sourceId, TokenKind type, Span span) {
 
     /** Crea un token sintetico di fine sorgente (EOF), di lunghezza zero. */
     public static Token eof(final SourceId sourceId, final SourceLocation location) {
-        return new Token(sourceId, TokenKind.Simple.EOF, Span.point(location));
+        return new Token(sourceId, TokenKind.Simple.Special.EOF, Span.point(location));
     }
 
     /** Verifica se il token è del tipo specificato. */
@@ -46,6 +47,12 @@ public record Token(SourceId sourceId, TokenKind type, Span span) {
 
     @Override
     public String toString() {
-        return "%s %s:%s".formatted(type, sourceId.identifier(), span);
+        final String result;
+        if (sourceId instanceof SourceId.FilePath(var path)) {
+            result = PathUtils.truncatePath(path, 2);
+        } else {
+            result = sourceId.identifier();
+        }
+        return "%s %s:%s".formatted(type, result, span);
     }
 }

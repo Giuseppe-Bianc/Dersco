@@ -17,28 +17,28 @@ class TokenKindTest {
 
     @Test
     void simpleTypeKeywordsReportAsTypes() {
-        final EnumSet<TokenKind.Simple> expected =
+        final EnumSet<TokenKind.Simple.TypeKeyword> expected =
                 EnumSet.of(
-                        TokenKind.Simple.TYPE_I8,
-                        TokenKind.Simple.TYPE_I16,
-                        TokenKind.Simple.TYPE_I32,
-                        TokenKind.Simple.TYPE_I64,
-                        TokenKind.Simple.TYPE_U8,
-                        TokenKind.Simple.TYPE_U16,
-                        TokenKind.Simple.TYPE_U32,
-                        TokenKind.Simple.TYPE_U64,
-                        TokenKind.Simple.TYPE_F32,
-                        TokenKind.Simple.TYPE_F64,
-                        TokenKind.Simple.TYPE_CHAR,
-                        TokenKind.Simple.TYPE_STRING,
-                        TokenKind.Simple.TYPE_BOOL);
+                        TokenKind.Simple.TypeKeyword.I8,
+                        TokenKind.Simple.TypeKeyword.I16,
+                        TokenKind.Simple.TypeKeyword.I32,
+                        TokenKind.Simple.TypeKeyword.I64,
+                        TokenKind.Simple.TypeKeyword.U8,
+                        TokenKind.Simple.TypeKeyword.U16,
+                        TokenKind.Simple.TypeKeyword.U32,
+                        TokenKind.Simple.TypeKeyword.U64,
+                        TokenKind.Simple.TypeKeyword.F32,
+                        TokenKind.Simple.TypeKeyword.F64,
+                        TokenKind.Simple.TypeKeyword.CHAR,
+                        TokenKind.Simple.TypeKeyword.STRING,
+                        TokenKind.Simple.TypeKeyword.BOOL);
 
-        final EnumSet<TokenKind.Simple> actual =
-                Arrays.stream(TokenKind.Simple.values())
+        final EnumSet<TokenKind.Simple.TypeKeyword> actual =
+                Arrays.stream(TokenKind.Simple.TypeKeyword.values())
                         .filter(TokenKind.Simple::isType)
                         .collect(
                                 Collectors.toCollection(
-                                        () -> EnumSet.noneOf(TokenKind.Simple.class)));
+                                        () -> EnumSet.noneOf(TokenKind.Simple.TypeKeyword.class)));
 
         Assertions.assertEquals(expected, actual);
     }
@@ -50,7 +50,7 @@ class TokenKindTest {
 
     @Test
     void stringRepresentationsExposeDisplayText() {
-        Assertions.assertEquals("'fun'", TokenKind.Simple.KEYWORD_FUN.toString());
+        Assertions.assertEquals("keyword 'fun'", TokenKind.Simple.Keyword.FUN.toString());
         Assertions.assertEquals(
                 "identifier 'value'", new TokenKind.IdentifierAscii("value").toString());
         Assertions.assertEquals(

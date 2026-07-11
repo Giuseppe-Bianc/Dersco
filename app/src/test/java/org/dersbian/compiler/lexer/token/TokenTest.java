@@ -37,7 +37,7 @@ class TokenTest {
         final Token token = Token.eof(sourceId, location);
 
         Assertions.assertAll(
-                () -> Assertions.assertEquals(TokenKind.Simple.EOF, token.type()),
+                () -> Assertions.assertEquals(TokenKind.Simple.Special.EOF, token.type()),
                 () -> Assertions.assertEquals(Span.point(location), token.span()),
                 () -> Assertions.assertTrue(token.span().isEmpty()));
     }
@@ -46,7 +46,7 @@ class TokenTest {
     void generatedSourcesMarkTokensAsSynthetic() {
         final SourceId sourceId = new SourceId.Generated("default constructor");
         final Span span = Span.point(SourceLocation.create(1, 1, 0L));
-        final Token token = Token.create(sourceId, TokenKind.Simple.KEYWORD_FUN, span);
+        final Token token = Token.create(sourceId, TokenKind.Simple.Keyword.FUN, span);
 
         Assertions.assertTrue(token.isSynthetic());
     }

@@ -1,222 +1,255 @@
 package org.dersbian.compiler.lexer.token;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import org.dersbian.compiler.lexer.token.number.INumber;
 
-/** Rappresenta tutti i possibili tipi di token del linguaggio. */
-@SuppressWarnings("PMD")
-public sealed interface TokenKind {
+/**
+ * Rappresenta tutti i possibili tipi di token del linguaggio.
+ *
+ * <p>La gerarchia è suddivisa in:
+ *
+ * <ul>
+ *   <li>{@link Simple} – token privi di payload (operatori, parole chiave, delimitatori, speciali)
+ *   <li>Record con payload – letterali, identificatori
+ * </ul>
+ */
+@SuppressWarnings("PMD.ShortVariable")
+public sealed interface TokenKind
+        permits TokenKind.Simple,
+                TokenKind.KeywordBool,
+                TokenKind.IdentifierAscii,
+                TokenKind.IdentifierUnicode,
+                TokenKind.Numeric,
+                TokenKind.Binary,
+                TokenKind.Octal,
+                TokenKind.Hexadecimal,
+                TokenKind.StringLiteral,
+                TokenKind.CharLiteral {
+
+    // ------------------------------------------------------------------
+    // Metodi dell'interfaccia
+    // ------------------------------------------------------------------
 
     /**
-     * Annotazione puramente documentale, analoga a {@code #[must_use]} di Rust. Java non dispone di
-     * un controllo nativo verificato dal compilatore per il valore di ritorno; strumenti esterni
-     * (es. Error Prone con {@code @CheckReturnValue}) offrono un controllo simile, ma
-     * introdurrebbero una dipendenza non presente nel sorgente originale.
-     */
-    @Documented
-    @Retention(RetentionPolicy.SOURCE)
-    @Target(ElementType.METHOD)
-    @interface MustUse {}
-
-    /**
-     * Verifica se il token rappresenta una parola chiave di tipo.
+     * Verifica se il token rappresenta una parola chiave di tipo (i8, u8, f32, bool, …).
      *
-     * <p>Traduzione di {@code TokenKind::is_type}. In Rust era una {@code const fn}: Java non ha
-     * una valutazione "const" generica per metodi con logica arbitraria, quindi qui è un normale
-     * metodo d'istanza (di default sull'interfaccia), pur restando puro / privo di effetti
-     * collaterali come l'originale.
-     *
-     * @return {@code true} per tutte le varianti di tipo (i8, u8, f32, ...), {@code false}
+     * @return {@code true} per tutte le varianti {@link Simple.TypeKeyword}, {@code false}
      *     altrimenti
      */
-    @MustUse
     default boolean isType() {
-        if (this instanceof Simple s) {
-            return switch (s) {
-                case TYPE_I8, TYPE_I16, TYPE_I32, TYPE_I64 -> true;
-                case TYPE_U8, TYPE_U16, TYPE_U32, TYPE_U64 -> true;
-                case TYPE_F32, TYPE_F64, TYPE_CHAR, TYPE_STRING, TYPE_BOOL -> true;
-                default -> false;
-            };
-        }
-        return false;
+        return this instanceof Simple.TypeKeyword;
     }
 
     // ------------------------------------------------------------------
-    // Varianti senza payload ("unit variant" -> costanti di un enum)
+    // Varianti senza payload
     // ------------------------------------------------------------------
 
     /**
-     * Tutte le varianti di {@code TokenKind} prive di dati associati: operatori, parole chiave
-     * semplici, parentesi/parentesi quadre/graffe, parole chiave di tipo e token speciali (spazi,
-     * commenti, EOF).
+     * Marker sealed per tutti i token privi di dati associati. Le costanti effettive vivono nei
+     * quattro enum annidati: {@link Operator}, {@link Keyword}, {@link TypeKeyword}, {@link
+     * Delimiter} e {@link Special}.
      */
-    enum Simple implements TokenKind {
-        // Operatori multi-carattere
-        PLUS_EQUAL,
-        MINUS_EQUAL,
-        EQUAL_EQUAL,
-        NOT_EQUAL,
-        LESS_EQUAL,
-        GREATER_EQUAL,
-        PLUS_PLUS,
-        MINUS_MINUS,
-        OR_OR,
-        AND_AND,
-        SHIFT_LEFT,
-        SHIFT_RIGHT,
-        PERCENT_EQUAL,
-        XOR_EQUAL,
+    sealed interface Simple extends TokenKind
+            permits Simple.Operator,
+                    Simple.Keyword,
+                    Simple.TypeKeyword,
+                    Simple.Delimiter,
+                    Simple.Special {
 
-        // Operatori a singolo carattere
-        PLUS,
-        MINUS,
-        STAR,
-        SLASH,
-        LESS,
-        GREATER,
-        NOT,
-        XOR,
-        PERCENT,
-        OR,
-        AND,
-        EQUAL,
-        COLON,
-        COMMA,
-        DOT,
+        /** Operatori aritmetici, logici, relazionali e di assegnazione. */
+        enum Operator implements Simple {
+            // Multi-carattere
+            PLUS_EQUAL,
+            MINUS_EQUAL,
+            EQUAL_EQUAL,
+            NOT_EQUAL,
+            LESS_EQUAL,
+            GREATER_EQUAL,
+            PLUS_PLUS,
+            MINUS_MINUS,
+            OR_OR,
+            AND_AND,
+            SHIFT_LEFT,
+            SHIFT_RIGHT,
+            PERCENT_EQUAL,
+            XOR_EQUAL,
 
-        // Parole chiave
-        KEYWORD_FUN,
-        KEYWORD_IF,
-        KEYWORD_ELSE,
-        KEYWORD_RETURN,
-        KEYWORD_WHILE,
-        KEYWORD_FOR,
-        KEYWORD_MAIN,
-        KEYWORD_VAR,
-        KEYWORD_CONST,
-        KEYWORD_NULLPTR,
-        KEYWORD_BREAK,
-        KEYWORD_CONTINUE,
+            // Singolo carattere
+            PLUS,
+            MINUS,
+            STAR,
+            SLASH,
+            LESS,
+            GREATER,
+            NOT,
+            XOR,
+            PERCENT,
+            OR,
+            AND,
+            EQUAL,
+            COLON,
+            COMMA,
+            DOT;
 
-        // Parentesi
-        OPEN_PAREN,
-        CLOSE_PAREN,
-        OPEN_BRACKET,
-        CLOSE_BRACKET,
-        OPEN_BRACE,
-        CLOSE_BRACE,
+            @SuppressWarnings("PMD.CyclomaticComplexity")
+            @Override
+            public String toString() {
+                return switch (this) {
+                    case PLUS -> "'+'";
+                    case MINUS -> "'-'";
+                    case STAR -> "'*'";
+                    case SLASH -> "'/'";
+                    case PLUS_EQUAL -> "'+='";
+                    case MINUS_EQUAL -> "'-='";
+                    case EQUAL_EQUAL -> "'=='";
+                    case NOT_EQUAL -> "'!='";
+                    case LESS -> "'<'";
+                    case GREATER -> "'>'";
+                    case LESS_EQUAL -> "'<='";
+                    case GREATER_EQUAL -> "'>='";
+                    case PLUS_PLUS -> "'++'";
+                    case MINUS_MINUS -> "'--'";
+                    case OR_OR -> "'||'";
+                    case AND_AND -> "'&&'";
+                    case SHIFT_LEFT -> "'<<'";
+                    case SHIFT_RIGHT -> "'>>'";
+                    case PERCENT_EQUAL -> "'%='";
+                    case XOR_EQUAL -> "'^='";
+                    case NOT -> "'!'";
+                    case XOR -> "'^'";
+                    case PERCENT -> "'%'";
+                    case OR -> "'|'";
+                    case AND -> "'&'";
+                    case EQUAL -> "'='";
+                    case COLON -> "':'";
+                    case COMMA -> "','";
+                    case DOT -> "'.'";
+                };
+            }
+        }
 
-        // Parole chiave di tipo
-        TYPE_I8,
-        TYPE_I16,
-        TYPE_I32,
-        TYPE_I64,
-        TYPE_U8,
-        TYPE_U16,
-        TYPE_U32,
-        TYPE_U64,
-        TYPE_F32,
-        TYPE_F64,
-        TYPE_CHAR,
-        TYPE_STRING,
-        TYPE_BOOL,
+        /** Parole chiave del linguaggio (control flow, dichiarazioni). */
+        enum Keyword implements Simple {
+            FUN,
+            IF,
+            ELSE,
+            RETURN,
+            WHILE,
+            FOR,
+            MAIN,
+            VAR,
+            CONST,
+            NULLPTR,
+            BREAK,
+            CONTINUE;
 
-        // Token speciali
-        SEMICOLON,
-        WHITESPACE,
-        COMMENT,
-        MULTILINE_COMMENT,
+            @SuppressWarnings("PMD.CyclomaticComplexity")
+            @Override
+            public String toString() {
+                final String value =
+                        switch (this) {
+                            case FUN -> "'fun'";
+                            case IF -> "'if'";
+                            case ELSE -> "'else'";
+                            case RETURN -> "'return'";
+                            case WHILE -> "'while'";
+                            case FOR -> "'for'";
+                            case MAIN -> "'main'";
+                            case VAR -> "'var'";
+                            case CONST -> "'const'";
+                            case NULLPTR -> "'nullptr'";
+                            case BREAK -> "'break'";
+                            case CONTINUE -> "'continue'";
+                        };
+                return "keyword " + value;
+            }
+        }
 
-        /** Marcatore di fine file (mai prodotto direttamente dal lexer). */
-        EOF;
+        /** Parole chiave di tipo primitivo. */
+        enum TypeKeyword implements Simple {
+            I8,
+            I16,
+            I32,
+            I64,
+            U8,
+            U16,
+            U32,
+            U64,
+            F32,
+            F64,
+            CHAR,
+            STRING,
+            BOOL;
 
-        /** Traduzione di {@code impl fmt::Display for TokenKind}. */
-        @Override
-        public String toString() {
-            return switch (this) {
-                case PLUS -> "'+'";
-                case MINUS -> "'-'";
-                case STAR -> "'*'";
-                case SLASH -> "'/'";
-                case PLUS_EQUAL -> "'+='";
-                case MINUS_EQUAL -> "'-='";
-                case EQUAL_EQUAL -> "'=='";
-                case NOT_EQUAL -> "'!='";
-                case LESS -> "'<'";
-                case GREATER -> "'>'";
-                case LESS_EQUAL -> "'<='";
-                case GREATER_EQUAL -> "'>='";
-                case PLUS_PLUS -> "'++'";
-                case MINUS_MINUS -> "'--'";
-                case OR_OR -> "'||'";
-                case AND_AND -> "'&&'";
-                case SHIFT_LEFT -> "'<<'";
-                case SHIFT_RIGHT -> "'>>'";
-                case PERCENT_EQUAL -> "'%='";
-                case XOR_EQUAL -> "'^='";
-                case NOT -> "'!'";
-                case XOR -> "'^'";
-                case PERCENT -> "'%'";
-                case OR -> "'|'";
-                case AND -> "'&'";
-                case EQUAL -> "'='";
-                case COLON -> "':'";
-                case COMMA -> "','";
-                case DOT -> "'.'";
-                case SEMICOLON -> "';'";
+            @SuppressWarnings("PMD.CyclomaticComplexity")
+            @Override
+            public String toString() {
+                final String value =
+                        switch (this) {
+                            case I8 -> "'i8'";
+                            case I16 -> "'i16'";
+                            case I32 -> "'i32'";
+                            case I64 -> "'i64'";
+                            case U8 -> "'u8'";
+                            case U16 -> "'u16'";
+                            case U32 -> "'u32'";
+                            case U64 -> "'u64'";
+                            case F32 -> "'f32'";
+                            case F64 -> "'f64'";
+                            case CHAR -> "'char'";
+                            case STRING -> "'string'";
+                            case BOOL -> "'bool'";
+                        };
+                return "Type " + value;
+            }
+        }
 
-                case KEYWORD_FUN -> "'fun'";
-                case KEYWORD_IF -> "'if'";
-                case KEYWORD_ELSE -> "'else'";
-                case KEYWORD_RETURN -> "'return'";
-                case KEYWORD_WHILE -> "'while'";
-                case KEYWORD_FOR -> "'for'";
-                case KEYWORD_MAIN -> "'main'";
-                case KEYWORD_VAR -> "'var'";
-                case KEYWORD_CONST -> "'const'";
-                case KEYWORD_NULLPTR -> "'nullptr'";
-                case KEYWORD_BREAK -> "'break'";
-                case KEYWORD_CONTINUE -> "'continue'";
+        /** Delimitatori: parentesi tonde, quadre e graffe. */
+        enum Delimiter implements Simple {
+            OPEN_PAREN,
+            CLOSE_PAREN,
+            OPEN_BRACKET,
+            CLOSE_BRACKET,
+            OPEN_BRACE,
+            CLOSE_BRACE;
 
-                case OPEN_PAREN -> "'('";
-                case CLOSE_PAREN -> "')'";
-                case OPEN_BRACKET -> "'['";
-                case CLOSE_BRACKET -> "']'";
-                case OPEN_BRACE -> "'{'";
-                case CLOSE_BRACE -> "'}'";
+            @Override
+            public String toString() {
+                return switch (this) {
+                    case OPEN_PAREN -> "'('";
+                    case CLOSE_PAREN -> "')'";
+                    case OPEN_BRACKET -> "'['";
+                    case CLOSE_BRACKET -> "']'";
+                    case OPEN_BRACE -> "'{'";
+                    case CLOSE_BRACE -> "'}'";
+                };
+            }
+        }
 
-                case TYPE_I8 -> "'i8'";
-                case TYPE_I16 -> "'i16'";
-                case TYPE_I32 -> "'i32'";
-                case TYPE_I64 -> "'i64'";
-                case TYPE_U8 -> "'u8'";
-                case TYPE_U16 -> "'u16'";
-                case TYPE_U32 -> "'u32'";
-                case TYPE_U64 -> "'u64'";
-                case TYPE_F32 -> "'f32'";
-                case TYPE_F64 -> "'f64'";
-                case TYPE_CHAR -> "'char'";
-                case TYPE_STRING -> "'string'";
-                case TYPE_BOOL -> "'bool'";
+        /** Token speciali: punto e virgola, commenti e marcatore di fine file. */
+        enum Special implements Simple {
+            SEMICOLON,
+            COMMENT,
+            MULTILINE_COMMENT,
+            /** Marcatore di fine file (mai prodotto direttamente dal lexer). */
+            EOF;
 
-                case WHITESPACE -> "whitespace";
-                case COMMENT -> "comment";
-                case MULTILINE_COMMENT -> "multiline comment";
-                case EOF -> "EOF";
-            };
+            @Override
+            public String toString() {
+                return switch (this) {
+                    case SEMICOLON -> "';'";
+                    case COMMENT -> "comment";
+                    case MULTILINE_COMMENT -> "multiline comment";
+                    case EOF -> "EOF";
+                };
+            }
         }
     }
 
     // ------------------------------------------------------------------
-    // Varianti con payload ("tuple variant" -> record)
+    // Varianti con payload
     // ------------------------------------------------------------------
 
-    /** Letterale booleano (`true`/`false`). */
+    /** Letterale booleano ({@code true}/{@code false}). */
     record KeywordBool(boolean value) implements TokenKind {
 
         @Override

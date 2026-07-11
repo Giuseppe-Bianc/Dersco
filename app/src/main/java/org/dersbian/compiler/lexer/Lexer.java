@@ -3,6 +3,7 @@ package org.dersbian.compiler.lexer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.Getter;
 import org.dersbian.compiler.Constants;
 import org.dersbian.compiler.error.CompileError;
@@ -14,6 +15,7 @@ import org.dersbian.compiler.lexer.token.TokenKind;
 import org.dersbian.compiler.location.LineTracker;
 
 /** A simple lexer for tokenizing Dersco source code. */
+// @SuppressWarnings({"UnusedMethod", "PMD.UnusedPrivateMethod", "PMD.TooManyMethods"})
 public class Lexer {
 
     /** Tracker used to map source positions to line numbers. */
@@ -24,6 +26,35 @@ public class Lexer {
 
     /** Collected lexical and syntax errors. */
     private final List<CompileError> errors = new ArrayList<>();
+
+    /** Mappa statica, immutabile, di tutte le keyword e type-keyword del linguaggio. */
+    private static final Map<String, TokenKind.Simple> KEYWORDS =
+            Map.ofEntries(
+                    Map.entry("fun", TokenKind.Simple.Keyword.FUN),
+                    Map.entry("if", TokenKind.Simple.Keyword.IF),
+                    Map.entry("else", TokenKind.Simple.Keyword.ELSE),
+                    Map.entry("return", TokenKind.Simple.Keyword.RETURN),
+                    Map.entry("while", TokenKind.Simple.Keyword.WHILE),
+                    Map.entry("for", TokenKind.Simple.Keyword.FOR),
+                    Map.entry("main", TokenKind.Simple.Keyword.MAIN),
+                    Map.entry("var", TokenKind.Simple.Keyword.VAR),
+                    Map.entry("const", TokenKind.Simple.Keyword.CONST),
+                    Map.entry("nullptr", TokenKind.Simple.Keyword.NULLPTR),
+                    Map.entry("break", TokenKind.Simple.Keyword.BREAK),
+                    Map.entry("continue", TokenKind.Simple.Keyword.CONTINUE),
+                    Map.entry("i8", TokenKind.Simple.TypeKeyword.I8),
+                    Map.entry("i16", TokenKind.Simple.TypeKeyword.I16),
+                    Map.entry("i32", TokenKind.Simple.TypeKeyword.I32),
+                    Map.entry("i64", TokenKind.Simple.TypeKeyword.I64),
+                    Map.entry("u8", TokenKind.Simple.TypeKeyword.U8),
+                    Map.entry("u16", TokenKind.Simple.TypeKeyword.U16),
+                    Map.entry("u32", TokenKind.Simple.TypeKeyword.U32),
+                    Map.entry("u64", TokenKind.Simple.TypeKeyword.U64),
+                    Map.entry("f32", TokenKind.Simple.TypeKeyword.F32),
+                    Map.entry("f64", TokenKind.Simple.TypeKeyword.F64),
+                    Map.entry("char", TokenKind.Simple.TypeKeyword.CHAR),
+                    Map.entry("string", TokenKind.Simple.TypeKeyword.STRING),
+                    Map.entry("bool", TokenKind.Simple.TypeKeyword.BOOL));
 
     /** Source text being lexed (decoded to a Java {@code String}, i.e. UTF-16 internally). */
     private final String source;
@@ -91,6 +122,132 @@ public class Lexer {
         return result;
     }
 
+    /*
+        private boolean match(final int expected) {
+            final boolean matched = peekCodePoint() == expected;
+            if (matched) {
+                advance();
+            }
+            return matched;
+        }
+
+        private int peekNextCodePoint() {
+            final int result;
+            if (isAtEnd()) {
+                result = -1;
+            } else {
+                final int codePoint = source.codePointAt(position);
+                final int next = position + Character.charCount(codePoint);
+                result = next < length ? source.codePointAt(next) : -1;
+            }
+            return result;
+        }
+    */
+    /**
+     * Returns {@code true} if the given code point is considered whitespace and should be skipped
+     * between tokens. This combines {@link Character#isWhitespace(int)} (which covers standard
+     * ASCII whitespace such as space, tab, newline, carriage return, form feed, vertical tab, plus
+     * most Unicode whitespace) with {@link Character#isSpaceChar(int)} (which additionally covers
+     * Unicode space separators that {@code isWhitespace} deliberately excludes, e.g. the
+     * non-breaking space {@code U+00A0}, the figure space {@code U+2007} and the narrow no-break
+     * space {@code U+202F}), so that any whitespace-looking byte sequence from a UTF-8 source file
+     * is skipped regardless of which category it falls under.
+     */
+    private static boolean isWhitespaceCodePoint(final int codePoint) {
+        return codePoint != -1
+                && (Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint));
+    }
+
+    /**
+     * Consumes consecutive whitespace code points (ASCII whitespace such as space/tab/newline as
+     * well as Unicode whitespace and space-separator characters that may appear when the source
+     * file is UTF-8 encoded), without producing any tokens for them. Line/column, UTF-8 offset and
+     * code point offset bookkeeping is delegated to {@link #advance()} so it stays correct for
+     * multi-byte whitespace characters too.
+     */
+    private void skipWhitespace() {
+        while (isWhitespaceCodePoint(peekCodePoint())) {
+            advance();
+        }
+    }
+
+    /**
+     * Returns {@code true} se il code point può iniziare un identificatore: lettera Unicode
+     * (secondo {@link Character#isUnicodeIdentifierStart(int)}) oppure underscore {@code '_'}.
+     */
+    private static boolean isIdentifierStart(final int codePoint) {
+        return codePoint != -1
+                && (codePoint == '_' || Character.isUnicodeIdentifierStart(codePoint));
+    }
+
+    /**
+     * Returns {@code true} se il code point può proseguire un identificatore già iniziato: lettere,
+     * cifre e altri caratteri Unicode "identifier part" (secondo {@link
+     * Character#isUnicodeIdentifierPart(int)}), oltre all'underscore {@code '_'}.
+     */
+    private static boolean isIdentifierPart(final int codePoint) {
+        return codePoint != -1
+                && (codePoint == '_' || Character.isUnicodeIdentifierPart(codePoint));
+    }
+
+    /**
+     * Scans a full identifier, type-keyword, keyword or boolean literal starting at the current
+     * position, and appends the resulting token to {@link #tokens}. Code points are consumed one at
+     * a time via {@link #advance()}, so multi-byte / surrogate-pair characters (e.g. accented
+     * letters, CJK ideographs, emoji used as identifiers if allowed by {@link
+     * Character#isUnicodeIdentifierPart(int)}) are never split.
+     *
+     * <p>Resolution order:
+     *
+     * <ol>
+     *   <li>{@code true} / {@code false} → {@link TokenKind.KeywordBool}
+     *   <li>presente in {@link #KEYWORDS} → {@link TokenKind.Simple.Keyword} o {@link
+     *       TokenKind.Simple.TypeKeyword}
+     *   <li>altrimenti → {@link TokenKind.IdentifierAscii} se composto solo da code point ASCII,
+     *       {@link TokenKind.IdentifierUnicode} altrimenti
+     * </ol>
+     */
+    private void scanIdentifierOrKeyword() {
+        final SourceLocation start = getCurrentLocation();
+        final StringBuilder builder = new StringBuilder();
+        boolean asciiOnly = true;
+
+        int codePoint = peekCodePoint();
+        while (isIdentifierPart(codePoint)) {
+            if (codePoint > Constants.UTF8_ONE_BYTE_LIMIT - 1) {
+                asciiOnly = false;
+            }
+            builder.appendCodePoint(codePoint);
+            advance();
+            codePoint = peekCodePoint();
+        }
+
+        final String value = builder.toString();
+        final Span span = Span.create(start, getCurrentLocation());
+        final TokenKind kind = resolveIdentifierKind(value, asciiOnly);
+        tokens.add(Token.create(sourceId, kind, span));
+    }
+
+    /**
+     * Determina il {@link TokenKind} corretto per un lessema già interamente scansionato, secondo
+     * la logica descritta in {@link #scanIdentifierOrKeyword()}.
+     */
+    private static TokenKind resolveIdentifierKind(final String value, final boolean asciiOnly) {
+        final TokenKind kind;
+        if (Constants.TRUE_LITERAL.equals(value)) {
+            kind = new TokenKind.KeywordBool(true);
+        } else if (Constants.FALSE_LITERAL.equals(value)) {
+            kind = new TokenKind.KeywordBool(false);
+        } else if (KEYWORDS.containsKey(value)) {
+            kind = KEYWORDS.get(value);
+        } else if (asciiOnly) {
+            kind = new TokenKind.IdentifierAscii(value);
+        } else {
+            kind = new TokenKind.IdentifierUnicode(value);
+        }
+        return kind;
+    }
+
     /** Creates a lexer for the given source file and text. */
     public Lexer(final Path filePath, final String source) {
         this.sourceId = new SourceId.FilePath(filePath);
@@ -111,15 +268,22 @@ public class Lexer {
      */
     public LexerResult tokenize() {
         while (!isAtEnd()) {
-            // TODO: wire up the real lexer. Codepoints (not raw chars) are consumed one
-            // at a time so that surrogate pairs (characters outside the BMP, e.g. many
-            // emoji) are never split in half, and UTF-8 byte / code point offsets stay in sync.
-            advance();
+            skipWhitespace();
+            if (isAtEnd()) {
+                break;
+            }
+            final int codePoint = peekCodePoint();
+            if (isIdentifierStart(codePoint)) {
+                scanIdentifierOrKeyword();
+            } else {
+                // TODO: wire up the remaining lexer rules (operators, delimiters, literals,
+                // comments...). Codepoints (not raw chars) are consumed one at a time so that
+                // surrogate pairs (characters outside the BMP, e.g. many emoji) are never split
+                // in half, and UTF-8 byte / code point offsets stay in sync.
+                advance();
+            }
         }
-        final SourceLocation eofLocation = getCurrentLocation();
-        final Span tokenPosition = Span.point(eofLocation);
-        final Token token = new Token(sourceId, TokenKind.Simple.EOF, tokenPosition);
-        tokens.add(token);
+        tokens.add(Token.eof(sourceId, getCurrentLocation()));
         return new LexerResult(tokens, errors);
     }
 
