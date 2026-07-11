@@ -26,7 +26,7 @@ class TokenTest {
                 () -> Assertions.assertFalse(token.isSynthetic()),
                 () ->
                         Assertions.assertEquals(
-                                "identifier 'foo' module:line 1:column 1-line 1:column 4",
+                                "Identifier 'foo' module:line 1:column 1-line 1:column 4",
                                 token.toString()));
     }
 

@@ -68,6 +68,11 @@ public sealed interface TokenKind
             MINUS_MINUS,
             OR_OR,
             AND_AND,
+            AND_EQUAL,
+            OR_EQUAL,
+            BITWISE_NOT,
+            SHIFT_LEFT_EQUAL,
+            SHIFT_RIGHT_EQUAL,
             SHIFT_LEFT,
             SHIFT_RIGHT,
             PERCENT_EQUAL,
@@ -93,37 +98,44 @@ public sealed interface TokenKind
             @SuppressWarnings("PMD.CyclomaticComplexity")
             @Override
             public String toString() {
-                return switch (this) {
-                    case PLUS -> "'+'";
-                    case MINUS -> "'-'";
-                    case STAR -> "'*'";
-                    case SLASH -> "'/'";
-                    case PLUS_EQUAL -> "'+='";
-                    case MINUS_EQUAL -> "'-='";
-                    case EQUAL_EQUAL -> "'=='";
-                    case NOT_EQUAL -> "'!='";
-                    case LESS -> "'<'";
-                    case GREATER -> "'>'";
-                    case LESS_EQUAL -> "'<='";
-                    case GREATER_EQUAL -> "'>='";
-                    case PLUS_PLUS -> "'++'";
-                    case MINUS_MINUS -> "'--'";
-                    case OR_OR -> "'||'";
-                    case AND_AND -> "'&&'";
-                    case SHIFT_LEFT -> "'<<'";
-                    case SHIFT_RIGHT -> "'>>'";
-                    case PERCENT_EQUAL -> "'%='";
-                    case XOR_EQUAL -> "'^='";
-                    case NOT -> "'!'";
-                    case XOR -> "'^'";
-                    case PERCENT -> "'%'";
-                    case OR -> "'|'";
-                    case AND -> "'&'";
-                    case EQUAL -> "'='";
-                    case COLON -> "':'";
-                    case COMMA -> "','";
-                    case DOT -> "'.'";
-                };
+                final String value =
+                        switch (this) {
+                            case PLUS -> "'+'";
+                            case MINUS -> "'-'";
+                            case STAR -> "'*'";
+                            case SLASH -> "'/'";
+                            case PLUS_EQUAL -> "'+='";
+                            case MINUS_EQUAL -> "'-='";
+                            case EQUAL_EQUAL -> "'=='";
+                            case NOT_EQUAL -> "'!='";
+                            case LESS -> "'<'";
+                            case GREATER -> "'>'";
+                            case SHIFT_LEFT_EQUAL -> "'<<='";
+                            case SHIFT_RIGHT_EQUAL -> "'>>='";
+                            case LESS_EQUAL -> "'<='";
+                            case GREATER_EQUAL -> "'>='";
+                            case PLUS_PLUS -> "'++'";
+                            case MINUS_MINUS -> "'--'";
+                            case OR_OR -> "'||'";
+                            case AND_AND -> "'&&'";
+                            case AND_EQUAL -> "'&='";
+                            case OR_EQUAL -> "'|='";
+                            case SHIFT_LEFT -> "'<<'";
+                            case SHIFT_RIGHT -> "'>>'";
+                            case PERCENT_EQUAL -> "'%='";
+                            case XOR_EQUAL -> "'^='";
+                            case BITWISE_NOT -> "'~'";
+                            case NOT -> "'!'";
+                            case XOR -> "'^'";
+                            case PERCENT -> "'%'";
+                            case OR -> "'|'";
+                            case AND -> "'&'";
+                            case EQUAL -> "'='";
+                            case COLON -> "':'";
+                            case COMMA -> "','";
+                            case DOT -> "'.'";
+                        };
+                return "Operator " + value;
             }
         }
 
@@ -214,14 +226,16 @@ public sealed interface TokenKind
 
             @Override
             public String toString() {
-                return switch (this) {
-                    case OPEN_PAREN -> "'('";
-                    case CLOSE_PAREN -> "')'";
-                    case OPEN_BRACKET -> "'['";
-                    case CLOSE_BRACKET -> "']'";
-                    case OPEN_BRACE -> "'{'";
-                    case CLOSE_BRACE -> "'}'";
-                };
+                final String value =
+                        switch (this) {
+                            case OPEN_PAREN -> "'('";
+                            case CLOSE_PAREN -> "')'";
+                            case OPEN_BRACKET -> "'['";
+                            case CLOSE_BRACKET -> "']'";
+                            case OPEN_BRACE -> "'{'";
+                            case CLOSE_BRACE -> "'}'";
+                        };
+                return "Delimiter " + value;
             }
         }
 
@@ -237,8 +251,8 @@ public sealed interface TokenKind
             public String toString() {
                 return switch (this) {
                     case SEMICOLON -> "';'";
-                    case COMMENT -> "comment";
-                    case MULTILINE_COMMENT -> "multiline comment";
+                    case COMMENT -> "Comment";
+                    case MULTILINE_COMMENT -> "Multiline Comment";
                     case EOF -> "EOF";
                 };
             }
@@ -263,7 +277,7 @@ public sealed interface TokenKind
 
         @Override
         public String toString() {
-            return "identifier '" + value + "'";
+            return "Identifier '" + value + "'";
         }
     }
 
@@ -272,7 +286,7 @@ public sealed interface TokenKind
 
         @Override
         public String toString() {
-            return "identifier '" + value + "'";
+            return "Identifier '" + value + "'";
         }
     }
 
@@ -281,7 +295,7 @@ public sealed interface TokenKind
 
         @Override
         public String toString() {
-            return "number '" + value + "'";
+            return "Number '" + value + "'";
         }
     }
 
@@ -290,7 +304,7 @@ public sealed interface TokenKind
 
         @Override
         public String toString() {
-            return "binary '" + value + "'";
+            return "Binary '" + value + "'";
         }
     }
 
@@ -299,7 +313,7 @@ public sealed interface TokenKind
 
         @Override
         public String toString() {
-            return "octal '" + value + "'";
+            return "Octal '" + value + "'";
         }
     }
 
@@ -308,7 +322,7 @@ public sealed interface TokenKind
 
         @Override
         public String toString() {
-            return "hexadecimal '" + value + "'";
+            return "Hexadecimal '" + value + "'";
         }
     }
 
@@ -317,7 +331,7 @@ public sealed interface TokenKind
 
         @Override
         public String toString() {
-            return "string literal \"" + value + "\"";
+            return "String literal \"" + value + "\"";
         }
     }
 
@@ -326,7 +340,7 @@ public sealed interface TokenKind
 
         @Override
         public String toString() {
-            return "character literal '" + value + "'";
+            return "Character literal '" + value + "'";
         }
     }
 }

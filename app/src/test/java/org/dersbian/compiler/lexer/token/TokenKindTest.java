@@ -50,10 +50,10 @@ class TokenKindTest {
 
     @Test
     void stringRepresentationsExposeDisplayText() {
-        Assertions.assertEquals("keyword 'fun'", TokenKind.Simple.Keyword.FUN.toString());
+        Assertions.assertEquals("Keyword 'fun'", TokenKind.Simple.Keyword.FUN.toString());
         Assertions.assertEquals(
-                "identifier 'value'", new TokenKind.IdentifierAscii("value").toString());
+                "Identifier 'value'", new TokenKind.IdentifierAscii("value").toString());
         Assertions.assertEquals(
-                "string literal \"hello\"", new TokenKind.StringLiteral("hello").toString());
+                "String literal \"hello\"", new TokenKind.StringLiteral("hello").toString());
     }
 }
