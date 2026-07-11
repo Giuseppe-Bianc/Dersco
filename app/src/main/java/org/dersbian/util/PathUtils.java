@@ -24,6 +24,9 @@ public final class PathUtils {
      */
     public static String truncatePath(final Path path, final int depth) {
         Objects.requireNonNull(path, "path");
+        if (depth <= 0) {
+            throw new IllegalArgumentException("depth must be positive: " + depth);
+        }
 
         final int nameCount = path.getNameCount();
         final String result;

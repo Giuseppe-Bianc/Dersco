@@ -33,10 +33,6 @@ public sealed interface SourceId
         public String identifier() {
             return path.toString();
         }
-
-        public Path getPath() {
-            return path;
-        }
     }
 
     /** Sorgente di una risorsa virtuale (URI, JAR, URL). */

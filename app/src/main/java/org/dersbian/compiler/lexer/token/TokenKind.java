@@ -160,7 +160,7 @@ public sealed interface TokenKind
                             case BREAK -> "'break'";
                             case CONTINUE -> "'continue'";
                         };
-                return "keyword " + value;
+                return "Keyword " + value;
             }
         }
 
