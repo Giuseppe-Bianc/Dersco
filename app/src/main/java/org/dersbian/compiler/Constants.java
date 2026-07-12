@@ -47,4 +47,13 @@ public final class Constants {
 
     /** Letterale booleano "false". */
     public static final String FALSE_LITERAL = "false";
+
+    /** Radix used for {@code #b} binary literals. */
+    public static final int RADIX_BINARY = 2;
+
+    /** Radix used for {@code #o} octal literals. */
+    public static final int RADIX_OCTAL = 8;
+
+    /** Radix used for {@code #x} hexadecimal literals. */
+    public static final int RADIX_HEX = 16;
 }

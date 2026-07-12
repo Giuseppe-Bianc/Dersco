@@ -83,9 +83,9 @@ public final class CodePoints {
 
     /** Returns {@code true} se il code point rientra nell'intervallo ASCII (un solo byte UTF-8). */
     public static boolean isAscii(final int codePoint) {
-        return Character.isValidCodePoint(codePoint)
-                && codePoint < Constants.UTF8_ONE_BYTE_LIMIT;
+        return Character.isValidCodePoint(codePoint) && codePoint < Constants.UTF8_ONE_BYTE_LIMIT;
     }
+
     /**
      * Returns {@code true} if the given code point is considered whitespace and should be skipped
      * between tokens. Combines {@link Character#isWhitespace(int)} with {@link

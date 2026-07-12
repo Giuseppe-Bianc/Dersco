@@ -4,15 +4,19 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
+import org.dersbian.compiler.Constants;
 import org.dersbian.compiler.error.CompileError;
+import org.dersbian.compiler.error.ErrorCode;
 import org.dersbian.compiler.lexer.token.SourceId;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.lexer.token.Token;
 import org.dersbian.compiler.lexer.token.TokenKind;
+import org.dersbian.compiler.lexer.token.parser.numeric.BaseParsers;
 import org.dersbian.compiler.location.LineTracker;
 
 /** A simple lexer for tokenizing Dersco source code. */
+@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
 public class Lexer {
 
     /** Tracker used to map source positions to line numbers. */
@@ -70,12 +74,13 @@ public class Lexer {
                         '~' ->
                         scanOperator();
                 case '(', '[', '{', ')', ']', '}' -> scanDeliminter();
+                case '#' -> scanRadixLiteral();
                 default -> {
                     if (CodePoints.isIdentifierStart(codePoint)) {
                         scanIdentifierOrKeyword();
                     } else {
-                        // TODO: wire up the remaining lexer rules (delimiters, literals,
-                        // comments...). Right now any character that isn't an operator start or
+                        // TODO: wire up the remaining lexer rules (literals, comments...).
+                        // Right now any character that isn't an operator start or
                         // an identifier start is silently skipped instead of being reported: this
                         // is not wired to `errors` yet, so invalid input currently tokenizes
                         // without complaint.
@@ -239,6 +244,124 @@ public class Lexer {
                                     + codePoint
                                     + "'");
         };
+    }
+
+    private void scanRadixLiteral() {
+        final SourceLocation start = cursor.currentLocation();
+        cursor.advance(); // consuma '#'
+
+        final char prefixLetter = radixPrefixLetter(cursor.peekCodePoint());
+        if (prefixLetter == 0) {
+            reportError(
+                    ErrorCode.E0001,
+                    start,
+                    "Prefisso numerico non valido dopo '#': atteso 'b', 'o' o 'x'.",
+                    null);
+        } else {
+            cursor.advance(); // consuma la lettera di prefisso
+
+            final int radix = radixFromPrefixLetter(prefixLetter);
+            final String body = scanRadixDigits(radix);
+            if (body.isEmpty()) {
+                reportError(
+                        ErrorCode.E0001,
+                        start,
+                        "Letterale numerico vuoto dopo il prefisso '#" + prefixLetter + "'.",
+                        null);
+            } else {
+                final String suffix = scanRadixSuffix();
+                final String literal = "#" + prefixLetter + body + suffix;
+                final Span span = Span.create(start, cursor.currentLocation());
+
+                try {
+                    tokens.add(Token.create(sourceId, parseRadixToken(radix, literal), span));
+                } catch (final NumberFormatException e) {
+                    reportRadixOverflow(radix, start, literal);
+                }
+            }
+        }
+    }
+
+    private static char radixPrefixLetter(final int prefixChar) {
+        return switch (prefixChar) {
+            case 'b' -> 'b';
+            case 'o' -> 'o';
+            case 'x' -> 'x';
+            default -> 0;
+        };
+    }
+
+    private static int radixFromPrefixLetter(final char prefixLetter) {
+        return switch (prefixLetter) {
+            case 'b' -> Constants.RADIX_BINARY;
+            case 'o' -> Constants.RADIX_OCTAL;
+            default -> Constants.RADIX_HEX;
+        };
+    }
+
+    private String scanRadixDigits(final int radix) {
+        final StringBuilder body = new StringBuilder();
+        int codePoint = cursor.peekCodePoint();
+        while (isRadixDigit(codePoint, radix)) {
+            body.appendCodePoint(codePoint);
+            cursor.advance();
+            codePoint = cursor.peekCodePoint();
+        }
+        return body.toString();
+    }
+
+    private String scanRadixSuffix() {
+        String suffix = "";
+        final int codePoint = cursor.peekCodePoint();
+        if (codePoint == 'u' || codePoint == 'U') {
+            cursor.advance();
+            suffix = Character.toString(codePoint);
+        }
+        return suffix;
+    }
+
+    private static TokenKind parseRadixToken(final int radix, final String literal) {
+        return switch (radix) {
+            case Constants.RADIX_BINARY -> new TokenKind.Binary(BaseParsers.parseBinary(literal));
+            case Constants.RADIX_OCTAL -> new TokenKind.Octal(BaseParsers.parseOctal(literal));
+            default -> new TokenKind.Hexadecimal(BaseParsers.parseHex(literal));
+        };
+    }
+
+    private void reportRadixOverflow(
+            final int radix, final SourceLocation start, final String literal) {
+        final ErrorCode code =
+                switch (radix) {
+                    case Constants.RADIX_BINARY -> ErrorCode.E0002;
+                    case Constants.RADIX_OCTAL -> ErrorCode.E0003;
+                    default -> ErrorCode.E0004;
+                };
+        reportError(
+                code,
+                start,
+                "Valore numerico fuori range per il letterale '" + literal + "'.",
+                null);
+    }
+
+    private static boolean isRadixDigit(final int codePoint, final int radix) {
+        return switch (radix) {
+            case Constants.RADIX_BINARY -> codePoint == '0' || codePoint == '1';
+            case Constants.RADIX_OCTAL -> codePoint >= '0' && codePoint <= '7';
+            case Constants.RADIX_HEX ->
+                    (codePoint >= '0' && codePoint <= '9')
+                            || (codePoint >= 'a' && codePoint <= 'f')
+                            || (codePoint >= 'A' && codePoint <= 'F');
+            default -> false;
+        };
+    }
+
+    private void reportError(
+            final ErrorCode errorCode,
+            final SourceLocation start,
+            final String message,
+            final String help) {
+        final Span span = Span.create(start, cursor.currentLocation());
+        errors.add(CompileError.lexerError(errorCode, message, span, help));
     }
 
     /** Returns the number of source lines tracked by this lexer. */
