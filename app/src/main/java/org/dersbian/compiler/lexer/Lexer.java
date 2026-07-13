@@ -80,7 +80,7 @@ public class Lexer {
                     if (CodePoints.isIdentifierStart(codePoint)) {
                         scanIdentifierOrKeyword();
                     } else {
-                        // TODO: wire up the remaining lexer rules (comments...).
+                        // TODO: wire up the remaining lexer rules (numbesr, comments...).
                         // Right now any character that isn't an operator start, a delimiter,
                         // a radix/string/char literal start or an identifier start is silently
                         // skipped instead of being reported.
@@ -92,9 +92,7 @@ public class Lexer {
                         reportError(
                                 ErrorCode.E0008,
                                 start,
-                                "Carattere non riconosciuto: '"
-                                        + Character.toString(ecodePoint)
-                                        + "'",
+                                "Unrecognized character: '" + Character.toString(ecodePoint) + "'",
                                 null);
                     }
                 }
@@ -131,7 +129,7 @@ public class Lexer {
      * SourceCursor#advance()}, so it stays correct for multi-byte whitespace characters too.
      */
     private void skipWhitespace() {
-        while (CodePoints.isWhitespaceCodePoint(cursor.peekCodePoint())) {
+        while (!cursor.isAtEnd() && CodePoints.isWhitespaceCodePoint(cursor.peekCodePoint())) {
             cursor.advance();
         }
     }
@@ -169,8 +167,8 @@ public class Lexer {
      * Scans a single operator token (single- or multi-character) starting at the current position
      * and appends the resulting token to {@link #tokens}.
      *
-     * <p>Precondizione: {@link SourceCursor#peekCodePoint()} deve corrispondere a uno dei caratteri
-     * gestiti dal ramo {@code case} dedicato agli operatori in {@link #tokenize()}.
+     * <p>Precondition: {@link SourceCursor#peekCodePoint()} must correspond to one of the
+     * characters handled by the dedicated {@code case} branch for operators in {@link #tokenize()}.
      */
     private void scanOperator() {
         final SourceLocation start = cursor.currentLocation();
@@ -196,8 +194,14 @@ public class Lexer {
                             : cursor.match('=')
                                     ? TokenKind.Simple.Operator.MINUS_EQUAL
                                     : TokenKind.Simple.Operator.MINUS;
-            case '*' -> TokenKind.Simple.Operator.STAR;
-            case '/' -> TokenKind.Simple.Operator.SLASH;
+            case '*' ->
+                    cursor.match('=')
+                            ? TokenKind.Simple.Operator.STAR_EQUAL
+                            : TokenKind.Simple.Operator.STAR;
+            case '/' ->
+                    cursor.match('=')
+                            ? TokenKind.Simple.Operator.SLASH_EQUAL
+                            : TokenKind.Simple.Operator.SLASH;
             case '=' ->
                     cursor.match('=')
                             ? TokenKind.Simple.Operator.EQUAL_EQUAL
@@ -256,17 +260,17 @@ public class Lexer {
 
     private void scanRadixLiteral() {
         final SourceLocation start = cursor.currentLocation();
-        cursor.advance(); // consuma '#'
+        cursor.advance(); // consume '#'
 
         final char prefixLetter = radixPrefixLetter(cursor.peekCodePoint());
         if (prefixLetter == 0) {
             reportError(
                     ErrorCode.E0001,
                     start,
-                    "Prefisso numerico non valido dopo '#': atteso 'b', 'o' o 'x'.",
+                    "Invalid numeric prefix after '#': expected 'b', 'o' or 'x'.",
                     null);
         } else {
-            cursor.advance(); // consuma la lettera di prefisso
+            cursor.advance(); // consume the prefix letter
 
             final int radix = radixFromPrefixLetter(prefixLetter);
             final String body = scanRadixDigits(radix);
@@ -274,7 +278,7 @@ public class Lexer {
                 reportError(
                         ErrorCode.E0001,
                         start,
-                        "Letterale numerico vuoto dopo il prefisso '#" + prefixLetter + "'.",
+                        "Empty numeric literal after prefix '#" + prefixLetter + "'.",
                         null);
             } else {
                 final String suffix = scanRadixSuffix();
@@ -344,21 +348,14 @@ public class Lexer {
                     case Constants.RADIX_OCTAL -> ErrorCode.E0003;
                     default -> ErrorCode.E0004;
                 };
-        reportError(
-                code,
-                start,
-                "Valore numerico fuori range per il letterale '" + literal + "'.",
-                null);
+        reportError(code, start, "Numeric value out of range for literal '" + literal + "'.", null);
     }
 
     private static boolean isRadixDigit(final int codePoint, final int radix) {
         return switch (radix) {
             case Constants.RADIX_BINARY -> codePoint == '0' || codePoint == '1';
             case Constants.RADIX_OCTAL -> codePoint >= '0' && codePoint <= '7';
-            case Constants.RADIX_HEX ->
-                    (codePoint >= '0' && codePoint <= '9')
-                            || (codePoint >= 'a' && codePoint <= 'f')
-                            || (codePoint >= 'A' && codePoint <= 'F');
+            case Constants.RADIX_HEX -> isHexDigit(codePoint);
             default -> false;
         };
     }
@@ -368,14 +365,14 @@ public class Lexer {
     // ------------------------------------------------------------------
 
     /**
-     * Scansiona un letterale stringa delimitato da doppi apici, gestendo escape sequence e
-     * caratteri Unicode multi-byte. In caso di stringa non terminata prima della fine della riga o
-     * della sorgente, viene riportato {@link ErrorCode#E0005}, ma il token viene comunque prodotto
-     * con il contenuto accumulato fino a quel punto, per consentire il recovery del parser.
+     * Scans a string literal delimited by double quotes, handling escape sequences and multi-byte
+     * Unicode characters. If the string is not terminated before the end of the line or the end of
+     * the source, {@link ErrorCode#E0005} is reported, but the token is still produced with the
+     * content accumulated so far, to allow the parser to recover.
      */
     private void scanStringLiteral() {
         final SourceLocation start = cursor.currentLocation();
-        cursor.advance(); // consuma il doppio apice di apertura
+        cursor.advance(); // consume the opening double quote
 
         final StringBuilder builder = new StringBuilder();
         boolean terminated = false;
@@ -399,7 +396,7 @@ public class Lexer {
         }
 
         if (!terminated) {
-            reportError(ErrorCode.E0005, start, "Stringa letterale non terminata.", null);
+            reportError(ErrorCode.E0005, start, "Unterminated string literal.", null);
         }
 
         final Span span = Span.create(start, cursor.currentLocation());
@@ -407,20 +404,21 @@ public class Lexer {
     }
 
     /**
-     * ASCII/Unicode sia escape sequence (incluso {@code \u005cu{XXXX}}). Riporta {@link
-     * ErrorCode#E0006} se il letterale non è correttamente terminato con un singolo carattere.
+     * Scans an ASCII/Unicode char literal, handling escape sequences (including {@code
+     * \u005cu{XXXX}}). Reports {@link ErrorCode#E0006} if the literal is not correctly terminated
+     * with a single character.
      */
     private void scanCharLiteral() {
         final SourceLocation start = cursor.currentLocation();
-        cursor.advance(); // consuma l'apice di apertura
+        cursor.advance(); // consume the opening quote
 
         final StringBuilder builder = new StringBuilder();
 
         if (cursor.isAtEnd() || isLineTerminator(cursor.peekCodePoint())) {
-            reportError(ErrorCode.E0006, start, "Carattere letterale non terminato.", null);
+            reportError(ErrorCode.E0006, start, "Unterminated char literal.", null);
         } else if (cursor.peekCodePoint() == Constants.CHAR_SINGLE_QUOTE) {
             cursor.advance();
-            reportError(ErrorCode.E0006, start, "Carattere letterale vuoto.", null);
+            reportError(ErrorCode.E0006, start, "Empty char literal.", null);
         } else {
             consumeCharLiteralBody(builder, start);
         }
@@ -443,7 +441,7 @@ public class Lexer {
             reportError(
                     ErrorCode.E0006,
                     start,
-                    "Carattere letterale non terminato o con più di un carattere.",
+                    "Unterminated char literal or containing more than one character.",
                     null);
         }
     }
@@ -482,16 +480,16 @@ public class Lexer {
     }
 
     /**
-     * Consuma e risolve una escape sequence che inizia con {@code '\'} sotto il cursore,
-     * aggiungendo il/i code point risultanti a {@code builder}. In caso di sequenza non
-     * riconosciuta o malformata viene riportato {@link ErrorCode#E0007}.
+     * Consumes and resolves an escape sequence starting with {@code '\'} under the cursor, adding
+     * the resulting code point(s) to {@code builder}. If the sequence is unrecognized or malformed,
+     * {@link ErrorCode#E0007} is reported.
      */
     private void consumeEscapeSequence(final StringBuilder builder) {
         final SourceLocation escapeStart = cursor.currentLocation();
-        cursor.advance(); // consuma '\'
+        cursor.advance(); // consume '\'
 
         if (cursor.isAtEnd()) {
-            reportError(ErrorCode.E0007, escapeStart, "Sequenza di escape non terminata.", null);
+            reportError(ErrorCode.E0007, escapeStart, "Unterminated escape sequence.", null);
             return;
         }
 
@@ -526,14 +524,15 @@ public class Lexer {
                 cursor.advance();
             }
             case 'x' -> consumeHexEscape(builder, escapeStart);
-            case 'u' -> consumeUnicodeEscape(builder, escapeStart);
+            case 'u' -> consumeUnicodeEscape(builder, escapeStart, 'u');
+            case 'U' -> consumeUnicodeEscape(builder, escapeStart, 'U');
             default -> {
                 reportError(
                         ErrorCode.E0007,
                         escapeStart,
-                        "Sequenza di escape non valida: '\\" + Character.toString(codePoint) + "'.",
+                        "Invalid escape sequence: '\\" + Character.toString(codePoint) + "'.",
                         null);
-                // recovery: consuma comunque il carattere per evitare loop infiniti.
+                // recovery: consume the character anyway to avoid infinite loops.
                 builder.appendCodePoint(codePoint);
                 cursor.advance();
             }
@@ -541,25 +540,69 @@ public class Lexer {
     }
 
     /**
-     * Consuma una escape sequence Unicode nel formato {@code \u005cu{XXXX}}, dove {@code XXXX} è
-     * una sequenza di cifre esadecimali che rappresenta un code point Unicode valido. Il cursore,
-     * al momento della chiamata, deve trovarsi sulla 'u' che segue il backslash.
+     * Consumes a Unicode escape sequence in the format {@code \u005cu{XXXX}}, where {@code XXXX} is
+     * a sequence of hexadecimal digits representing a valid Unicode code point. At the time of the
+     * call, the cursor must be positioned on the 'u' following the backslash.
      */
     private void consumeUnicodeEscape(
-            final StringBuilder builder, final SourceLocation escapeStart) {
+            final StringBuilder builder,
+            final SourceLocation escapeStart,
+            final char prefixLetter) {
 
-        cursor.advance(); // consume 'u'
+        final int maxDigits =
+                (prefixLetter == 'U')
+                        ? Constants.UNICODE_ESCAPE_LONG_DIGIT_COUNT // 8
+                        : Constants.UNICODE_ESCAPE_SHORT_DIGIT_COUNT; // 4
+
+        cursor.advance(); // consume 'u' or 'U'
 
         boolean valid = expectOpenBrace(escapeStart);
 
         String hex = null;
         if (valid) {
-            hex = consumeHexDigits();
-            valid = expectClosingBrace(escapeStart, hex);
+            hex = consumeHexDigits(maxDigits);
+
+            // Check if the digit limit was reached before the '}'
+            if (!cursor.isAtEnd()
+                    && cursor.peekCodePoint() != '}'
+                    && isHexDigit(cursor.peekCodePoint())) {
+                reportError(
+                        ErrorCode.E0007,
+                        escapeStart,
+                        "Unicode escape sequence with too many digits: "
+                                + "maximum "
+                                + maxDigits
+                                + " hexadecimal digits for '\\"
+                                + prefixLetter
+                                + "'.",
+                        null);
+                drainExcessHexDigits();
+                valid = false;
+            } else {
+                valid = expectClosingBrace(escapeStart, hex);
+            }
         }
 
         if (valid) {
             appendUnicodeCodePoint(builder, escapeStart, hex);
+        }
+    }
+
+    /**
+     * Recovery method: advances the cursor past excess hexadecimal digits until reaching {@code
+     * '}'}, a non-hexadecimal character, or the end of the source. If a {@code '}'} is present at
+     * the end, it is consumed to keep the cursor in a consistent state and allow lexing to
+     * continue.
+     */
+    private void drainExcessHexDigits() {
+        while (!cursor.isAtEnd()
+                && cursor.peekCodePoint() != '}'
+                && isHexDigit(cursor.peekCodePoint())) {
+            cursor.advance();
+        }
+        // Consume the closing '}' if present, to avoid leaving the cursor on it
+        if (!cursor.isAtEnd() && cursor.peekCodePoint() == '}') {
+            cursor.advance();
         }
     }
 
@@ -570,7 +613,7 @@ public class Lexer {
             reportError(
                     ErrorCode.E0007,
                     escapeStart,
-                    "Sequenza di escape unicode non valida: atteso '{' dopo \\u.",
+                    "Invalid unicode escape sequence: expected '{' after \\u.",
                     null);
             isValid = false;
         } else {
@@ -580,9 +623,10 @@ public class Lexer {
         return isValid;
     }
 
-    private String consumeHexDigits() {
+    private String consumeHexDigits(final int maxDigits) {
         final StringBuilder hex = new StringBuilder();
-        while (!cursor.isAtEnd()
+        while (hex.length() < maxDigits
+                && !cursor.isAtEnd()
                 && cursor.peekCodePoint() != '}'
                 && isHexDigit(cursor.peekCodePoint())) {
             hex.appendCodePoint(cursor.peekCodePoint());
@@ -598,14 +642,14 @@ public class Lexer {
             reportError(
                     ErrorCode.E0007,
                     escapeStart,
-                    "Sequenza di escape unicode senza cifre esadecimali.",
+                    "Unicode escape sequence without hexadecimal digits.",
                     null);
             result = false;
         } else if (cursor.isAtEnd() || cursor.peekCodePoint() != '}') {
             reportError(
                     ErrorCode.E0007,
                     escapeStart,
-                    "Sequenza di escape unicode non terminata: manca '}'.",
+                    "Unterminated unicode escape sequence: missing '}'.",
                     null);
             result = false;
         } else {
@@ -623,29 +667,25 @@ public class Lexer {
                 builder.appendCodePoint(codePointValue);
             } else {
                 reportError(
-                        ErrorCode.E0007,
-                        escapeStart,
-                        "Code point unicode non valido: U+" + hex,
-                        null);
+                        ErrorCode.E0007, escapeStart, "Invalid unicode code point: U+" + hex, null);
             }
         } catch (final NumberFormatException e) {
             reportError(
                     ErrorCode.E0007,
                     escapeStart,
-                    "Valore esadecimale non valido nella sequenza di escape unicode.",
+                    "Invalid hexadecimal value in unicode escape sequence.",
                     null);
         }
     }
 
     /**
-     * Consuma una escape sequence esadecimale a due cifre nel formato {@code \xHH}, dove {@code HH}
-     * rappresenta un valore di byte compreso tra {@code 0x00} e {@code 0xFF}. Il cursore, al
-     * momento della chiamata, deve trovarsi sulla 'x' che segue il backslash. In caso di numero di
-     * cifre diverso da {@link Constants#HEX_ESCAPE_DIGIT_COUNT} viene riportato {@link
-     * ErrorCode#E0007}.
+     * Consumes a two-digit hexadecimal escape sequence in the format {@code \xHH}, where {@code HH}
+     * represents a byte value between {@code 0x00} and {@code 0xFF}. At the time of the call, the
+     * cursor must be positioned on the 'x' following the backslash. If the number of digits differs
+     * from {@link Constants#HEX_ESCAPE_DIGIT_COUNT}, {@link ErrorCode#E0007} is reported.
      */
     private void consumeHexEscape(final StringBuilder builder, final SourceLocation escapeStart) {
-        cursor.advance(); // consuma 'x'
+        cursor.advance(); // consume 'x'
 
         final StringBuilder hex = new StringBuilder();
         while (hex.length() < Constants.HEX_ESCAPE_DIGIT_COUNT
@@ -659,9 +699,9 @@ public class Lexer {
             reportError(
                     ErrorCode.E0007,
                     escapeStart,
-                    "Sequenza di escape esadecimale non valida: attese esattamente "
+                    "Invalid hexadecimal escape sequence: expected exactly "
                             + Constants.HEX_ESCAPE_DIGIT_COUNT
-                            + " cifre esadecimali dopo \\x.",
+                            + " hexadecimal digits after \\x.",
                     null);
             return;
         }

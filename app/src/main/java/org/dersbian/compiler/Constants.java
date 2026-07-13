@@ -74,4 +74,10 @@ public final class Constants {
 
     /** Character constant for backslash (\). */
     public static final int CHAR_BACKSLASH = '\\';
+
+    /** Maximum hex digit count for a \u005cu Unicode escape (e.g. \u005cu{004F}). */
+    public static final int UNICODE_ESCAPE_SHORT_DIGIT_COUNT = 4;
+
+    /** Maximum hex digit count for a \U Unicode escape (e.g. \U{0010FFFF}). */
+    public static final int UNICODE_ESCAPE_LONG_DIGIT_COUNT = 8;
 }

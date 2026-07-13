@@ -77,6 +77,8 @@ public sealed interface TokenKind
             SHIFT_RIGHT,
             PERCENT_EQUAL,
             XOR_EQUAL,
+            STAR_EQUAL,
+            SLASH_EQUAL,
 
             // Singolo carattere
             PLUS,
@@ -108,6 +110,8 @@ public sealed interface TokenKind
                             case MINUS_EQUAL -> "'-='";
                             case EQUAL_EQUAL -> "'=='";
                             case NOT_EQUAL -> "'!='";
+                            case STAR_EQUAL -> "'*='";
+                            case SLASH_EQUAL -> "'/='";
                             case LESS -> "'<'";
                             case GREATER -> "'>'";
                             case SHIFT_LEFT_EQUAL -> "'<<='";
