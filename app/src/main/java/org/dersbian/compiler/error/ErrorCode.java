@@ -238,10 +238,10 @@ public enum ErrorCode {
                             8,
                             Severity.ERROR,
                             CompilerPhase.LEXER,
-                            "unterminated multi-line comment",
+                            "unrecognized character",
                             """
-                            Multi-line comments opened with `/*` must be closed with `*/`.
-                            Check for missing closing markers or accidental nesting.
+                            The lexer encountered a character that is not recognized as a valid token start or part.
+                            Check for typos or unsupported characters.
                             """,
                             List.of());
             case E0009 ->

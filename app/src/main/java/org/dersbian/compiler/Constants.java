@@ -18,6 +18,12 @@ public final class Constants {
     /** Code point for the carriage return character ({@code \r}). */
     public static final int CARRIAGE_RETURN = '\r';
 
+    /** Code point for the Unicode line separator character ({@code \u2028}). */
+    public static final int LINE_SEPARATOR = '\u2028';
+
+    /** Code point for the Unicode paragraph separator character ({@code \u2029}). */
+    public static final int PARAGRAPH_SEPARATOR = '\u2029';
+
     /** Unicode byte-order mark, occasionally left at the start of UTF-8 encoded files. */
     public static final int BYTE_ORDER_MARK = '\uFEFF';
 

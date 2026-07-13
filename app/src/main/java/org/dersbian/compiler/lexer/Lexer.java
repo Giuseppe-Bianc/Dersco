@@ -72,7 +72,7 @@ public class Lexer {
                         '.',
                         '~' ->
                         scanOperator();
-                case '(', '[', '{', ')', ']', '}' -> scanDeliminter();
+                case '(', '[', '{', ')', ']', '}' -> scanDelimiter();
                 case '#' -> scanRadixLiteral();
                 case '"' -> scanStringLiteral();
                 case '\'' -> scanCharLiteral();
@@ -87,7 +87,15 @@ public class Lexer {
                         // Codepoints (not raw chars) are consumed one at a time so that surrogate
                         // pairs are never split in half, and UTF-8 byte / code point offsets stay
                         // in sync.
-                        cursor.advance();
+                        final SourceLocation start = cursor.currentLocation();
+                        final int ecodePoint = cursor.advance();
+                        reportError(
+                                ErrorCode.E0008,
+                                start,
+                                "Carattere non riconosciuto: '"
+                                        + Character.toString(ecodePoint)
+                                        + "'",
+                                null);
                     }
                 }
             }
@@ -96,7 +104,7 @@ public class Lexer {
         return new LexerResult(tokens, errors);
     }
 
-    private void scanDeliminter() {
+    private void scanDelimiter() {
         final SourceLocation start = cursor.currentLocation();
         final int codePoint = cursor.advance();
         final TokenKind.Simple.Delimiter kind =
@@ -199,20 +207,20 @@ public class Lexer {
                             ? TokenKind.Simple.Operator.NOT_EQUAL
                             : TokenKind.Simple.Operator.NOT;
             case '<' ->
-                    cursor.match('=')
-                            ? TokenKind.Simple.Operator.LESS_EQUAL
-                            : cursor.match('<', '=')
-                                    ? TokenKind.Simple.Operator.SHIFT_LEFT_EQUAL
-                                    : cursor.match('<')
-                                            ? TokenKind.Simple.Operator.SHIFT_LEFT
+                    cursor.match('<', '=')
+                            ? TokenKind.Simple.Operator.SHIFT_LEFT_EQUAL
+                            : cursor.match('<')
+                                    ? TokenKind.Simple.Operator.SHIFT_LEFT
+                                    : cursor.match('=')
+                                            ? TokenKind.Simple.Operator.LESS_EQUAL
                                             : TokenKind.Simple.Operator.LESS;
             case '>' ->
-                    cursor.match('=')
-                            ? TokenKind.Simple.Operator.GREATER_EQUAL
-                            : cursor.match('>', '=')
-                                    ? TokenKind.Simple.Operator.SHIFT_RIGHT_EQUAL
-                                    : cursor.match('>')
-                                            ? TokenKind.Simple.Operator.SHIFT_RIGHT
+                    cursor.match('>', '=')
+                            ? TokenKind.Simple.Operator.SHIFT_RIGHT_EQUAL
+                            : cursor.match('>')
+                                    ? TokenKind.Simple.Operator.SHIFT_RIGHT
+                                    : cursor.match('=')
+                                            ? TokenKind.Simple.Operator.GREATER_EQUAL
                                             : TokenKind.Simple.Operator.GREATER;
             case '|' ->
                     cursor.match('|')
@@ -663,7 +671,10 @@ public class Lexer {
     }
 
     private static boolean isLineTerminator(final int codePoint) {
-        return codePoint == Constants.LINE_FEED || codePoint == Constants.CARRIAGE_RETURN;
+        return codePoint == Constants.LINE_FEED
+                || codePoint == Constants.CARRIAGE_RETURN
+                || codePoint == Constants.LINE_SEPARATOR
+                || codePoint == Constants.PARAGRAPH_SEPARATOR;
     }
 
     private static boolean isHexDigit(final int codePoint) {

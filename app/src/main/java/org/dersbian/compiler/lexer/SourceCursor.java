@@ -94,7 +94,9 @@ public final class SourceCursor {
             utf8Offset += CodePoints.utf8ByteLength(codePoint);
             codePointOffset++;
             switch (codePoint) {
-                case Constants.LINE_FEED -> {
+                case Constants.LINE_FEED,
+                        Constants.LINE_SEPARATOR,
+                        Constants.PARAGRAPH_SEPARATOR -> {
                     lineNumber++;
                     columnNumber = 1;
                 }
