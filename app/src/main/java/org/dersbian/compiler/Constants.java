@@ -56,4 +56,16 @@ public final class Constants {
 
     /** Radix used for {@code #x} hexadecimal literals. */
     public static final int RADIX_HEX = 16;
+
+    /** Numero fisso di cifre esadecimali richieste da una escape sequence {@code \xHH}. */
+    public static final int HEX_ESCAPE_DIGIT_COUNT = 2;
+
+    /** Character constant for double quote ("). */
+    public static final int CHAR_DOUBLE_QUOTE = '"';
+
+    /** Character constant for single quote ('). */
+    public static final int CHAR_SINGLE_QUOTE = '\'';
+
+    /** Character constant for backslash (\). */
+    public static final int CHAR_BACKSLASH = '\\';
 }

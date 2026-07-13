@@ -47,7 +47,6 @@ public class Lexer {
      *
      * @return the result containing the produced tokens and collected errors.
      */
-    @SuppressWarnings("PMD.CyclomaticComplexity")
     public LexerResult tokenize() {
         while (!cursor.isAtEnd()) {
             skipWhitespace();
@@ -75,15 +74,16 @@ public class Lexer {
                         scanOperator();
                 case '(', '[', '{', ')', ']', '}' -> scanDeliminter();
                 case '#' -> scanRadixLiteral();
+                case '"' -> scanStringLiteral();
+                case '\'' -> scanCharLiteral();
                 default -> {
                     if (CodePoints.isIdentifierStart(codePoint)) {
                         scanIdentifierOrKeyword();
                     } else {
-                        // TODO: wire up the remaining lexer rules (literals, comments...).
-                        // Right now any character that isn't an operator start or
-                        // an identifier start is silently skipped instead of being reported: this
-                        // is not wired to `errors` yet, so invalid input currently tokenizes
-                        // without complaint.
+                        // TODO: wire up the remaining lexer rules (comments...).
+                        // Right now any character that isn't an operator start, a delimiter,
+                        // a radix/string/char literal start or an identifier start is silently
+                        // skipped instead of being reported.
                         // Codepoints (not raw chars) are consumed one at a time so that surrogate
                         // pairs are never split in half, and UTF-8 byte / code point offsets stay
                         // in sync.
@@ -171,7 +171,7 @@ public class Lexer {
         tokens.add(Token.create(sourceId, kind, span));
     }
 
-    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.CognitiveComplexity"})
+    @SuppressWarnings("PMD.CognitiveComplexity")
     private TokenKind.Simple.Operator consumeOperatorKind() {
         final int codePoint = cursor.advance();
 
@@ -353,6 +353,323 @@ public class Lexer {
                             || (codePoint >= 'A' && codePoint <= 'F');
             default -> false;
         };
+    }
+
+    // ------------------------------------------------------------------
+    // String / char literals
+    // ------------------------------------------------------------------
+
+    /**
+     * Scansiona un letterale stringa delimitato da doppi apici, gestendo escape sequence e
+     * caratteri Unicode multi-byte. In caso di stringa non terminata prima della fine della riga o
+     * della sorgente, viene riportato {@link ErrorCode#E0005}, ma il token viene comunque prodotto
+     * con il contenuto accumulato fino a quel punto, per consentire il recovery del parser.
+     */
+    private void scanStringLiteral() {
+        final SourceLocation start = cursor.currentLocation();
+        cursor.advance(); // consuma il doppio apice di apertura
+
+        final StringBuilder builder = new StringBuilder();
+        boolean terminated = false;
+
+        while (!cursor.isAtEnd()) {
+            final int codePoint = cursor.peekCodePoint();
+            if (codePoint == Constants.CHAR_DOUBLE_QUOTE) { // was: codePoint == '"'
+                cursor.advance();
+                terminated = true;
+                break;
+            }
+            if (isLineTerminator(codePoint)) {
+                break;
+            }
+            if (codePoint == Constants.CHAR_BACKSLASH) { // was: codePoint == '\\'
+                consumeEscapeSequence(builder);
+            } else {
+                builder.appendCodePoint(codePoint);
+                cursor.advance();
+            }
+        }
+
+        if (!terminated) {
+            reportError(ErrorCode.E0005, start, "Stringa letterale non terminata.", null);
+        }
+
+        final Span span = Span.create(start, cursor.currentLocation());
+        tokens.add(Token.create(sourceId, new TokenKind.StringLiteral(builder.toString()), span));
+    }
+
+    /**
+     * ASCII/Unicode sia escape sequence (incluso {@code \u005cu{XXXX}}). Riporta {@link
+     * ErrorCode#E0006} se il letterale non è correttamente terminato con un singolo carattere.
+     */
+    private void scanCharLiteral() {
+        final SourceLocation start = cursor.currentLocation();
+        cursor.advance(); // consuma l'apice di apertura
+
+        final StringBuilder builder = new StringBuilder();
+
+        if (cursor.isAtEnd() || isLineTerminator(cursor.peekCodePoint())) {
+            reportError(ErrorCode.E0006, start, "Carattere letterale non terminato.", null);
+        } else if (cursor.peekCodePoint() == Constants.CHAR_SINGLE_QUOTE) {
+            cursor.advance();
+            reportError(ErrorCode.E0006, start, "Carattere letterale vuoto.", null);
+        } else {
+            consumeCharLiteralBody(builder, start);
+        }
+
+        final Span span = Span.create(start, cursor.currentLocation());
+        tokens.add(Token.create(sourceId, new TokenKind.CharLiteral(builder.toString()), span));
+    }
+
+    /**
+     * Consumes the body of a char literal (after the opening quote has been consumed), including
+     * the closing quote. Reports an error if the literal contains more than one character or is not
+     * properly terminated.
+     */
+    private void consumeCharLiteralBody(final StringBuilder builder, final SourceLocation start) {
+        consumeSingleCharOrEscape(builder);
+        if (isClosingQuote()) {
+            cursor.advance();
+        } else {
+            skipToClosingQuoteOrLineEnd();
+            reportError(
+                    ErrorCode.E0006,
+                    start,
+                    "Carattere letterale non terminato o con più di un carattere.",
+                    null);
+        }
+    }
+
+    /** Consumes exactly one logical character or escape sequence into {@code builder}. */
+    private void consumeSingleCharOrEscape(final StringBuilder builder) {
+        if (cursor.peekCodePoint() == Constants.CHAR_BACKSLASH) {
+            consumeEscapeSequence(builder);
+        } else {
+            builder.appendCodePoint(cursor.peekCodePoint());
+            cursor.advance();
+        }
+    }
+
+    /**
+     * Returns {@code true} if the cursor is not at end and the current code point is a single-quote
+     * closing delimiter.
+     */
+    private boolean isClosingQuote() {
+        return !cursor.isAtEnd() && cursor.peekCodePoint() == Constants.CHAR_SINGLE_QUOTE;
+    }
+
+    /**
+     * Advances past any extra characters until the closing single-quote or a line terminator is
+     * reached, then consumes the closing quote if present.
+     */
+    private void skipToClosingQuoteOrLineEnd() {
+        while (!cursor.isAtEnd()
+                && cursor.peekCodePoint() != Constants.CHAR_SINGLE_QUOTE
+                && !isLineTerminator(cursor.peekCodePoint())) {
+            cursor.advance();
+        }
+        if (isClosingQuote()) {
+            cursor.advance();
+        }
+    }
+
+    /**
+     * Consuma e risolve una escape sequence che inizia con {@code '\'} sotto il cursore,
+     * aggiungendo il/i code point risultanti a {@code builder}. In caso di sequenza non
+     * riconosciuta o malformata viene riportato {@link ErrorCode#E0007}.
+     */
+    private void consumeEscapeSequence(final StringBuilder builder) {
+        final SourceLocation escapeStart = cursor.currentLocation();
+        cursor.advance(); // consuma '\'
+
+        if (cursor.isAtEnd()) {
+            reportError(ErrorCode.E0007, escapeStart, "Sequenza di escape non terminata.", null);
+            return;
+        }
+
+        final int codePoint = cursor.peekCodePoint();
+        switch (codePoint) {
+            case 'n' -> {
+                builder.append('\n');
+                cursor.advance();
+            }
+            case 'r' -> {
+                builder.append('\r');
+                cursor.advance();
+            }
+            case 't' -> {
+                builder.append('\t');
+                cursor.advance();
+            }
+            case '\\' -> {
+                builder.append('\\');
+                cursor.advance();
+            }
+            case '\'' -> {
+                builder.append('\'');
+                cursor.advance();
+            }
+            case '"' -> {
+                builder.append('"');
+                cursor.advance();
+            }
+            case '0' -> {
+                builder.append('\0');
+                cursor.advance();
+            }
+            case 'x' -> consumeHexEscape(builder, escapeStart);
+            case 'u' -> consumeUnicodeEscape(builder, escapeStart);
+            default -> {
+                reportError(
+                        ErrorCode.E0007,
+                        escapeStart,
+                        "Sequenza di escape non valida: '\\" + Character.toString(codePoint) + "'.",
+                        null);
+                // recovery: consuma comunque il carattere per evitare loop infiniti.
+                builder.appendCodePoint(codePoint);
+                cursor.advance();
+            }
+        }
+    }
+
+    /**
+     * Consuma una escape sequence Unicode nel formato {@code \u005cu{XXXX}}, dove {@code XXXX} è
+     * una sequenza di cifre esadecimali che rappresenta un code point Unicode valido. Il cursore,
+     * al momento della chiamata, deve trovarsi sulla 'u' che segue il backslash.
+     */
+    private void consumeUnicodeEscape(
+            final StringBuilder builder, final SourceLocation escapeStart) {
+
+        cursor.advance(); // consume 'u'
+
+        boolean valid = expectOpenBrace(escapeStart);
+
+        String hex = null;
+        if (valid) {
+            hex = consumeHexDigits();
+            valid = expectClosingBrace(escapeStart, hex);
+        }
+
+        if (valid) {
+            appendUnicodeCodePoint(builder, escapeStart, hex);
+        }
+    }
+
+    private boolean expectOpenBrace(final SourceLocation escapeStart) {
+        boolean isValid = true;
+
+        if (cursor.isAtEnd() || cursor.peekCodePoint() != '{') {
+            reportError(
+                    ErrorCode.E0007,
+                    escapeStart,
+                    "Sequenza di escape unicode non valida: atteso '{' dopo \\u.",
+                    null);
+            isValid = false;
+        } else {
+            cursor.advance(); // consume '{'
+        }
+
+        return isValid;
+    }
+
+    private String consumeHexDigits() {
+        final StringBuilder hex = new StringBuilder();
+        while (!cursor.isAtEnd()
+                && cursor.peekCodePoint() != '}'
+                && isHexDigit(cursor.peekCodePoint())) {
+            hex.appendCodePoint(cursor.peekCodePoint());
+            cursor.advance();
+        }
+        return hex.toString();
+    }
+
+    private boolean expectClosingBrace(final SourceLocation escapeStart, final String hex) {
+        boolean result = true;
+
+        if (hex.isEmpty()) {
+            reportError(
+                    ErrorCode.E0007,
+                    escapeStart,
+                    "Sequenza di escape unicode senza cifre esadecimali.",
+                    null);
+            result = false;
+        } else if (cursor.isAtEnd() || cursor.peekCodePoint() != '}') {
+            reportError(
+                    ErrorCode.E0007,
+                    escapeStart,
+                    "Sequenza di escape unicode non terminata: manca '}'.",
+                    null);
+            result = false;
+        } else {
+            cursor.advance(); // consume '}'
+        }
+
+        return result;
+    }
+
+    private void appendUnicodeCodePoint(
+            final StringBuilder builder, final SourceLocation escapeStart, final String hex) {
+        try {
+            final int codePointValue = Integer.parseInt(hex, 16);
+            if (Character.isValidCodePoint(codePointValue)) {
+                builder.appendCodePoint(codePointValue);
+            } else {
+                reportError(
+                        ErrorCode.E0007,
+                        escapeStart,
+                        "Code point unicode non valido: U+" + hex,
+                        null);
+            }
+        } catch (final NumberFormatException e) {
+            reportError(
+                    ErrorCode.E0007,
+                    escapeStart,
+                    "Valore esadecimale non valido nella sequenza di escape unicode.",
+                    null);
+        }
+    }
+
+    /**
+     * Consuma una escape sequence esadecimale a due cifre nel formato {@code \xHH}, dove {@code HH}
+     * rappresenta un valore di byte compreso tra {@code 0x00} e {@code 0xFF}. Il cursore, al
+     * momento della chiamata, deve trovarsi sulla 'x' che segue il backslash. In caso di numero di
+     * cifre diverso da {@link Constants#HEX_ESCAPE_DIGIT_COUNT} viene riportato {@link
+     * ErrorCode#E0007}.
+     */
+    private void consumeHexEscape(final StringBuilder builder, final SourceLocation escapeStart) {
+        cursor.advance(); // consuma 'x'
+
+        final StringBuilder hex = new StringBuilder();
+        while (hex.length() < Constants.HEX_ESCAPE_DIGIT_COUNT
+                && !cursor.isAtEnd()
+                && isHexDigit(cursor.peekCodePoint())) {
+            hex.appendCodePoint(cursor.peekCodePoint());
+            cursor.advance();
+        }
+
+        if (hex.length() != Constants.HEX_ESCAPE_DIGIT_COUNT) {
+            reportError(
+                    ErrorCode.E0007,
+                    escapeStart,
+                    "Sequenza di escape esadecimale non valida: attese esattamente "
+                            + Constants.HEX_ESCAPE_DIGIT_COUNT
+                            + " cifre esadecimali dopo \\x.",
+                    null);
+            return;
+        }
+
+        final int value = Integer.parseInt(hex.toString(), 16);
+        builder.appendCodePoint(value);
+    }
+
+    private static boolean isLineTerminator(final int codePoint) {
+        return codePoint == Constants.LINE_FEED || codePoint == Constants.CARRIAGE_RETURN;
+    }
+
+    private static boolean isHexDigit(final int codePoint) {
+        return (codePoint >= '0' && codePoint <= '9')
+                || (codePoint >= 'a' && codePoint <= 'f')
+                || (codePoint >= 'A' && codePoint <= 'F');
     }
 
     private void reportError(
