@@ -80,4 +80,7 @@ public final class Constants {
 
     /** Maximum hex digit count for a \U Unicode escape (e.g. \U{0010FFFF}). */
     public static final int UNICODE_ESCAPE_LONG_DIGIT_COUNT = 8;
+
+    /** Character constant for asterisk (*). */
+    public static final char CHAR_ASTERISK = '*';
 }

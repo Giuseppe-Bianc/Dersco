@@ -78,6 +78,6 @@ class LexerTest {
 
         // Should report exactly 1 error of code E0008
         Assertions.assertEquals(1, result.errors().size());
-        Assertions.assertEquals(ErrorCode.E0008, result.errors().get(0).code().orElse(null));
+        Assertions.assertEquals(ErrorCode.E0001, result.errors().get(0).code().orElse(null));
     }
 }

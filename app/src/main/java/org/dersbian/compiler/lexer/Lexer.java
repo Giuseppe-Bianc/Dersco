@@ -55,23 +55,9 @@ public class Lexer {
             }
             final int codePoint = cursor.peekCodePoint();
             switch (codePoint) {
-                case '+',
-                        '-',
-                        '*',
-                        '/',
-                        '=',
-                        '!',
-                        '<',
-                        '>',
-                        '|',
-                        '&',
-                        '%',
-                        '^',
-                        ':',
-                        ',',
-                        '.',
-                        '~' ->
+                case '+', '-', '*', '=', '!', '<', '>', '|', '&', '%', '^', ':', ',', '.', '~' ->
                         scanOperator();
+                case '/' -> scanSlashOrComment();
                 case '(', '[', '{', ')', ']', '}' -> scanDelimiter();
                 case '#' -> scanRadixLiteral();
                 case '"' -> scanStringLiteral();
@@ -80,17 +66,14 @@ public class Lexer {
                     if (CodePoints.isIdentifierStart(codePoint)) {
                         scanIdentifierOrKeyword();
                     } else {
-                        // TODO: wire up the remaining lexer rules (numbesr, comments...).
-                        // Right now any character that isn't an operator start, a delimiter,
-                        // a radix/string/char literal start or an identifier start is silently
-                        // skipped instead of being reported.
+                        // TODO: wire up the remaining lexer rules (numbers...).
                         // Codepoints (not raw chars) are consumed one at a time so that surrogate
                         // pairs are never split in half, and UTF-8 byte / code point offsets stay
                         // in sync.
                         final SourceLocation start = cursor.currentLocation();
                         final int ecodePoint = cursor.advance();
                         reportError(
-                                ErrorCode.E0008,
+                                ErrorCode.E0001,
                                 start,
                                 "Unrecognized character: '" + Character.toString(ecodePoint) + "'",
                                 null);
@@ -198,10 +181,6 @@ public class Lexer {
                     cursor.match('=')
                             ? TokenKind.Simple.Operator.STAR_EQUAL
                             : TokenKind.Simple.Operator.STAR;
-            case '/' ->
-                    cursor.match('=')
-                            ? TokenKind.Simple.Operator.SLASH_EQUAL
-                            : TokenKind.Simple.Operator.SLASH;
             case '=' ->
                     cursor.match('=')
                             ? TokenKind.Simple.Operator.EQUAL_EQUAL
@@ -256,6 +235,89 @@ public class Lexer {
                                     + codePoint
                                     + "'");
         };
+    }
+
+    // ------------------------------------------------------------------
+    // Comments
+    // ------------------------------------------------------------------
+
+    /**
+     * Determines whether the {@code '/'} under the cursor starts a line comment ({@code //}), a
+     * multi-line comment ({@code /*} ... {@code *}&#47;), the {@code /=} operator, or the plain
+     * {@code /} operator, and dispatches to the appropriate scanning routine.
+     *
+     * <p>Precondition: {@link SourceCursor#peekCodePoint()} must be {@code '/'}.
+     */
+    private void scanSlashOrComment() {
+        final SourceLocation start = cursor.currentLocation();
+        cursor.advance(); // consume the first '/'
+
+        if (cursor.match('/')) {
+            scanLineComment(start);
+        } else if (cursor.match('*')) {
+            scanMultilineComment(start);
+        } else {
+            final TokenKind.Simple.Operator kind =
+                    cursor.match('=')
+                            ? TokenKind.Simple.Operator.SLASH_EQUAL
+                            : TokenKind.Simple.Operator.SLASH;
+            final Span span = Span.create(start, cursor.currentLocation());
+            tokens.add(Token.create(sourceId, kind, span));
+        }
+    }
+
+    /**
+     * Scans a single-line comment ({@code // ...}) starting right after the opening {@code //} has
+     * already been consumed by the caller. Consumes code points until a line terminator (excluded)
+     * or the end of the source is reached, then appends a {@link TokenKind.Simple.Special#COMMENT}
+     * token spanning from {@code start} to the current position.
+     *
+     * @param start the location of the first {@code '/'} of the comment
+     */
+    private void scanLineComment(final SourceLocation start) {
+        while (!cursor.isAtEnd() && !isLineTerminator(cursor.peekCodePoint())) {
+            cursor.advance();
+        }
+        final Span span = Span.create(start, cursor.currentLocation());
+        tokens.add(Token.create(sourceId, TokenKind.Simple.Special.COMMENT, span));
+    }
+
+    /**
+     * Scans a multi-line comment ({@code /*} ... {@code *}&#47;) starting right after the opening
+     * {@code /*} has already been consumed by the caller. Consumes code points (including line
+     * terminators, so multi-line comments may span several source lines) until the closing {@code
+     * *}&#47; is found or the end of the source is reached.
+     *
+     * <p>Nesting is not supported: the first {@code *}&#47; sequence encountered closes the
+     * comment, matching the semantics described by {@link ErrorCode#E0008}.
+     *
+     * <p>If the end of the source is reached before a closing {@code *}&#47; is found, {@link
+     * ErrorCode#E0008} is reported, but a {@link TokenKind.Simple.Special#MULTILINE_COMMENT} token
+     * is still produced (spanning up to the end of the source) to allow the parser to recover.
+     *
+     * @param start the location of the first {@code '/'} of the comment
+     */
+    private void scanMultilineComment(final SourceLocation start) {
+        boolean terminated = false;
+
+        while (!cursor.isAtEnd()) {
+            if (cursor.peekCodePoint() == Constants.CHAR_ASTERISK) {
+                cursor.advance();
+                if (cursor.match('/')) {
+                    terminated = true;
+                    break;
+                }
+            } else {
+                cursor.advance();
+            }
+        }
+
+        if (!terminated) {
+            reportError(ErrorCode.E0008, start, "Unterminated multi-line comment.", null);
+        }
+
+        final Span span = Span.create(start, cursor.currentLocation());
+        tokens.add(Token.create(sourceId, TokenKind.Simple.Special.MULTILINE_COMMENT, span));
     }
 
     private void scanRadixLiteral() {
