@@ -12,7 +12,9 @@ import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.lexer.token.Token;
 import org.dersbian.compiler.lexer.token.TokenKind;
+import org.dersbian.compiler.lexer.token.number.INumber;
 import org.dersbian.compiler.lexer.token.parser.numeric.BaseParsers;
+import org.dersbian.compiler.lexer.token.parser.numeric.NumericParsers;
 import org.dersbian.compiler.location.LineTracker;
 
 /** A simple lexer for tokenizing Dersco source code. */
@@ -55,21 +57,34 @@ public class Lexer {
             }
             final int codePoint = cursor.peekCodePoint();
             switch (codePoint) {
-                case '+', '-', '*', '=', '!', '<', '>', '|', '&', '%', '^', ':', ',', '.', '~' ->
-                        scanOperator();
+                case '+',
+                        '-',
+                        '*',
+                        '=',
+                        '!',
+                        '<',
+                        '>',
+                        '|',
+                        '&',
+                        '%',
+                        '^',
+                        ':',
+                        ',',
+                        '.',
+                        '~',
+                        ';' ->
+                        scanOperatorOrNumber();
                 case '/' -> scanSlashOrComment();
                 case '(', '[', '{', ')', ']', '}' -> scanDelimiter();
                 case '#' -> scanRadixLiteral();
                 case '"' -> scanStringLiteral();
                 case '\'' -> scanCharLiteral();
                 default -> {
-                    if (CodePoints.isIdentifierStart(codePoint)) {
+                    if (Character.isDigit(codePoint)) {
+                        scanNumber();
+                    } else if (CodePoints.isIdentifierStart(codePoint)) {
                         scanIdentifierOrKeyword();
                     } else {
-                        // TODO: wire up the remaining lexer rules (numbers...).
-                        // Codepoints (not raw chars) are consumed one at a time so that surrogate
-                        // pairs are never split in half, and UTF-8 byte / code point offsets stay
-                        // in sync.
                         final SourceLocation start = cursor.currentLocation();
                         final int ecodePoint = cursor.advance();
                         reportError(
@@ -153,15 +168,131 @@ public class Lexer {
      * <p>Precondition: {@link SourceCursor#peekCodePoint()} must correspond to one of the
      * characters handled by the dedicated {@code case} branch for operators in {@link #tokenize()}.
      */
-    private void scanOperator() {
+    @SuppressWarnings({"PMD.AvoidLiteralsInIfCondition", "PMD.OnlyOneReturn"})
+    private void scanOperatorOrNumber() {
         final SourceLocation start = cursor.currentLocation();
-        final TokenKind.Simple.Operator kind = consumeOperatorKind();
+        final int codePoint = cursor.peekCodePoint();
+
+        // Handle '.' specially - could be DOT operator or start of numeric literal like .5
+        if (codePoint == '.') {
+            cursor.advance();
+            if (!cursor.isAtEnd() && Character.isDigit(cursor.peekCodePoint())) {
+                // This is a numeric literal starting with '.' (e.g., .5, .123e10)
+                scanNumericLiteralFromFraction(start);
+                return;
+            }
+            // Just a DOT operator
+            final Span span = Span.create(start, cursor.currentLocation());
+            tokens.add(Token.create(sourceId, TokenKind.Simple.Operator.DOT, span));
+            return;
+        }
+
+        final TokenKind.Simple kind = consumeOperatorKind();
         final Span span = Span.create(start, cursor.currentLocation());
         tokens.add(Token.create(sourceId, kind, span));
     }
 
+    @SuppressWarnings({
+        "PMD.CognitiveComplexity",
+        "PMD.NPathComplexity",
+    })
+    private void scanNumber() {
+        final SourceLocation start = cursor.currentLocation();
+        final StringBuilder literal = new StringBuilder();
+
+        consumeDigits(literal);
+        consumeOptionalFraction(literal);
+        finishNumericLiteral(start, literal);
+    }
+
+    /**
+     * Scans a numeric literal that started with '.', where the '.' has already been consumed.
+     * Handles patterns like .5, .123, .5e10, .5f, etc.
+     */
+    private void scanNumericLiteralFromFraction(final SourceLocation start) {
+        final StringBuilder literal = new StringBuilder(".");
+
+        // At least one digit is guaranteed by the caller
+        consumeDigits(literal);
+        finishNumericLiteral(start, literal);
+    }
+
+    /** Scans an optional numeric suffix into the provided builder. */
+    @SuppressWarnings("PMD.ShortVariable")
+    private void scanNumericSuffix(final StringBuilder literal) {
+        if (cursor.isAtEnd()) {
+            return;
+        }
+
+        final int cp = cursor.peekCodePoint();
+
+        // Single-char suffixes: u, U, f, F, d, D
+        // Multi-char suffixes: i8, i16, i32, u8, u16, u32 (case-insensitive)
+        if ("uUfFdD".indexOf(cp) >= 0) {
+            literal.appendCodePoint(cp);
+            cursor.advance();
+        } else if (cp == 'i' || cp == 'I' || cp == 'u' || cp == 'U') {
+            literal.appendCodePoint(cp);
+            cursor.advance();
+
+            if (!cursor.isAtEnd() && Character.isDigit(cursor.peekCodePoint())) {
+                scanSuffixDigits(literal);
+            }
+        }
+    }
+
+    private void scanSuffixDigits(final StringBuilder literal) {
+        // Consume 1-2 digits for type width (8, 16, 32)
+        int digitCount = 0;
+        while (!cursor.isAtEnd() && Character.isDigit(cursor.peekCodePoint()) && digitCount < 2) {
+            literal.appendCodePoint(cursor.peekCodePoint());
+            cursor.advance();
+            digitCount++;
+        }
+    }
+
+    private void consumeDigits(final StringBuilder literal) {
+        while (!cursor.isAtEnd() && Character.isDigit(cursor.peekCodePoint())) {
+            literal.appendCodePoint(cursor.peekCodePoint());
+            cursor.advance();
+        }
+    }
+
+    private void consumeOptionalFraction(final StringBuilder literal) {
+        if (!cursor.isAtEnd() && cursor.peekCodePoint() == '.') {
+            literal.appendCodePoint(cursor.peekCodePoint());
+            cursor.advance();
+
+            consumeDigits(literal);
+        }
+    }
+
+    private void consumeOptionalExponent(final StringBuilder literal) {
+        if (!cursor.isAtEnd() && (cursor.peekCodePoint() == 'e' || cursor.peekCodePoint() == 'E')) {
+            literal.appendCodePoint(cursor.peekCodePoint());
+            cursor.advance();
+
+            if (!cursor.isAtEnd()
+                    && (cursor.peekCodePoint() == '+' || cursor.peekCodePoint() == '-')) {
+                literal.appendCodePoint(cursor.peekCodePoint());
+                cursor.advance();
+            }
+
+            consumeDigits(literal);
+        }
+    }
+
+    private void finishNumericLiteral(final SourceLocation start, final StringBuilder literal) {
+        consumeOptionalExponent(literal);
+        scanNumericSuffix(literal);
+
+        final Span span = Span.create(start, cursor.currentLocation());
+        final INumber value = NumericParsers.parseNumber(literal.toString());
+        tokens.add(Token.create(sourceId, new TokenKind.Numeric(value), span));
+    }
+
     @SuppressWarnings("PMD.CognitiveComplexity")
-    private TokenKind.Simple.Operator consumeOperatorKind() {
+    private TokenKind.Simple consumeOperatorKind() {
         final int codePoint = cursor.advance();
 
         return switch (codePoint) {
@@ -227,8 +358,8 @@ public class Lexer {
                             : TokenKind.Simple.Operator.XOR;
             case ':' -> TokenKind.Simple.Operator.COLON;
             case ',' -> TokenKind.Simple.Operator.COMMA;
-            case '.' -> TokenKind.Simple.Operator.DOT;
             case '~' -> TokenKind.Simple.Operator.BITWISE_NOT;
+            case ';' -> TokenKind.Simple.Special.SEMICOLON;
             default ->
                     throw new IllegalStateException(
                             "Unreachable: unexpected operator start code point '"

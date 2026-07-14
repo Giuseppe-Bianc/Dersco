@@ -58,7 +58,8 @@ public final class NumericParsers {
     }
 
     /**
-     * Attempts to strip a three-character type suffix from the body.
+     * Attempts to strip a three-character type suffix from the body (case-insensitive, come
+     * previsto dal pattern {@code [iIuU](?:8|16|32)}).
      *
      * @param body the current numeric literal body
      * @return a {@link SuffixResult}, or {@code null} if not found
@@ -69,10 +70,11 @@ public final class NumericParsers {
             found = null;
         } else {
             final String tail3 = body.substring(body.length() - MIN_TAIL3_LENGTH);
-            if ("i32".equals(tail3)
-                    || "u32".equals(tail3)
-                    || "i16".equals(tail3)
-                    || "u16".equals(tail3)) {
+            final String normalized = tail3.toLowerCase(Locale.ROOT);
+            if ("i32".equals(normalized)
+                    || "u32".equals(normalized)
+                    || "i16".equals(normalized)
+                    || "u16".equals(normalized)) {
                 found =
                         new SuffixResult(
                                 body.substring(0, body.length() - MIN_TAIL3_LENGTH), tail3);
@@ -84,7 +86,7 @@ public final class NumericParsers {
     }
 
     /**
-     * Attempts to strip a two-character type suffix from the body.
+     * Attempts to strip a two-character type suffix from the body (case-insensitive).
      *
      * @param body the current numeric literal body
      * @return a {@link SuffixResult}, or {@code null} if not found
@@ -95,7 +97,8 @@ public final class NumericParsers {
             found = null;
         } else {
             final String tail2 = body.substring(body.length() - MIN_TAIL2_LENGTH);
-            if ("i8".equals(tail2) || "u8".equals(tail2)) {
+            final String normalized = tail2.toLowerCase(Locale.ROOT);
+            if ("i8".equals(normalized) || "u8".equals(normalized)) {
                 found =
                         new SuffixResult(
                                 body.substring(0, body.length() - MIN_TAIL2_LENGTH), tail2);
