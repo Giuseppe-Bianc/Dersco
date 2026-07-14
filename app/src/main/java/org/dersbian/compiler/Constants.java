@@ -83,4 +83,7 @@ public final class Constants {
 
     /** Character constant for asterisk (*). */
     public static final char CHAR_ASTERISK = '*';
+
+    /** Rough character-per-token estimate used to presize the token list and avoid resizing. */
+    public static final int ESTIMATED_CHARS_PER_TOKEN = 5;
 }

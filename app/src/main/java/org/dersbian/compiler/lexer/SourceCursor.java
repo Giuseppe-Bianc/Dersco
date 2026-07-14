@@ -85,6 +85,34 @@ public final class SourceCursor {
      * point count. Line terminators {@code \n}, {@code \r} and {@code \r\n} are all normalized to a
      * single line break.
      *
+     * <h2>Surrogate-pair handling</h2>
+     *
+     * <p>UTF-16 encodes code points above {@code U+FFFF} as a pair of {@code char} units: a high
+     * surrogate ({@code 0xD800}..{@code 0xDBFF}) followed by a low surrogate ({@code
+     * 0xDC00}..{@code 0xDFFF}). The Java {@link String} type stores text as a sequence of UTF-16
+     * code units, so a single visible character can occupy two {@code char} slots.
+     *
+     * <p>This method is the single point that crosses that boundary. It must:
+     *
+     * <ul>
+     *   <li>Read the code point via {@link String#codePointAt(int)}, which decodes a lone BMP code
+     *       unit as itself and a high surrogate followed by a low surrogate as a single
+     *       supplementary code point.
+     *   <li>Advance {@link #position} by {@link Character#charCount(int)}, which is {@code 1} for
+     *       BMP code points and {@code 2} for supplementary code points. Never advance by {@code 1}
+     *       unconditionally; doing so would split a surrogate pair and leave {@code position}
+     *       pointing at the low surrogate half on the next call.
+     *   <li>Increment {@link #codePointOffset} and {@link #utf8Offset} by <em>one</em> each (code
+     *       points and UTF-8 bytes are counted per logical character, not per UTF-16 code unit).
+     *       The UTF-8 byte length comes from {@link CodePoints#utf8ByteLength(int)}.
+     * </ul>
+     *
+     * <p>Malformed input (an unpaired high or low surrogate) is treated by {@link
+     * String#codePointAt(int)} as a single code-unit value, so the cursor still moves forward, but
+     * the resulting {@link SourceLocation} will reference an invalid code point. The lexer is
+     * expected to surface this through {@link ErrorCode#E0001} at the call site; this method does
+     * not throw.
+     *
      * @return the consumed code point, or {@code -1} at end of source.
      */
     public int advance() {

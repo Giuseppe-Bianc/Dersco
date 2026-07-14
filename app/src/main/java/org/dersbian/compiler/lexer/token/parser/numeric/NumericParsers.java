@@ -58,8 +58,8 @@ public final class NumericParsers {
     }
 
     /**
-     * Attempts to strip a three-character type suffix from the body (case-insensitive, come
-     * previsto dal pattern {@code [iIuU](?:8|16|32)}).
+     * Attempts to strip a three-character type suffix from the body (case-insensitive, matching the
+     * pattern {@code [iIuU](?:8|16|32)}).
      *
      * @param body the current numeric literal body
      * @return a {@link SuffixResult}, or {@code null} if not found

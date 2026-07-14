@@ -25,7 +25,7 @@ public class Lexer {
     @Getter private final LineTracker lineTracker;
 
     /** Collected tokens produced by the lexer. */
-    private final List<Token> tokens = new ArrayList<>();
+    private final List<Token> tokens;
 
     /** Collected lexical and syntax errors. */
     private final List<CompileError> errors = new ArrayList<>();
@@ -40,8 +40,13 @@ public class Lexer {
     public Lexer(final Path filePath, final String source) {
         this.sourceId = new SourceId.FilePath(filePath);
         final String normalized = CodePoints.stripByteOrderMark(source);
+        this.tokens = new ArrayList<>(estimatedTokenCapacity(normalized));
         this.cursor = new SourceCursor(normalized);
         this.lineTracker = LineTracker.fromText(normalized);
+    }
+
+    private static int estimatedTokenCapacity(final String source) {
+        return (source.length() / Constants.ESTIMATED_CHARS_PER_TOKEN) + 1;
     }
 
     /**
@@ -192,10 +197,6 @@ public class Lexer {
         tokens.add(Token.create(sourceId, kind, span));
     }
 
-    @SuppressWarnings({
-        "PMD.CognitiveComplexity",
-        "PMD.NPathComplexity",
-    })
     private void scanNumber() {
         final SourceLocation start = cursor.currentLocation();
         final StringBuilder literal = new StringBuilder();
@@ -228,16 +229,16 @@ public class Lexer {
 
         // Single-char suffixes: u, U, f, F, d, D
         // Multi-char suffixes: i8, i16, i32, u8, u16, u32 (case-insensitive)
-        if ("uUfFdD".indexOf(cp) >= 0) {
-            literal.appendCodePoint(cp);
-            cursor.advance();
-        } else if (cp == 'i' || cp == 'I' || cp == 'u' || cp == 'U') {
+        if (cp == 'i' || cp == 'I' || cp == 'u' || cp == 'U') {
             literal.appendCodePoint(cp);
             cursor.advance();
 
             if (!cursor.isAtEnd() && Character.isDigit(cursor.peekCodePoint())) {
                 scanSuffixDigits(literal);
             }
+        } else if ("fFdD".indexOf(cp) >= 0) {
+            literal.appendCodePoint(cp);
+            cursor.advance();
         }
     }
 
