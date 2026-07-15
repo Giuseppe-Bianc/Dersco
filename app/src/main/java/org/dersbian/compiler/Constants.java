@@ -48,10 +48,10 @@ public final class Constants {
     /** Number of bytes used by a 4-byte UTF-8 encoding. */
     public static final int UTF8_FOUR_BYTE_LENGTH = 4;
 
-    /** Letterale booleano "true". */
+    /** Boolean literal "true". */
     public static final String TRUE_LITERAL = "true";
 
-    /** Letterale booleano "false". */
+    /** Boolean literal "false". */
     public static final String FALSE_LITERAL = "false";
 
     /** Radix used for {@code #b} binary literals. */
@@ -63,7 +63,7 @@ public final class Constants {
     /** Radix used for {@code #x} hexadecimal literals. */
     public static final int RADIX_HEX = 16;
 
-    /** Numero fisso di cifre esadecimali richieste da una escape sequence {@code \xHH}. */
+    /** Fixed number of hex digits required by a {@code \xHH} escape sequence. */
     public static final int HEX_ESCAPE_DIGIT_COUNT = 2;
 
     /** Character constant for double quote ("). */

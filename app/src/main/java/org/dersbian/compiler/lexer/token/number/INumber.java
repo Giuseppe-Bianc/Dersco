@@ -1,10 +1,10 @@
 package org.dersbian.compiler.lexer.token.number;
 
-/** Rappresenta un valore numerico letterale. */
+/** Represents a numeric literal value. */
 @SuppressWarnings({"AvoidCommonTypeNames", "checkstyle:AbbreviationAsWordInName"})
 public sealed interface INumber {
 
-    /** Valore intero. */
+    /** Integer value. */
     record IntegerValue(long value, String suffix) implements INumber {
 
         @Override
@@ -13,7 +13,7 @@ public sealed interface INumber {
         }
     }
 
-    /** Valore in virgola mobile. */
+    /** Floating-point value. */
     record FloatingValue(double value, String suffix) implements INumber {
 
         @Override

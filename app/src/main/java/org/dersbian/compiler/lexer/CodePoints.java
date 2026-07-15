@@ -11,7 +11,7 @@ import org.dersbian.compiler.lexer.token.TokenKind;
  */
 public final class CodePoints {
 
-    /** Mappa statica, immutabile, di tutte le keyword e type-keyword del linguaggio. */
+    /** Static, immutable map of all keywords and type-keywords of the language. */
     private static final Map<String, TokenKind.Simple> KEYWORDS =
             Map.ofEntries(
                     Map.entry("fun", TokenKind.Simple.Keyword.FUN),
@@ -81,7 +81,9 @@ public final class CodePoints {
         return result;
     }
 
-    /** Returns {@code true} se il code point rientra nell'intervallo ASCII (un solo byte UTF-8). */
+    /**
+     * Returns {@code true} if the code point falls within the ASCII range (a single UTF-8 byte).
+     */
     public static boolean isAscii(final int codePoint) {
         return Character.isValidCodePoint(codePoint) && codePoint < Constants.UTF8_ONE_BYTE_LIMIT;
     }
@@ -98,8 +100,8 @@ public final class CodePoints {
     }
 
     /**
-     * Returns {@code true} se il code point può iniziare un identificatore: lettera Unicode
-     * (secondo {@link Character#isUnicodeIdentifierStart(int)}) oppure underscore {@code '_'}.
+     * Returns {@code true} if the code point can start an identifier: a Unicode letter (according
+     * to {@link Character#isUnicodeIdentifierStart(int)}) or an underscore {@code '_'}.
      */
     public static boolean isIdentifierStart(final int codePoint) {
         return codePoint != -1
@@ -107,9 +109,9 @@ public final class CodePoints {
     }
 
     /**
-     * Returns {@code true} se il code point può proseguire un identificatore già iniziato: lettere,
-     * cifre e altri caratteri Unicode "identifier part" (secondo {@link
-     * Character#isUnicodeIdentifierPart(int)}), oltre all'underscore {@code '_'}.
+     * Returns {@code true} if the code point can continue an already-started identifier: letters,
+     * digits and other Unicode "identifier part" characters (according to {@link
+     * Character#isUnicodeIdentifierPart(int)}), in addition to the underscore {@code '_'}.
      */
     public static boolean isIdentifierPart(final int codePoint) {
         return codePoint != -1
@@ -117,8 +119,8 @@ public final class CodePoints {
     }
 
     /**
-     * Determina il {@link TokenKind} corretto per un lessema già interamente scansionato: literal
-     * booleano, keyword, type-keyword, oppure identificatore ASCII o Unicode.
+     * Determines the correct {@link TokenKind} for an already fully-scanned lexeme: a boolean
+     * literal, a keyword, a type-keyword, or an ASCII or Unicode identifier.
      */
     public static TokenKind resolveIdentifierKind(final String value, final boolean asciiOnly) {
         final TokenKind kind;

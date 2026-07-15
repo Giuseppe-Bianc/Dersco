@@ -4,24 +4,24 @@ import java.util.Comparator;
 import org.dersbian.util.PathUtils;
 
 /**
- * Unità lessicale fondamentale prodotta dall'analisi lessicale.
+ * Fundamental lexical unit produced by the lexer.
  *
- * @param sourceId identificativo stabile della sorgente.
- * @param type tipo lessicale puntuale del token.
- * @param span estensione nella sorgente.
+ * @param sourceId stable identifier of the source.
+ * @param type point-like lexical kind of the token.
+ * @param span extent in the source.
  */
 public record Token(SourceId sourceId, TokenKind type, Span span) {
 
-    /** Comparatore per posizione. Non coerente con equals. */
+    /** Comparator by position. Not consistent with equals. */
     public static final Comparator<Token> BY_POSITION =
             Comparator.comparing(token -> token.span().start());
 
-    /** Crea un token a partire da uno span già costruito. */
+    /** Creates a token from an already built span. */
     public static Token create(final SourceId sourceId, final TokenKind type, final Span span) {
         return new Token(sourceId, type, span);
     }
 
-    /** Crea un token a partire da posizione iniziale e finale esplicite. */
+    /** Creates a token from explicit start and end positions. */
     public static Token create(
             final SourceId sourceId,
             final TokenKind type,
@@ -30,17 +30,17 @@ public record Token(SourceId sourceId, TokenKind type, Span span) {
         return new Token(sourceId, type, Span.create(start, end));
     }
 
-    /** Crea un token sintetico di fine sorgente (EOF), di lunghezza zero. */
+    /** Creates a synthetic end-of-source (EOF) token, with zero length. */
     public static Token eof(final SourceId sourceId, final SourceLocation location) {
         return new Token(sourceId, TokenKind.Simple.Special.EOF, Span.point(location));
     }
 
-    /** Verifica se il token è del tipo specificato. */
+    /** Checks whether the token is of the given kind. */
     public boolean isType(final TokenKind candidate) {
         return type.equals(candidate);
     }
 
-    /** Indica se il token proviene da una sorgente generata automaticamente. */
+    /** Whether the token comes from an automatically generated source. */
     public boolean isSynthetic() {
         return sourceId instanceof SourceId.Generated;
     }
