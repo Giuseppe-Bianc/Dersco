@@ -2,49 +2,48 @@ package org.dersbian.compiler.lexer.token;
 
 import java.util.Objects;
 
-/** Posizione. */
+/** Source position within a compilation unit. */
 public record SourceLocation(
         int line, int column, long offset, int index, long utf8Offset, long codePointOffset)
         implements Comparable<SourceLocation> {
 
-    /** Valore sentinella per campi opzionali non calcolati. */
+    /** Sentinel value for optional fields that have not been computed. */
     public static final long UNKNOWN = -1L;
 
-    /** Min 1-based. */
+    /** Minimum value for 1-based fields. */
     private static final int MIN_1_BASED = 1;
 
-    /** Min 0-based. */
+    /** Minimum value for 0-based fields. */
     private static final int MIN_0_BASED = 0;
 
-    /** Costruttore compatto per validare i parametri. */
+    /** Compact constructor that validates all parameters. */
     public SourceLocation {
         if (line < MIN_1_BASED) {
-            throw new IllegalArgumentException("line deve essere >= 1 (1-based), valore: " + line);
+            throw new IllegalArgumentException("line must be >= 1 (1-based), got: " + line);
         }
         if (column < MIN_1_BASED) {
-            throw new IllegalArgumentException(
-                    "column deve essere >= 1 (1-based), valore: " + column);
+            throw new IllegalArgumentException("column must be >= 1 (1-based), got: " + column);
         }
         if (offset < MIN_0_BASED) {
-            throw new IllegalArgumentException("offset deve essere >= 0, valore: " + offset);
+            throw new IllegalArgumentException("offset must be >= 0, got: " + offset);
         }
         if (index < MIN_0_BASED) {
-            throw new IllegalArgumentException("index deve essere >= 0, valore: " + index);
+            throw new IllegalArgumentException("index must be >= 0, got: " + index);
         }
         if (utf8Offset != UNKNOWN && utf8Offset < MIN_0_BASED) {
-            throw new IllegalArgumentException("utf8Offset deve essere >= 0 oppure UNKNOWN");
+            throw new IllegalArgumentException("utf8Offset must be >= 0 or UNKNOWN");
         }
         if (codePointOffset != UNKNOWN && codePointOffset < MIN_0_BASED) {
-            throw new IllegalArgumentException("codePointOffset deve essere >= 0 oppure UNKNOWN");
+            throw new IllegalArgumentException("codePointOffset must be >= 0 or UNKNOWN");
         }
     }
 
-    /** Crea una posizione minimale. */
+    /** Creates a minimal position with line, column and offset only. */
     public static SourceLocation create(final int line, final int column, final long offset) {
         return new SourceLocation(line, column, offset, Math.toIntExact(offset), UNKNOWN, UNKNOWN);
     }
 
-    /** Crea una posizione completa. */
+    /** Creates a fully specified position with all offset variants. */
     public static SourceLocation create(
             final int line,
             final int column,
@@ -55,12 +54,12 @@ public record SourceLocation(
         return new SourceLocation(line, column, offset, index, utf8Offset, codePointOffset);
     }
 
-    /** Copia con offset UTF-8 valorizzato. */
+    /** Returns a copy with the given UTF-8 byte offset. */
     public SourceLocation withUtf8Offset(final long newUtf8Offset) {
         return new SourceLocation(line, column, offset, index, newUtf8Offset, codePointOffset);
     }
 
-    /** Copia con offset in code point valorizzato. */
+    /** Returns a copy with the given code-point offset. */
     public SourceLocation withCodePointOffset(final long cpOffset) {
         return new SourceLocation(line, column, offset, index, utf8Offset, cpOffset);
     }

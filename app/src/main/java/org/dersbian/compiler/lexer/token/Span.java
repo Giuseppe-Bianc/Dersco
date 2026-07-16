@@ -3,42 +3,42 @@ package org.dersbian.compiler.lexer.token;
 import java.util.Objects;
 
 /**
- * Estensione di un token.
+ * Extent of a token in the source text.
  *
- * @param start posizione iniziale.
- * @param end posizione finale.
+ * @param start start position (inclusive).
+ * @param end end position (exclusive).
  */
 public record Span(SourceLocation start, SourceLocation end) {
 
-    /** Costruttore compatto per la validazione. */
+    /** Compact constructor that validates start/end ordering. */
     public Span {
         Objects.requireNonNull(start, "start must not be null");
         Objects.requireNonNull(end, "end must not be null");
         if (end.offset() < start.offset()) {
             throw new IllegalArgumentException(
-                    "end offset (%d) non può precedere start offset (%d)"
+                    "end offset (%d) must not precede start offset (%d)"
                             .formatted(end.offset(), start.offset()));
         }
     }
 
     /**
-     * Crea un nuovo Span.
+     * Creates a new span.
      *
-     * @param start posizione iniziale
-     * @param end posizione finale
-     * @return il nuovo span
+     * @param start start position
+     * @param end end position
+     * @return the new span
      */
     public static Span create(final SourceLocation start, final SourceLocation end) {
         return new Span(start, end);
     }
 
-    /** Span puntuale. */
+    /** Creates a zero-length span at the given location. */
     public static Span point(final SourceLocation location) {
         Objects.requireNonNull(location, "location must not be null");
         return new Span(location, location);
     }
 
-    /** Lunghezza in unità UTF-16 (coerente con {@link String#length()}). */
+    /** Length in UTF-16 code units (consistent with {@link String#length()}). */
     public long length() {
         return end.offset() - start.offset();
     }
@@ -46,7 +46,7 @@ public record Span(SourceLocation start, SourceLocation end) {
     /**
      * Verifica se lo span ha lunghezza zero.
      *
-     * @return true se vuoto
+     * @return {@code true} if empty
      */
     public boolean isEmpty() {
         return length() == 0L;
@@ -55,7 +55,7 @@ public record Span(SourceLocation start, SourceLocation end) {
     /**
      * Verifica se lo span si estende su più righe.
      *
-     * @return true se multilinea
+     * @return {@code true} if multiline
      */
     public boolean isMultiline() {
         return start.line() != end.line();

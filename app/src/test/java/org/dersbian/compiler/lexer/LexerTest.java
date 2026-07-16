@@ -115,7 +115,7 @@ class LexerTest {
                         new TokenKind.Hexadecimal(new INumber.IntegerValue(0L, null)),
                         new TokenKind.Binary(new INumber.IntegerValue(255L, null)),
                         new TokenKind.Octal(new INumber.IntegerValue(255L, null)),
-                        new TokenKind.Hexadecimal(new INumber.IntegerValue(3735928559L, null)),
+                        new TokenKind.Hexadecimal(new INumber.IntegerValue(3_735_928_559L, null)),
                         TokenKind.Simple.Special.EOF);
 
         Assertions.assertEquals(expectedTokens, tokens);
@@ -141,7 +141,7 @@ class LexerTest {
                         new TokenKind.Hexadecimal(new INumber.IntegerValue(0L, "u")),
                         new TokenKind.Binary(new INumber.IntegerValue(255L, "u")),
                         new TokenKind.Octal(new INumber.IntegerValue(255L, "u")),
-                        new TokenKind.Hexadecimal(new INumber.IntegerValue(3735928559L, "u")),
+                        new TokenKind.Hexadecimal(new INumber.IntegerValue(3_735_928_559L, "u")),
                         TokenKind.Simple.Special.EOF);
 
         Assertions.assertEquals(expectedTokens, tokens);

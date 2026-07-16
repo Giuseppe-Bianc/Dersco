@@ -59,24 +59,27 @@ public final class SourceCursor {
     }
 
     /**
+     * Decodes the code point starting at the given UTF-16 index, or {@code -1} if {@code index} is
+     * at or past the end of {@link #source}. Centralizes the bounds check so that callers needing
+     * to look more than one code point ahead can reuse an already-decoded code point instead of
+     * re-decoding the same position, as {@link #match(int, int)} does.
+     */
+    private int codePointAt(final int index) {
+        return index < length ? source.codePointAt(index) : -1;
+    }
+
+    /**
      * Returns the Unicode code point at the current position without consuming it, or {@code -1} if
      * the end of the source has been reached.
      */
     public int peekCodePoint() {
-        return isAtEnd() ? -1 : source.codePointAt(position);
+        return codePointAt(position);
     }
 
     /** Returns the Unicode code point immediately after the current one, or {@code -1} at end. */
     public int peekNextCodePoint() {
-        final int result;
-        if (isAtEnd()) {
-            result = -1;
-        } else {
-            final int codePoint = source.codePointAt(position);
-            final int next = position + Character.charCount(codePoint);
-            result = next < length ? source.codePointAt(next) : -1;
-        }
-        return result;
+        final int codePoint = peekCodePoint();
+        return codePoint == -1 ? -1 : codePointAt(position + Character.charCount(codePoint));
     }
 
     /**
@@ -158,7 +161,10 @@ public final class SourceCursor {
      * versus a lone {@code '/'}.
      */
     public boolean match(final int first, final int second) {
-        final boolean matched = peekCodePoint() == first && peekNextCodePoint() == second;
+        final int codePoint = peekCodePoint();
+        final boolean matched =
+                codePoint == first
+                        && codePointAt(position + Character.charCount(codePoint)) == second;
         if (matched) {
             advance();
             advance();

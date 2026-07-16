@@ -3,13 +3,13 @@ package org.dersbian.compiler.lexer.token;
 import org.dersbian.compiler.lexer.token.number.INumber;
 
 /**
- * Rappresenta tutti i possibili tipi di token del linguaggio.
+ * Represents every possible token kind in the language.
  *
- * <p>La gerarchia è suddivisa in:
+ * <p>The hierarchy is split into:
  *
  * <ul>
- *   <li>{@link Simple} – token privi di payload (operatori, parole chiave, delimitatori, speciali)
- *   <li>Record con payload – letterali, identificatori
+ *   <li>{@link Simple} - payload-free tokens (operators, keywords, delimiters, specials)
+ *   <li>Records with payload - literals, identifiers
  * </ul>
  */
 @SuppressWarnings("PMD.ShortVariable")
@@ -26,27 +26,27 @@ public sealed interface TokenKind
                 TokenKind.CharLiteral {
 
     // ------------------------------------------------------------------
-    // Metodi dell'interfaccia
+    // Interface methods
     // ------------------------------------------------------------------
 
     /**
-     * Verifica se il token rappresenta una parola chiave di tipo (i8, u8, f32, bool, …).
+     * Returns {@code true} if this token represents a primitive type keyword (i8, u8, f32, bool,
+     * etc.).
      *
-     * @return {@code true} per tutte le varianti {@link Simple.TypeKeyword}, {@code false}
-     *     altrimenti
+     * @return {@code true} for all {@link Simple.TypeKeyword} variants, {@code false} otherwise
      */
     default boolean isType() {
         return this instanceof Simple.TypeKeyword;
     }
 
     // ------------------------------------------------------------------
-    // Varianti senza payload
+    // Payload-free variants
     // ------------------------------------------------------------------
 
     /**
-     * Marker sealed per tutti i token privi di dati associati. Le costanti effettive vivono nei
-     * quattro enum annidati: {@link Operator}, {@link Keyword}, {@link TypeKeyword}, {@link
-     * Delimiter} e {@link Special}.
+     * Sealed marker for all tokens that carry no associated data. The actual constants live in the
+     * four nested enums: {@link Operator}, {@link Keyword}, {@link TypeKeyword}, {@link Delimiter}
+     * and {@link Special}.
      */
     sealed interface Simple extends TokenKind
             permits Simple.Operator,
@@ -55,9 +55,9 @@ public sealed interface TokenKind
                     Simple.Delimiter,
                     Simple.Special {
 
-        /** Operatori aritmetici, logici, relazionali e di assegnazione. */
+        /** Arithmetic, logical, relational and assignment operators. */
         enum Operator implements Simple {
-            // Multi-carattere
+            // Multi-character
             PLUS_EQUAL,
             MINUS_EQUAL,
             EQUAL_EQUAL,
@@ -80,7 +80,7 @@ public sealed interface TokenKind
             STAR_EQUAL,
             SLASH_EQUAL,
 
-            // Singolo carattere
+            // Single-character
             PLUS,
             MINUS,
             STAR,
@@ -143,7 +143,7 @@ public sealed interface TokenKind
             }
         }
 
-        /** Parole chiave del linguaggio (control flow, dichiarazioni). */
+        /** Language keywords (control flow, declarations). */
         enum Keyword implements Simple {
             FUN,
             IF,
@@ -180,7 +180,7 @@ public sealed interface TokenKind
             }
         }
 
-        /** Parole chiave di tipo primitivo. */
+        /** Primitive type keywords. */
         enum TypeKeyword implements Simple {
             I8,
             I16,
@@ -219,7 +219,7 @@ public sealed interface TokenKind
             }
         }
 
-        /** Delimitatori: parentesi tonde, quadre e graffe. */
+        /** Delimiters: round, square and curly brackets. */
         enum Delimiter implements Simple {
             OPEN_PAREN,
             CLOSE_PAREN,
@@ -243,12 +243,12 @@ public sealed interface TokenKind
             }
         }
 
-        /** Token speciali: punto e virgola, commenti e marcatore di fine file. */
+        /** Special tokens: semicolon, comments and end-of-file marker. */
         enum Special implements Simple {
             SEMICOLON,
             COMMENT,
             MULTILINE_COMMENT,
-            /** Marcatore di fine file (mai prodotto direttamente dal lexer). */
+            /** End-of-file marker (never produced directly by the lexer). */
             EOF;
 
             @Override
@@ -264,10 +264,10 @@ public sealed interface TokenKind
     }
 
     // ------------------------------------------------------------------
-    // Varianti con payload
+    // Payload-carrying variants
     // ------------------------------------------------------------------
 
-    /** Letterale booleano ({@code true}/{@code false}). */
+    /** Boolean literal ({@code true}/{@code false}). */
     record KeywordBool(boolean value) implements TokenKind {
 
         @Override
@@ -276,7 +276,7 @@ public sealed interface TokenKind
         }
     }
 
-    /** Identificatore ASCII (lettere, cifre, underscore). */
+    /** ASCII identifier (letters, digits, underscore). */
     record IdentifierAscii(String value) implements TokenKind {
 
         @Override
@@ -285,7 +285,7 @@ public sealed interface TokenKind
         }
     }
 
-    /** Identificatore Unicode (supporta caratteri internazionali). */
+    /** Unicode identifier (supports international characters). */
     record IdentifierUnicode(String value) implements TokenKind {
 
         @Override
@@ -294,7 +294,7 @@ public sealed interface TokenKind
         }
     }
 
-    /** Letterale numerico (interi, float, notazione scientifica, suffissi). */
+    /** Numeric literal (integers, floats, scientific notation, suffixes). */
     record Numeric(INumber value) implements TokenKind {
 
         @Override
@@ -303,7 +303,7 @@ public sealed interface TokenKind
         }
     }
 
-    /** Letterale binario (es. {@code #b1010u}). */
+    /** Binary literal (e.g. {@code #b1010u}). */
     record Binary(INumber value) implements TokenKind {
 
         @Override
@@ -312,7 +312,7 @@ public sealed interface TokenKind
         }
     }
 
-    /** Letterale ottale (es. {@code #o755}). */
+    /** Octal literal (e.g. {@code #o755}). */
     record Octal(INumber value) implements TokenKind {
 
         @Override
@@ -321,7 +321,7 @@ public sealed interface TokenKind
         }
     }
 
-    /** Letterale esadecimale (es. {@code #xdeadbeefu}). */
+    /** Hexadecimal literal (e.g. {@code #xdeadbeefu}). */
     record Hexadecimal(INumber value) implements TokenKind {
 
         @Override
@@ -330,7 +330,7 @@ public sealed interface TokenKind
         }
     }
 
-    /** Letterale stringa (contenuto già privato delle virgolette). */
+    /** String literal (content already stripped of surrounding quotes). */
     record StringLiteral(String value) implements TokenKind {
 
         @Override
@@ -339,7 +339,7 @@ public sealed interface TokenKind
         }
     }
 
-    /** Letterale carattere (contenuto già privato degli apici). */
+    /** Character literal (content already stripped of surrounding quotes). */
     record CharLiteral(String value) implements TokenKind {
 
         @Override
