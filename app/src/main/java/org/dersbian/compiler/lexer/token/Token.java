@@ -36,7 +36,7 @@ public record Token(SourceId sourceId, TokenKind type, Span span) {
     }
 
     /** Checks whether the token is of the given kind. */
-    public boolean isType(final TokenKind candidate) {
+    public boolean isKind(final TokenKind candidate) {
         return type.equals(candidate);
     }
 

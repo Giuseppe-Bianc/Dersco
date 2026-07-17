@@ -74,7 +74,9 @@ public final class NumericParsers {
             if ("i32".equals(normalized)
                     || "u32".equals(normalized)
                     || "i16".equals(normalized)
-                    || "u16".equals(normalized)) {
+                    || "u16".equals(normalized)
+                    || "i64".equals(normalized)
+                    || "u64".equals(normalized)) {
                 found =
                         new SuffixResult(
                                 body.substring(0, body.length() - MIN_TAIL3_LENGTH), tail3);

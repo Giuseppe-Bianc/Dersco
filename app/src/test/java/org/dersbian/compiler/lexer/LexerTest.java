@@ -148,6 +148,21 @@ class LexerTest {
     }
 
     @Test
+    void testNuberEdgeCases() {
+        final Lexer lexer =
+                new Lexer(
+                        Path.of(TEST_PATH),
+                        "#b111111111111111111111111111111111111111111111111111111111111111");
+        final LexerResult result = lexer.tokenize();
+        final List<TokenKind> tokens = result.tokens().stream().map(Token::type).toList();
+        final List<TokenKind> expectedTokens =
+                List.of(
+                        new TokenKind.Binary(new INumber.IntegerValue(Long.MAX_VALUE, null)),
+                        TokenKind.Simple.Special.EOF);
+        Assertions.assertEquals(expectedTokens, tokens);
+    }
+
+    @Test
     void testUnicodeLineTerminatorsInStringLiteral() {
         // String literal contains a line separator \u2028, which should be treated as a line
         // terminator, making the string literal unterminated.
