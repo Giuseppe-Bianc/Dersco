@@ -14,31 +14,25 @@ class BaseParsersTest {
 
     @Test
     void parseBinarySupportsUnsignedSuffix() {
-        final INumber parsed = BaseParsers.parseBinary("#b1010u");
-        final INumber.IntegerValue value =
-                Assertions.assertInstanceOf(INumber.IntegerValue.class, parsed);
+        final INumber parsed = BaseNumberParser.parseBinary("#b1010u");
+        final INumber.UnsignedInteger value =
+                Assertions.assertInstanceOf(INumber.UnsignedInteger.class, parsed);
 
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(10L, value.value()),
-                () -> Assertions.assertEquals("u", value.suffix()));
+        Assertions.assertEquals(10L, value.value());
     }
 
     @Test
     void parseOctalReturnsIntegerValue() {
-        final INumber parsed = BaseParsers.parseOctal("#o755");
-        final INumber.IntegerValue value =
-                Assertions.assertInstanceOf(INumber.IntegerValue.class, parsed);
+        final INumber parsed = BaseNumberParser.parseOctal("#o755");
+        final INumber.Integer value = Assertions.assertInstanceOf(INumber.Integer.class, parsed);
 
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(493L, value.value()),
-                () -> Assertions.assertNull(value.suffix()));
+        Assertions.assertEquals(493L, value.value());
     }
 
     @Test
     void parseHexAcceptsUppercaseDigits() {
-        final INumber parsed = BaseParsers.parseHex("#xBEEF");
-        final INumber.IntegerValue value =
-                Assertions.assertInstanceOf(INumber.IntegerValue.class, parsed);
+        final INumber parsed = BaseNumberParser.parseHex("#xBEEF");
+        final INumber.Integer value = Assertions.assertInstanceOf(INumber.Integer.class, parsed);
 
         Assertions.assertEquals(48_879L, value.value());
     }

@@ -14,56 +14,43 @@ class NumericParsersTest {
 
     @Test
     void parseIntegerWithoutSuffix() {
-        final INumber parsed = NumericParsers.parseNumber("42");
-        final INumber.IntegerValue value =
-                Assertions.assertInstanceOf(INumber.IntegerValue.class, parsed);
+        final INumber parsed = NumericParser.parseNumber("42");
+        final INumber.Integer value = Assertions.assertInstanceOf(INumber.Integer.class, parsed);
 
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(42L, value.value()),
-                () -> Assertions.assertNull(value.suffix()));
+        Assertions.assertEquals(42L, value.value());
     }
 
     @Test
     void parseIntegerWithMultiCharacterSuffix() {
-        final INumber parsed = NumericParsers.parseNumber("255u32");
-        final INumber.IntegerValue value =
-                Assertions.assertInstanceOf(INumber.IntegerValue.class, parsed);
+        final INumber parsed = NumericParser.parseNumber("255u32");
+        final INumber.U32 value = Assertions.assertInstanceOf(INumber.U32.class, parsed);
 
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(255L, value.value()),
-                () -> Assertions.assertEquals("u32", value.suffix()));
+        Assertions.assertEquals(255L, value.value());
     }
 
     @Test
     void parseDecimalFloatingPoint() {
-        final INumber parsed = NumericParsers.parseNumber("3.5f");
-        final INumber.FloatingValue value =
-                Assertions.assertInstanceOf(INumber.FloatingValue.class, parsed);
+        final INumber parsed = NumericParser.parseNumber("3.5f");
+        final INumber.Float32 value = Assertions.assertInstanceOf(INumber.Float32.class, parsed);
 
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(3.5D, value.value()),
-                () -> Assertions.assertEquals("f", value.suffix()));
+        Assertions.assertEquals(3.5D, value.value());
     }
 
     @Test
     void parseExponentFloatingPoint() {
-        final INumber parsed = NumericParsers.parseNumber("1e3");
-        final INumber.FloatingValue value =
-                Assertions.assertInstanceOf(INumber.FloatingValue.class, parsed);
+        final INumber parsed = NumericParser.parseNumber("1e3");
+        final INumber.Scientific64 value =
+                Assertions.assertInstanceOf(INumber.Scientific64.class, parsed);
 
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(1_000.0D, value.value()),
-                () -> Assertions.assertNull(value.suffix()));
+        Assertions.assertEquals(1.0D, value.base());
+        Assertions.assertEquals(3.0D, value.exponent());
     }
 
     @Test
     void floatingSuffixMakesWholeNumberFloatingPoint() {
-        final INumber parsed = NumericParsers.parseNumber("7f");
-        final INumber.FloatingValue value =
-                Assertions.assertInstanceOf(INumber.FloatingValue.class, parsed);
+        final INumber parsed = NumericParser.parseNumber("7f");
+        final INumber.Float32 value = Assertions.assertInstanceOf(INumber.Float32.class, parsed);
 
-        Assertions.assertAll(
-                () -> Assertions.assertEquals(7.0D, value.value()),
-                () -> Assertions.assertEquals("f", value.suffix()));
+        Assertions.assertEquals(7.0D, value.value());
     }
 }

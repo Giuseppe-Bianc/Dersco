@@ -78,18 +78,18 @@ class LexerTest {
         Assertions.assertEquals(13, tokens.size());
         final List<TokenKind> expectedTokens =
                 List.of(
-                        new TokenKind.Numeric(new INumber.IntegerValue(123, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(45.67, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(9.01, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(1e5, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(2E-3, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(1.2e3, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(123.0, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(0.456, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(10e5, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(3.4e+5, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(5e0, null)),
-                        new TokenKind.Numeric(new INumber.FloatingValue(0e0, null)),
+                        new TokenKind.Numeric(new INumber.Integer(123)),
+                        new TokenKind.Numeric(new INumber.Float64(45.67)),
+                        new TokenKind.Numeric(new INumber.Float64(9.01)),
+                        new TokenKind.Numeric(new INumber.Scientific64(1.0, 5)),
+                        new TokenKind.Numeric(new INumber.Scientific64(2.0, -3)),
+                        new TokenKind.Numeric(new INumber.Scientific64(1.2, 3)),
+                        new TokenKind.Numeric(new INumber.Float64(123.0)),
+                        new TokenKind.Numeric(new INumber.Float64(0.456)),
+                        new TokenKind.Numeric(new INumber.Scientific64(10.0, 5)),
+                        new TokenKind.Numeric(new INumber.Scientific64(3.4, 5)),
+                        new TokenKind.Numeric(new INumber.Scientific64(5.0, 0)),
+                        new TokenKind.Numeric(new INumber.Scientific64(0.0, 0)),
                         TokenKind.Simple.Special.EOF);
 
         Assertions.assertEquals(expectedTokens, tokens);
@@ -107,15 +107,15 @@ class LexerTest {
         Assertions.assertEquals(10, tokens.size());
         final List<TokenKind> expectedTokens =
                 List.of(
-                        new TokenKind.Binary(new INumber.IntegerValue(10L, null)),
-                        new TokenKind.Octal(new INumber.IntegerValue(511L, null)),
-                        new TokenKind.Hexadecimal(new INumber.IntegerValue(31L, null)),
-                        new TokenKind.Binary(new INumber.IntegerValue(0L, null)),
-                        new TokenKind.Octal(new INumber.IntegerValue(0L, null)),
-                        new TokenKind.Hexadecimal(new INumber.IntegerValue(0L, null)),
-                        new TokenKind.Binary(new INumber.IntegerValue(255L, null)),
-                        new TokenKind.Octal(new INumber.IntegerValue(255L, null)),
-                        new TokenKind.Hexadecimal(new INumber.IntegerValue(3_735_928_559L, null)),
+                        new TokenKind.Binary(new INumber.Integer(10L)),
+                        new TokenKind.Octal(new INumber.Integer(511L)),
+                        new TokenKind.Hexadecimal(new INumber.Integer(31L)),
+                        new TokenKind.Binary(new INumber.Integer(0L)),
+                        new TokenKind.Octal(new INumber.Integer(0L)),
+                        new TokenKind.Hexadecimal(new INumber.Integer(0L)),
+                        new TokenKind.Binary(new INumber.Integer(255L)),
+                        new TokenKind.Octal(new INumber.Integer(255L)),
+                        new TokenKind.Hexadecimal(new INumber.Integer(3_735_928_559L)),
                         TokenKind.Simple.Special.EOF);
 
         Assertions.assertEquals(expectedTokens, tokens);
@@ -133,17 +133,18 @@ class LexerTest {
         Assertions.assertEquals(10, tokens.size());
         final List<TokenKind> expectedTokens =
                 List.of(
-                        new TokenKind.Binary(new INumber.IntegerValue(10L, "u")),
-                        new TokenKind.Octal(new INumber.IntegerValue(511L, "u")),
-                        new TokenKind.Hexadecimal(new INumber.IntegerValue(31L, "u")),
-                        new TokenKind.Binary(new INumber.IntegerValue(0L, "u")),
-                        new TokenKind.Octal(new INumber.IntegerValue(0L, "u")),
-                        new TokenKind.Hexadecimal(new INumber.IntegerValue(0L, "u")),
-                        new TokenKind.Binary(new INumber.IntegerValue(255L, "u")),
-                        new TokenKind.Octal(new INumber.IntegerValue(255L, "u")),
-                        new TokenKind.Hexadecimal(new INumber.IntegerValue(3_735_928_559L, "u")),
+                        new TokenKind.Binary(new INumber.UnsignedInteger(10L)),
+                        new TokenKind.Octal(new INumber.UnsignedInteger(511L)),
+                        new TokenKind.Hexadecimal(new INumber.UnsignedInteger(31L)),
+                        new TokenKind.Binary(new INumber.UnsignedInteger(0L)),
+                        new TokenKind.Octal(new INumber.UnsignedInteger(0L)),
+                        new TokenKind.Hexadecimal(new INumber.UnsignedInteger(0L)),
+                        new TokenKind.Binary(new INumber.UnsignedInteger(255L)),
+                        new TokenKind.Octal(new INumber.UnsignedInteger(255L)),
+                        new TokenKind.Hexadecimal(new INumber.UnsignedInteger(3_735_928_559L)),
                         TokenKind.Simple.Special.EOF);
 
+        // Ensures the underlying class/record holds a verified distinct unsigned form.
         Assertions.assertEquals(expectedTokens, tokens);
     }
 
@@ -157,7 +158,7 @@ class LexerTest {
         final List<TokenKind> tokens = result.tokens().stream().map(Token::type).toList();
         final List<TokenKind> expectedTokens =
                 List.of(
-                        new TokenKind.Binary(new INumber.IntegerValue(Long.MAX_VALUE, null)),
+                        new TokenKind.Binary(new INumber.Integer(Long.MAX_VALUE)),
                         TokenKind.Simple.Special.EOF);
         Assertions.assertEquals(expectedTokens, tokens);
     }

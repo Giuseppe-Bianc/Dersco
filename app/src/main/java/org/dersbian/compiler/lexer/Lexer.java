@@ -13,8 +13,8 @@ import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.lexer.token.Token;
 import org.dersbian.compiler.lexer.token.TokenKind;
 import org.dersbian.compiler.lexer.token.number.INumber;
-import org.dersbian.compiler.lexer.token.parser.numeric.BaseParsers;
-import org.dersbian.compiler.lexer.token.parser.numeric.NumericParsers;
+import org.dersbian.compiler.lexer.token.parser.numeric.BaseNumberParser;
+import org.dersbian.compiler.lexer.token.parser.numeric.NumericParser;
 import org.dersbian.compiler.location.LineTracker;
 
 /** A simple lexer for tokenizing Dersco source code. */
@@ -288,7 +288,7 @@ public class Lexer {
         scanNumericSuffix(literal);
 
         final Span span = Span.create(start, cursor.currentLocation());
-        final INumber value = NumericParsers.parseNumber(literal.toString());
+        final INumber value = NumericParser.parseNumber(literal.toString());
         tokens.add(Token.create(sourceId, new TokenKind.Numeric(value), span));
     }
 
@@ -528,9 +528,10 @@ public class Lexer {
 
     private static TokenKind parseRadixToken(final int radix, final String literal) {
         return switch (radix) {
-            case Constants.RADIX_BINARY -> new TokenKind.Binary(BaseParsers.parseBinary(literal));
-            case Constants.RADIX_OCTAL -> new TokenKind.Octal(BaseParsers.parseOctal(literal));
-            default -> new TokenKind.Hexadecimal(BaseParsers.parseHex(literal));
+            case Constants.RADIX_BINARY ->
+                    new TokenKind.Binary(BaseNumberParser.parseBinary(literal));
+            case Constants.RADIX_OCTAL -> new TokenKind.Octal(BaseNumberParser.parseOctal(literal));
+            default -> new TokenKind.Hexadecimal(BaseNumberParser.parseHex(literal));
         };
     }
 

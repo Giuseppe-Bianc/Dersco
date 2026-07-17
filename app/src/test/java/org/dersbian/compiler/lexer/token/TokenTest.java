@@ -22,7 +22,7 @@ class TokenTest {
                 () -> Assertions.assertEquals(sourceId, token.sourceId()),
                 () -> Assertions.assertEquals(new TokenKind.IdentifierAscii("foo"), token.type()),
                 () -> Assertions.assertEquals(Span.create(start, end), token.span()),
-                () -> Assertions.assertTrue(token.isType(new TokenKind.IdentifierAscii("foo"))),
+                () -> Assertions.assertTrue(token.isKind(new TokenKind.IdentifierAscii("foo"))),
                 () -> Assertions.assertFalse(token.isSynthetic()),
                 () ->
                         Assertions.assertEquals(
