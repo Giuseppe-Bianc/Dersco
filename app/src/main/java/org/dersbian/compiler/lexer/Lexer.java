@@ -469,10 +469,12 @@ public class Lexer {
             final int radix = radixFromPrefixLetter(prefixLetter);
             final String body = scanRadixDigits(radix);
             if (body.isEmpty()) {
+                final ErrorCode emptyCode = emptyRadixErrorCode(prefixLetter);
+                final String radixName = radixName(prefixLetter);
                 reportError(
-                        ErrorCode.E0001,
+                        emptyCode,
                         start,
-                        "Empty numeric literal after prefix '#" + prefixLetter + "'.",
+                        "Malformed " + radixName + " number: \"#" + prefixLetter + "\"",
                         null);
             } else {
                 final String suffix = scanRadixSuffix();
@@ -505,6 +507,22 @@ public class Lexer {
         };
     }
 
+    private static ErrorCode emptyRadixErrorCode(final char prefixLetter) {
+        return switch (prefixLetter) {
+            case 'b' -> ErrorCode.E0002;
+            case 'o' -> ErrorCode.E0003;
+            default -> ErrorCode.E0004;
+        };
+    }
+
+    private static String radixName(final char prefixLetter) {
+        return switch (prefixLetter) {
+            case 'b' -> "binary";
+            case 'o' -> "octal";
+            default -> "hexadecimal";
+        };
+    }
+
     private String scanRadixDigits(final int radix) {
         final StringBuilder body = new StringBuilder();
         int codePoint = cursor.peekCodePoint();
@@ -527,12 +545,34 @@ public class Lexer {
     }
 
     private static TokenKind parseRadixToken(final int radix, final String literal) {
-        return switch (radix) {
-            case Constants.RADIX_BINARY ->
-                    new TokenKind.Binary(BaseNumberParser.parseBinary(literal));
-            case Constants.RADIX_OCTAL -> new TokenKind.Octal(BaseNumberParser.parseOctal(literal));
-            default -> new TokenKind.Hexadecimal(BaseNumberParser.parseHex(literal));
-        };
+        TokenKind kind;
+        switch (radix) {
+            case Constants.RADIX_BINARY -> {
+                INumber number = BaseNumberParser.parseBinary(literal);
+                if (number == null) {
+                    throw new NumberFormatException();
+                } else {
+                    kind = new TokenKind.Binary(number);
+                }
+            }
+            case Constants.RADIX_OCTAL -> {
+                INumber number = BaseNumberParser.parseOctal(literal);
+                if (number == null) {
+                    throw new NumberFormatException();
+                } else {
+                    kind = new TokenKind.Octal(number);
+                }
+            }
+            default -> {
+                INumber number = BaseNumberParser.parseHex(literal);
+                if (number == null) {
+                    throw new NumberFormatException();
+                } else {
+                    kind = new TokenKind.Hexadecimal(number);
+                }
+            }
+        }
+        return kind;
     }
 
     private void reportRadixOverflow(

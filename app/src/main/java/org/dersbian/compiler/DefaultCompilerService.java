@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.extern.slf4j.Slf4j;
-import org.dersbian.compiler.error.CompileError;
+import org.dersbian.compiler.error.ErrorReporter;
 import org.dersbian.compiler.lexer.Lexer;
 import org.dersbian.compiler.lexer.LexerResult;
 import org.dersbian.compiler.lexer.token.Token;
@@ -18,12 +18,12 @@ import org.dersbian.util.SizeSystems;
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
     "PMD.MethodArgumentCouldBeFinal",
-    "PMD.AvoidUncheckedExceptionsInSignatures"
+    "PMD.AvoidUncheckedExceptionsInSignatures",
+    "PMD.SystemPrintln"
 })
 public final class DefaultCompilerService implements ICompilerService {
 
     @Override
-    @SuppressWarnings("PMD.CyclomaticComplexity")
     public void checkSyntax(Path source) throws CompilerException {
         log.debug("Syntax check on {}", source);
         final FileSizeReport sizeReport =
@@ -46,15 +46,13 @@ public final class DefaultCompilerService implements ICompilerService {
             log.debug("Line count: {}", nLines);
         }
         final LexerResult result = lexer.tokenize();
-        if (result.errors().isEmpty()) {
-            log.debug("No syntax errors found.");
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Found {} syntax errors.", result.errors().size());
-            }
-            for (final CompileError error : result.errors()) {
-                log.error("Syntax error: {}", error);
-            }
+        final ErrorReporter errorReporter =
+                new ErrorReporter(lexer.getLineTracker(), source.toString());
+        final String errorReport = errorReporter.reportErrors(result.errors());
+        if (!errorReport.isEmpty()) {
+            System.out.println(errorReport);
+            throw new CompilerException(
+                    "Compilation failed with " + result.errors().size() + " error(s)");
         }
         if (log.isDebugEnabled()) {
             for (final Token token : result.tokens()) {

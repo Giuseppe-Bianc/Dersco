@@ -206,4 +206,90 @@ class LexerTest {
         Assertions.assertEquals(1, result.errors().size());
         Assertions.assertEquals(ErrorCode.E0001, result.errors().get(0).code().orElse(null));
     }
+
+    @Test
+    void testMalformedBaseSpecificNumbers() {
+        record TestCase(String input, ErrorCode expectedErrorCode) {}
+
+        final List<TestCase> cases =
+                List.of(
+                        new TestCase("#b", ErrorCode.E0002),
+                        new TestCase("#o", ErrorCode.E0003),
+                        new TestCase("#x", ErrorCode.E0004));
+
+        for (final TestCase testCase : cases) {
+            final Lexer lexer = new Lexer(Path.of(TEST_PATH), testCase.input());
+            final LexerResult result = lexer.tokenize();
+
+            Assertions.assertFalse(
+                    result.errors().isEmpty(),
+                    "Expected an error for malformed input: " + testCase.input());
+
+            Assertions.assertEquals(
+                    1,
+                    result.errors().size(),
+                    "Expected exactly one error for input: " + testCase.input());
+
+            Assertions.assertEquals(
+                    testCase.expectedErrorCode(),
+                    result.errors().get(0).code().orElse(null),
+                    "Expected error code "
+                            + testCase.expectedErrorCode()
+                            + " for input: "
+                            + testCase.input());
+        }
+    }
+
+    @Test
+    void testUnrecognizedCharacters() {
+        record TestCase(String input, String expectedMessage) {}
+
+        final List<TestCase> cases =
+                List.of(
+                        new TestCase("@", "[E0001] Unrecognized character: '@' at line 1:column 1-line 1:column 2"),
+                        new TestCase("`", "[E0001] Unrecognized character: '`' at line 1:column 1-line 1:column 2"));
+
+        for (final TestCase testCase : cases) {
+            final Lexer lexer = new Lexer(Path.of(TEST_PATH), testCase.input());
+            final LexerResult result = lexer.tokenize();
+
+            Assertions.assertFalse(
+                    result.errors().isEmpty(),
+                    "Expected an error for unrecognized character: " + testCase.input());
+
+            Assertions.assertEquals(
+                    1,
+                    result.errors().size(),
+                    "Expected exactly one error for input: " + testCase.input());
+
+            Assertions.assertEquals(
+                    ErrorCode.E0001,
+                    result.errors().get(0).code().orElse(null),
+                    "Expected error code E0001 for input: " + testCase.input());
+
+            Assertions.assertEquals(
+                    testCase.expectedMessage(),
+                    result.errors().get(0).toString(),
+                    "Expected error message to match for input: " + testCase.input());
+        }
+    }
+
+    @Test
+    void testTooLargeBinaryNumberIsInvalidToken() {
+        final String input = "#b1111111111111111111111111111111111111111111111111111111111111111";
+        final Lexer lexer = new Lexer(Path.of(TEST_PATH), input);
+        final LexerResult result = lexer.tokenize();
+        final List<Token> tokens = result.tokens();
+
+        Assertions.assertEquals(1, tokens.size());
+        Assertions.assertEquals(TokenKind.Simple.Special.EOF, tokens.get(0).type());
+
+        Assertions.assertEquals(1, result.errors().size());
+        Assertions.assertEquals(ErrorCode.E0002, result.errors().get(0).code().orElse(null));
+        Assertions.assertEquals(
+                "[E0002] Numeric value out of range for literal '"
+                        + input
+                        + "'. at line 1:column 1-line 1:column 67",
+                result.errors().get(0).toString());
+    }
 }

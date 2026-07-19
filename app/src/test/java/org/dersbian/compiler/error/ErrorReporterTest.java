@@ -17,7 +17,7 @@ class ErrorReporterTest {
     @Test
     void reportsSingleLineErrorsWithSourceContextAndHelp() {
         final LineTracker lineTracker = LineTracker.fromLines(List.of("let value = 42;"));
-        final ErrorReporter reporter = new ErrorReporter(lineTracker);
+        final ErrorReporter reporter = new ErrorReporter(lineTracker, "test.vn");
         final Span span =
                 Span.create(SourceLocation.create(1, 5, 4L), SourceLocation.create(1, 10, 9L));
         final CompileError.LexerError error =
@@ -30,8 +30,9 @@ class ErrorReporterTest {
                                 "\u001B[31m\u001B[1mERROR\u001B[0m"
                                     + " [\u001B[31m\u001B[1mE0001\u001B[0m] \u001B[31mLEX\u001B[0m:"
                                     + " \u001B[33mInvalid token\u001B[0m",
-                                "\u001B[34mLocation:\u001B[0m \u001B[36mline 1:column 5-line"
-                                        + " 1:column 10\u001B[0m",
+                                "\u001B[34mLocation:\u001B[0m"
+                                        + " \u001B[36mtest.vn:line 1:column 5-line 1:column"
+                                        + " 10\u001B[0m",
                                 "   1 │ let value = 42;",
                                 "     │ \u001B[31m\u001B[1m    ^^^^^\u001B[0m",
                                 "\u001B[34m\u001B[1mhelp:\u001B[0m \u001B[32mCheck the"
@@ -43,7 +44,7 @@ class ErrorReporterTest {
     @Test
     void reportsMultiLineErrorsAndSimpleFailures() {
         final LineTracker lineTracker = LineTracker.fromLines(List.of("first line", "second line"));
-        final ErrorReporter reporter = new ErrorReporter(lineTracker);
+        final ErrorReporter reporter = new ErrorReporter(lineTracker, "test.vn");
         final Span span =
                 Span.create(SourceLocation.create(1, 3, 2L), SourceLocation.create(2, 4, 14L));
         final CompileError.SyntaxError syntaxError =
@@ -59,8 +60,9 @@ class ErrorReporterTest {
                                         + " [\u001B[31m\u001B[1mE1004\u001B[0m]"
                                         + " \u001B[31mSYNTAX\u001B[0m: \u001B[33mUnexpected"
                                         + " token\u001B[0m",
-                                "\u001B[34mLocation:\u001B[0m \u001B[36mline 1:column 3-line"
-                                        + " 2:column 4\u001B[0m",
+                                "\u001B[34mLocation:\u001B[0m"
+                                        + " \u001B[36mtest.vn:line 1:column 3-line 2:column"
+                                        + " 4\u001B[0m",
                                 "   1 │ first line",
                                 "     │ \u001B[31m\u001B[1m  ^\u001B[0m",
                                 "     │ \u001B[34m...\u001B[0m (error spans lines 1-2)"));

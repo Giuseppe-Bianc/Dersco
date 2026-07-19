@@ -32,13 +32,18 @@ public final class ErrorReporter {
     /** Line tracker used to resolve source lines and spans for error reporting. */
     private final LineTracker lineTracker;
 
+    /** Human-readable identifier of the source being reported (e.g. file path). */
+    private final String sourceFile;
+
     /**
      * Creates an {@link ErrorReporter} backed by the given {@link LineTracker}.
      *
      * @param lineTracker used when rendering span information; must not be null.
+     * @param sourceFile human-readable identifier of the source (e.g. file path); must not be null.
      */
-    public ErrorReporter(final LineTracker lineTracker) {
+    public ErrorReporter(final LineTracker lineTracker, final String sourceFile) {
         this.lineTracker = Objects.requireNonNull(lineTracker, "lineTracker must not be null");
+        this.sourceFile = Objects.requireNonNull(sourceFile, "sourceFile must not be null");
     }
 
     /** Returns a formatted string containing all compile errors with source context. */
@@ -118,7 +123,7 @@ public final class ErrorReporter {
                 .append('\n')
                 .append(style("Location:", BLUE))
                 .append(' ')
-                .append(style(span.toString(), CYAN));
+                .append(style(sourceFile + ":" + span.toString(), CYAN));
 
         if (!sourceLine.isEmpty()) {
             output.append('\n').append(String.format("%4d │ %s", startLine, sourceLine));
