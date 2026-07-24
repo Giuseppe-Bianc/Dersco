@@ -260,7 +260,9 @@ public class Lexer {
     }
 
     private void consumeOptionalFraction(final StringBuilder literal) {
-        if (!cursor.isAtEnd() && cursor.peekCodePoint() == '.') {
+        if (!cursor.isAtEnd()
+                && cursor.peekCodePoint() == '.'
+                && Character.isDigit(cursor.peekNextCodePoint())) {
             literal.appendCodePoint(cursor.peekCodePoint());
             cursor.advance();
 
@@ -288,7 +290,16 @@ public class Lexer {
         scanNumericSuffix(literal);
 
         final Span span = Span.create(start, cursor.currentLocation());
-        final INumber value = NumericParser.parseNumber(literal.toString());
+        final String rawLiteral = literal.toString();
+        final INumber value = NumericParser.parseNumber(rawLiteral);
+        if (value == null) {
+            reportError(
+                    ErrorCode.E0010,
+                    start,
+                    "Invalid or out-of-range numeric literal: '" + rawLiteral + "'.",
+                    null);
+            return;
+        }
         tokens.add(Token.create(sourceId, new TokenKind.Numeric(value), span));
     }
 

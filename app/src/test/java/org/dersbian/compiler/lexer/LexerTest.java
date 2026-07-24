@@ -73,11 +73,11 @@ class LexerTest {
         final Lexer lexer =
                 new Lexer(
                         Path.of(TEST_PATH),
-                        "123 45.67 9.01 1e5 2E-3 1.2e3 123. .456 10e5 3.4e+5 5e0 0e0");
+                        "123 45.67 9.01 1e5 2E-3 1.2e3 .456 10e5 3.4e+5 5e0 0e0");
         final LexerResult result = lexer.tokenize();
         final List<TokenKind> tokens = result.tokens().stream().map(Token::type).toList();
 
-        Assertions.assertEquals(13, tokens.size());
+        Assertions.assertEquals(12, tokens.size());
         final List<TokenKind> expectedTokens =
                 List.of(
                         new TokenKind.Numeric(new INumber.Integer(123)),
@@ -86,7 +86,6 @@ class LexerTest {
                         new TokenKind.Numeric(new INumber.Scientific64(1.0, 5)),
                         new TokenKind.Numeric(new INumber.Scientific64(2.0, -3)),
                         new TokenKind.Numeric(new INumber.Scientific64(1.2, 3)),
-                        new TokenKind.Numeric(new INumber.Float64(123.0)),
                         new TokenKind.Numeric(new INumber.Float64(0.456)),
                         new TokenKind.Numeric(new INumber.Scientific64(10.0, 5)),
                         new TokenKind.Numeric(new INumber.Scientific64(3.4, 5)),
@@ -299,5 +298,45 @@ class LexerTest {
                         + input
                         + "'. at line 1:column 1-line 1:column 67",
                 result.errors().get(0).toString());
+    }
+
+    @Test
+    void testFractionLookaheadWithMethodCallAndRange() {
+        final Lexer rangeLexer = new Lexer(Path.of(TEST_PATH), "1..5");
+        final LexerResult rangeResult = rangeLexer.tokenize();
+        final List<TokenKind> rangeTokens = rangeResult.tokens().stream().map(Token::type).toList();
+        Assertions.assertEquals(
+                List.of(
+                        new TokenKind.Numeric(new INumber.Integer(1)),
+                        TokenKind.Simple.Operator.DOT,
+                        new TokenKind.Numeric(new INumber.Float64(0.5)),
+                        TokenKind.Simple.Special.EOF),
+                rangeTokens);
+
+        final Lexer methodLexer = new Lexer(Path.of(TEST_PATH), "42.toString()");
+        final LexerResult methodResult = methodLexer.tokenize();
+        final List<TokenKind> methodTokens =
+                methodResult.tokens().stream().map(Token::type).toList();
+        Assertions.assertEquals(
+                List.of(
+                        new TokenKind.Numeric(new INumber.Integer(42)),
+                        TokenKind.Simple.Operator.DOT,
+                        new TokenKind.IdentifierAscii("toString"),
+                        TokenKind.Simple.Delimiter.OPEN_PAREN,
+                        TokenKind.Simple.Delimiter.CLOSE_PAREN,
+                        TokenKind.Simple.Special.EOF),
+                methodTokens);
+    }
+
+    @Test
+    void testOverflowDecimalNumberEmitsE0010Error() {
+        final String input = "99999999999999999999999999999999";
+        final Lexer lexer = new Lexer(Path.of(TEST_PATH), input);
+        final LexerResult result = lexer.tokenize();
+
+        Assertions.assertEquals(1, result.errors().size());
+        Assertions.assertEquals(ErrorCode.E0010, result.errors().get(0).code().orElse(null));
+        Assertions.assertEquals(1, result.tokens().size());
+        Assertions.assertEquals(TokenKind.Simple.Special.EOF, result.tokens().get(0).type());
     }
 }
