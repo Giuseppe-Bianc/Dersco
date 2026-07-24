@@ -19,7 +19,7 @@ plugins {
     id("net.ltgt.errorprone") version "5.1.0"
     id("com.diffplug.spotless") version "8.8.0"
     id("io.freefair.lombok") version "9.5.0"
-    id("com.gradleup.shadow") version "9.4.3"
+    id("com.gradleup.shadow") version "9.6.1"
 }
 
 group = "org.dersbian"
