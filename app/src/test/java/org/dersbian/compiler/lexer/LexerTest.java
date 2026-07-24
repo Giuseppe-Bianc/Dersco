@@ -205,7 +205,7 @@ class LexerTest {
         Assertions.assertEquals(TokenKind.Simple.Special.EOF, tokens.get(2).type());
 
         Assertions.assertEquals(1, result.errors().size());
-        Assertions.assertEquals(ErrorCode.E0001, result.errors().get(0).code().orElse(null));
+        Assertions.assertEquals(ErrorCode.E0001, result.errors().getFirst().code().orElse(null));
     }
 
     @Test
@@ -233,7 +233,7 @@ class LexerTest {
 
             Assertions.assertEquals(
                     testCase.expectedErrorCode(),
-                    result.errors().get(0).code().orElse(null),
+                    result.errors().getFirst().code().orElse(null),
                     "Expected error code "
                             + testCase.expectedErrorCode()
                             + " for input: "
@@ -271,12 +271,12 @@ class LexerTest {
 
             Assertions.assertEquals(
                     ErrorCode.E0001,
-                    result.errors().get(0).code().orElse(null),
+                    result.errors().getFirst().code().orElse(null),
                     "Expected error code E0001 for input: " + testCase.input());
 
             Assertions.assertEquals(
                     testCase.expectedMessage(),
-                    result.errors().get(0).toString(),
+                    result.errors().getFirst().toString(),
                     "Expected error message to match for input: " + testCase.input());
         }
     }
@@ -297,7 +297,7 @@ class LexerTest {
                 "[E0002] Numeric value out of range for literal '"
                         + input
                         + "'. at line 1:column 1-line 1:column 67",
-                result.errors().get(0).toString());
+                result.errors().getFirst().toString());
     }
 
     @Test
@@ -335,8 +335,8 @@ class LexerTest {
         final LexerResult result = lexer.tokenize();
 
         Assertions.assertEquals(1, result.errors().size());
-        Assertions.assertEquals(ErrorCode.E0010, result.errors().get(0).code().orElse(null));
+        Assertions.assertEquals(ErrorCode.E0010, result.errors().getFirst().code().orElse(null));
         Assertions.assertEquals(1, result.tokens().size());
-        Assertions.assertEquals(TokenKind.Simple.Special.EOF, result.tokens().get(0).type());
+        Assertions.assertEquals(TokenKind.Simple.Special.EOF, result.tokens().getFirst().type());
     }
 }
