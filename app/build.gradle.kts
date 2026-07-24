@@ -15,7 +15,7 @@ plugins {
     application
     checkstyle
     pmd
-    id("com.github.spotbugs") version "6.5.8"
+    id("com.github.spotbugs") version "6.5.9"
     id("net.ltgt.errorprone") version "5.1.0"
     id("com.diffplug.spotless") version "8.8.0"
     id("io.freefair.lombok") version "9.5.0"
