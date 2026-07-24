@@ -39,7 +39,7 @@ jobs:
         run: ./gradlew shadowJar
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dersco-application
           path: app/build/libs/*.jar
