@@ -1,10 +1,15 @@
-# Set update schedule for GitHub Actions
+# Dependabot configuration file for Gradle and GitHub Actions
 
 version: 2
 updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      # Check for updates to GitHub Actions every week
-      interval: "weekly"
+      interval: "daily"
+    open-pull-requests-limit: 5

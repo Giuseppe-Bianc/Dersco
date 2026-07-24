@@ -112,7 +112,12 @@ class FileSizeInfoTest {
         final FileSizeInfo info = new FileSizeInfo(1L);
 
         final NullPointerException exception =
-                assertThrows(NullPointerException.class, () -> info.format(null));
+                assertThrows(
+                        NullPointerException.class,
+                        () -> {
+                            @SuppressWarnings("unused")
+                            final FormattedSize _ = info.format(null); // (1)
+                        });
 
         assertNotNull(exception.getMessage());
         assertTrue(exception.getMessage().toLowerCase(Locale.getDefault()).contains("sys"));

@@ -11,7 +11,9 @@ import org.junit.jupiter.api.Test;
 
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
+    "PMD.AvoidInstantiatingObjectsInLoops",
     "PMD.CommentRequired",
+    "PMD.TooManyMethods",
     "PMD.UnitTestAssertionsShouldIncludeMessage",
     "PMD.UnitTestContainsTooManyAsserts"
 })
@@ -246,8 +248,14 @@ class LexerTest {
 
         final List<TestCase> cases =
                 List.of(
-                        new TestCase("@", "[E0001] Unrecognized character: '@' at line 1:column 1-line 1:column 2"),
-                        new TestCase("`", "[E0001] Unrecognized character: '`' at line 1:column 1-line 1:column 2"));
+                        new TestCase(
+                                "@",
+                                "[E0001] Unrecognized character: '@' at line 1:column 1-line"
+                                        + " 1:column 2"),
+                        new TestCase(
+                                "`",
+                                "[E0001] Unrecognized character: '`' at line 1:column 1-line"
+                                        + " 1:column 2"));
 
         for (final TestCase testCase : cases) {
             final Lexer lexer = new Lexer(Path.of(TEST_PATH), testCase.input());

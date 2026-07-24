@@ -1,12 +1,12 @@
 [versions]
-guava = "33.5.0-jre"
+guava = "33.6.0-jre"
 slf4j = "2.0.18"
-logback = "1.5.37"
+logback = "1.6.0"
 jansi = "2.4.3"
 errorprone-core = "2.50.0"
-junit-jupiter = "6.0.1"
+junit-jupiter = "6.1.2"
 picocli = "4.7.7"
-assertj = "3.27.6"
+assertj = "3.27.7"
 
 [libraries]
 guava = { module = "com.google.guava:guava", version.ref = "guava" }

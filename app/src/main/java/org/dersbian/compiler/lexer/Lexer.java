@@ -545,10 +545,10 @@ public class Lexer {
     }
 
     private static TokenKind parseRadixToken(final int radix, final String literal) {
-        TokenKind kind;
+        final TokenKind kind;
         switch (radix) {
             case Constants.RADIX_BINARY -> {
-                INumber number = BaseNumberParser.parseBinary(literal);
+                final INumber number = BaseNumberParser.parseBinary(literal);
                 if (number == null) {
                     throw new NumberFormatException();
                 } else {
@@ -556,7 +556,7 @@ public class Lexer {
                 }
             }
             case Constants.RADIX_OCTAL -> {
-                INumber number = BaseNumberParser.parseOctal(literal);
+                final INumber number = BaseNumberParser.parseOctal(literal);
                 if (number == null) {
                     throw new NumberFormatException();
                 } else {
@@ -564,7 +564,7 @@ public class Lexer {
                 }
             }
             default -> {
-                INumber number = BaseNumberParser.parseHex(literal);
+                final INumber number = BaseNumberParser.parseHex(literal);
                 if (number == null) {
                     throw new NumberFormatException();
                 } else {
