@@ -115,7 +115,6 @@ class FileSizeInfoTest {
                 assertThrows(
                         NullPointerException.class,
                         () -> {
-                            @SuppressWarnings("unused")
                             final FormattedSize _ = info.format(null); // (1)
                         });
 
