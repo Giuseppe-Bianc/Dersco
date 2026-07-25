@@ -3,6 +3,7 @@ package org.dersbian.compiler.lexer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import lombok.Getter;
 import org.dersbian.compiler.Constants;
 import org.dersbian.compiler.error.CompileError;
@@ -556,34 +557,21 @@ public class Lexer {
     }
 
     private static TokenKind parseRadixToken(final int radix, final String literal) {
-        final TokenKind kind;
-        switch (radix) {
-            case Constants.RADIX_BINARY -> {
-                final INumber number = BaseNumberParser.parseBinary(literal);
-                if (number == null) {
-                    throw new NumberFormatException();
-                } else {
-                    kind = new TokenKind.Binary(number);
-                }
-            }
-            case Constants.RADIX_OCTAL -> {
-                final INumber number = BaseNumberParser.parseOctal(literal);
-                if (number == null) {
-                    throw new NumberFormatException();
-                } else {
-                    kind = new TokenKind.Octal(number);
-                }
-            }
-            default -> {
-                final INumber number = BaseNumberParser.parseHex(literal);
-                if (number == null) {
-                    throw new NumberFormatException();
-                } else {
-                    kind = new TokenKind.Hexadecimal(number);
-                }
-            }
+        return switch (radix) {
+            case Constants.RADIX_BINARY ->
+                    createToken(BaseNumberParser.parseBinary(literal), TokenKind.Binary::new);
+            case Constants.RADIX_OCTAL ->
+                    createToken(BaseNumberParser.parseOctal(literal), TokenKind.Octal::new);
+            default -> createToken(BaseNumberParser.parseHex(literal), TokenKind.Hexadecimal::new);
+        };
+    }
+
+    private static TokenKind createToken(
+            final INumber number, final Function<INumber, TokenKind> tokenFactory) {
+        if (number == null) {
+            throw new NumberFormatException();
         }
-        return kind;
+        return tokenFactory.apply(number);
     }
 
     private void reportRadixOverflow(
