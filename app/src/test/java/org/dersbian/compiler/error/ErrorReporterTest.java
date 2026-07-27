@@ -29,15 +29,26 @@ import org.junit.jupiter.params.provider.MethodSource;
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
     "PMD.CommentRequired",
-    "PMD.UnitTestAssertionsShouldIncludeMessage"
+    "PMD.ShortVariable",
+    "PMD.OnlyOneReturn",
+    "PMD.UnitTestContainsTooManyAsserts"
 })
 class ErrorReporterTest {
 
     /** ANSI CSI escape sequence: {@code ESC [} ... letter. */
     private static final Pattern ANSI_REGEX = Pattern.compile("\\u001B\\[[0-?]*[ -/]*[@-~]");
 
+    /** Default source-file name used across most tests. */
+    private static final String SOURCE_FILE = "f.vn";
+
+    /** The help-label prefix checked in negative assertions. */
+    private static final String HELP_LABEL = "help:";
+
+    /** Location label prefix used in all rendered error blocks. */
+    private static final String LOCATION_LABEL = "Location: ";
+
     /** Removes ANSI escape codes so tests assert on the human-readable text. */
-    static String stripAnsiCodes(final String s) {
+    private static String stripAnsiCodes(final String s) {
         if (s == null) {
             return null;
         }
@@ -50,7 +61,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("constructor")
-    class Constructor {
+    private final class Constructor {
 
         @Test
         @DisplayName("rejects a null LineTracker")
@@ -76,13 +87,13 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("empty input")
-    class EmptyInput {
+    private final class EmptyInput {
 
         @Test
         @DisplayName("empty error list produces empty output")
         void emptyErrorListProducesEmptyString() {
             final ErrorReporter reporter =
-                    new ErrorReporter(LineTracker.fromLines(List.of("x")), "f.vn");
+                    new ErrorReporter(LineTracker.fromLines(List.of("x")), SOURCE_FILE);
             assertThat(reporter.reportErrors(List.of())).isEmpty();
         }
 
@@ -90,7 +101,7 @@ class ErrorReporterTest {
         @DisplayName("empty LineTracker yields no source-line/underline block")
         void emptyLineTrackerSkipsSourceLine() {
             final ErrorReporter reporter =
-                    new ErrorReporter(LineTracker.fromLines(List.of()), "f.vn");
+                    new ErrorReporter(LineTracker.fromLines(List.of()), SOURCE_FILE);
             final Span span = Span.point(SourceLocation.create(1, 1, 0L));
             final CompileError.LexerError error =
                     CompileError.lexerError(ErrorCode.E0001, "boom", span, null);
@@ -99,9 +110,9 @@ class ErrorReporterTest {
 
             assertThat(rendered)
                     .startsWith("ERROR [E0001] LEX: boom")
-                    .contains("Location: f.vn:line 1:column 1")
+                    .contains(LOCATION_LABEL + SOURCE_FILE + ":line 1:column 1")
                     .doesNotContain("│")
-                    .doesNotContain("help:");
+                    .doesNotContain(HELP_LABEL);
         }
     }
 
@@ -111,7 +122,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("per-variant rendering")
-    class PerVariant {
+    private final class PerVariant {
 
         private final LineTracker tracker = LineTracker.fromLines(List.of("let value = 42;"));
         private final Span span =
@@ -136,7 +147,7 @@ class ErrorReporterTest {
                     .contains("Location: test.vn:line 1:column 5-line 1:column 10")
                     .contains("   1 │ let value = 42;")
                     .contains("     │     ^^^^^")
-                    .contains("help: Check the input");
+                    .contains(HELP_LABEL + " Check the input");
         }
 
         @Test
@@ -154,7 +165,7 @@ class ErrorReporterTest {
 
             assertThat(rendered)
                     .startsWith("ERROR [E1004] SYNTAX: Unexpected token\n")
-                    .contains("help: Check brackets");
+                    .contains(HELP_LABEL + " Check brackets");
         }
 
         @Test
@@ -172,7 +183,7 @@ class ErrorReporterTest {
 
             assertThat(rendered)
                     .startsWith("ERROR [E2002] TYPE: Type mismatch\n")
-                    .contains("help: Cast the value");
+                    .contains(HELP_LABEL + " Cast the value");
         }
 
         @Test
@@ -187,7 +198,7 @@ class ErrorReporterTest {
 
             assertThat(rendered)
                     .startsWith("ERROR [E3003] IR GEN: Bad IR\n")
-                    .doesNotContain("help:");
+                    .doesNotContain(HELP_LABEL);
         }
 
         @Test
@@ -204,7 +215,7 @@ class ErrorReporterTest {
                     .isEqualTo("ERROR [E4001] ASM GEN: Invalid instruction\n")
                     .doesNotContain("Location:")
                     .doesNotContain("│")
-                    .doesNotContain("help:");
+                    .doesNotContain(HELP_LABEL);
         }
 
         @Test
@@ -249,13 +260,13 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("span rendering")
-    class SpanRendering {
+    private final class SpanRendering {
 
         @Test
         @DisplayName("single-line span emits a caret run matching the column range")
         void singleLineSpan() {
             final LineTracker tracker = LineTracker.fromLines(List.of("let value = 42;"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final Span span =
                     Span.create(SourceLocation.create(1, 5, 4L), SourceLocation.create(1, 10, 9L));
 
@@ -273,7 +284,7 @@ class ErrorReporterTest {
         @DisplayName("multi-line span emits a single caret and a continuation note")
         void multiLineSpan() {
             final LineTracker tracker = LineTracker.fromLines(List.of("first line", "second line"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final Span span =
                     Span.create(SourceLocation.create(1, 3, 2L), SourceLocation.create(2, 4, 14L));
 
@@ -285,7 +296,7 @@ class ErrorReporterTest {
                                                     ErrorCode.E1004, "x", span, null))));
 
             assertThat(rendered)
-                    .contains("Location: f.vn:line 1:column 3-line 2:column 4")
+                    .contains(LOCATION_LABEL + SOURCE_FILE + ":line 1:column 3-line 2:column 4")
                     .contains("   1 │ first line")
                     .contains("     │   ^")
                     .contains("     │ ... (error spans lines 1-2)");
@@ -295,7 +306,7 @@ class ErrorReporterTest {
         @DisplayName("zero-length point span emits a single caret at the column")
         void pointSpan() {
             final LineTracker tracker = LineTracker.fromLines(List.of("abcdef"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final Span span = Span.point(SourceLocation.create(1, 4, 3L));
 
             final String rendered =
@@ -312,7 +323,7 @@ class ErrorReporterTest {
         @DisplayName("span pointing past the last tracked line omits the source-line block")
         void spanPastEndOfSource() {
             final LineTracker tracker = LineTracker.fromLines(List.of("only line"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final Span span =
                     Span.create(
                             SourceLocation.create(42, 1, 100L), SourceLocation.create(42, 2, 101L));
@@ -325,7 +336,7 @@ class ErrorReporterTest {
                                                     ErrorCode.E1004, "x", span, null))));
 
             assertThat(rendered)
-                    .contains("Location: f.vn:line 42:column 1-line 42:column 2")
+                    .contains(LOCATION_LABEL + SOURCE_FILE + ":line 42:column 1-line 42:column 2")
                     .doesNotContain("│");
         }
 
@@ -333,7 +344,7 @@ class ErrorReporterTest {
         @DisplayName("span starting at column 1 renders the caret at column 0 (no leading space)")
         void spanStartingAtColumnOne() {
             final LineTracker tracker = LineTracker.fromLines(List.of("abcdef"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final Span span =
                     Span.create(SourceLocation.create(1, 1, 0L), SourceLocation.create(1, 3, 2L));
 
@@ -364,7 +375,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("help and code prefix")
-    class HelpAndCodePrefix {
+    private final class HelpAndCodePrefix {
 
         private final LineTracker tracker = LineTracker.fromLines(List.of("let x = 1;"));
         private final Span span =
@@ -373,7 +384,7 @@ class ErrorReporterTest {
         @Test
         @DisplayName("null help omits the help line entirely")
         void nullHelpOmitted() {
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final String rendered =
                     stripAnsiCodes(
                             reporter.reportErrors(
@@ -384,13 +395,13 @@ class ErrorReporterTest {
                                                     span,
                                                     java.util.Optional.ofNullable(null)))));
 
-            assertThat(rendered).doesNotContain("help:");
+            assertThat(rendered).doesNotContain(HELP_LABEL);
         }
 
         @Test
         @DisplayName("missing ErrorCode renders a blank prefix slot")
         void missingErrorCodeBlankPrefix() {
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final String rendered =
                     stripAnsiCodes(
                             reporter.reportErrors(
@@ -411,13 +422,13 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("ANSI styling")
-    class AnsiStyling {
+    private final class AnsiStyling {
 
         @Test
         @DisplayName("output is wrapped in ANSI escape sequences")
         void outputContainsAnsiEscapes() {
             final LineTracker tracker = LineTracker.fromLines(List.of("x"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final Span span = Span.point(SourceLocation.create(1, 1, 0L));
             final String raw =
                     reporter.reportErrors(
@@ -450,13 +461,13 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("multiple errors")
-    class MultipleErrors {
+    private final class MultipleErrors {
 
         @Test
         @DisplayName("errors are concatenated in input order without any separator")
         void errorsConcatenatedInOrder() {
             final LineTracker tracker = LineTracker.fromLines(List.of("abc"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final Span s1 = Span.point(SourceLocation.create(1, 1, 0L));
             final Span s2 = Span.point(SourceLocation.create(1, 2, 1L));
             final CompileError a = CompileError.lexerError(ErrorCode.E0001, "first", s1, null);
@@ -476,7 +487,7 @@ class ErrorReporterTest {
         @DisplayName("single-error list renders exactly one block")
         void singleErrorRendersOneBlock() {
             final LineTracker tracker = LineTracker.fromLines(List.of("abc"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final Span span = Span.point(SourceLocation.create(1, 1, 0L));
 
             final String rendered =
@@ -497,7 +508,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("edge cases")
-    class EdgeCases {
+    private final class EdgeCases {
 
         private final LineTracker tracker = LineTracker.fromLines(List.of("hello"));
         private final Span span = Span.point(SourceLocation.create(1, 1, 0L));
@@ -519,7 +530,7 @@ class ErrorReporterTest {
         @Test
         @DisplayName("empty message is preserved verbatim")
         void emptyMessagePreserved() {
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final String rendered =
                     stripAnsiCodes(
                             reporter.reportErrors(
@@ -534,9 +545,9 @@ class ErrorReporterTest {
         @DisplayName(
                 "source line containing tab characters still produces a correct underline column")
         void tabInSourceLine() {
-            final LineTracker tracker = LineTracker.fromLines(List.of("\tabc"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
-            final Span span =
+            final LineTracker tabTracker = LineTracker.fromLines(List.of("\tabc"));
+            final ErrorReporter reporter = new ErrorReporter(tabTracker, SOURCE_FILE);
+            final Span tabSpan =
                     Span.create(SourceLocation.create(1, 2, 1L), SourceLocation.create(1, 4, 3L));
 
             final String rendered =
@@ -544,7 +555,7 @@ class ErrorReporterTest {
                             reporter.reportErrors(
                                     List.of(
                                             CompileError.lexerError(
-                                                    ErrorCode.E0001, "m", span, null))));
+                                                    ErrorCode.E0001, "m", tabSpan, null))));
 
             // startColumn=2 -> startOffset=1; one space, then "^^" run
             assertThat(rendered).contains("     │  ^^");
@@ -553,9 +564,8 @@ class ErrorReporterTest {
         @Test
         @DisplayName("unicode source line is rendered verbatim in the source context")
         void unicodeSourceLine() {
-            final LineTracker tracker = LineTracker.fromLines(List.of("αβγ"));
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
-            final Span span = Span.point(SourceLocation.create(1, 1, 0L));
+            final LineTracker unicodeTracker = LineTracker.fromLines(List.of("αβγ"));
+            final ErrorReporter reporter = new ErrorReporter(unicodeTracker, SOURCE_FILE);
 
             final String rendered =
                     stripAnsiCodes(
@@ -570,7 +580,7 @@ class ErrorReporterTest {
         @Test
         @DisplayName("singleton List with AsmGeneratorError renders a trailing newline")
         void asmErrorTrailingNewline() {
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             final String rendered =
                     stripAnsiCodes(
                             reporter.reportErrors(
@@ -582,7 +592,7 @@ class ErrorReporterTest {
         @Test
         @DisplayName("unmodifiable Collections.emptyList() is also supported")
         void supportsCollectionsEmptyList() {
-            final ErrorReporter reporter = new ErrorReporter(tracker, "f.vn");
+            final ErrorReporter reporter = new ErrorReporter(tracker, SOURCE_FILE);
             assertThat(reporter.reportErrors(Collections.<CompileError>emptyList())).isEmpty();
         }
     }
@@ -593,13 +603,13 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("parameterized phase-with-span variants")
-    class ParameterizedPhaseVariants {
+    private final class ParameterizedPhaseVariants {
 
         private static Stream<Arguments> phaseVariants() {
             final Span span =
                     Span.create(SourceLocation.create(1, 1, 0L), SourceLocation.create(1, 2, 1L));
             final ErrorReporter reporter =
-                    new ErrorReporter(LineTracker.fromLines(List.of("ab")), "f.vn");
+                    new ErrorReporter(LineTracker.fromLines(List.of("ab")), SOURCE_FILE);
             return Stream.of(
                     Arguments.of(
                             "LEX",
@@ -628,7 +638,7 @@ class ErrorReporterTest {
             assertThat(rendered)
                     .contains("ERROR [E")
                     .contains(" " + category + ": m")
-                    .contains("Location: f.vn:")
+                    .contains(LOCATION_LABEL + SOURCE_FILE + ":")
                     .contains("   1 │ ab")
                     .contains("     │ ^");
         }
