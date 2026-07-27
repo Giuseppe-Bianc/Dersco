@@ -356,8 +356,7 @@ class CompilerPhaseTest {
     @Test
     @DisplayName("complement of all-phases EnumSet is empty")
     void complementOfAllPhasesEnumSetIsEmpty() {
-        final EnumSet<CompilerPhase> all = EnumSet.allOf(CompilerPhase.class);
-        assertThat(EnumSet.complementOf(all)).isEmpty();
+        assertThat(EnumSet.complementOf(EnumSet.allOf(CompilerPhase.class))).isEmpty();
     }
 
     @Test
