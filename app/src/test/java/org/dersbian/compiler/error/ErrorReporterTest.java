@@ -61,7 +61,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("constructor")
-    private final class Constructor {
+    public final class Constructor {
 
         @Test
         @DisplayName("rejects a null LineTracker")
@@ -87,7 +87,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("empty input")
-    private final class EmptyInput {
+    public final class EmptyInput {
 
         @Test
         @DisplayName("empty error list produces empty output")
@@ -122,7 +122,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("per-variant rendering")
-    private final class PerVariant {
+    public final class PerVariant {
 
         private final LineTracker tracker = LineTracker.fromLines(List.of("let value = 42;"));
         private final Span span =
@@ -260,7 +260,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("span rendering")
-    private final class SpanRendering {
+    public final class SpanRendering {
 
         @Test
         @DisplayName("single-line span emits a caret run matching the column range")
@@ -375,7 +375,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("help and code prefix")
-    private final class HelpAndCodePrefix {
+    public final class HelpAndCodePrefix {
 
         private final LineTracker tracker = LineTracker.fromLines(List.of("let x = 1;"));
         private final Span span =
@@ -422,7 +422,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("ANSI styling")
-    private final class AnsiStyling {
+    public final class AnsiStyling {
 
         @Test
         @DisplayName("output is wrapped in ANSI escape sequences")
@@ -461,7 +461,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("multiple errors")
-    private final class MultipleErrors {
+    public final class MultipleErrors {
 
         @Test
         @DisplayName("errors are concatenated in input order without any separator")
@@ -508,7 +508,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("edge cases")
-    private final class EdgeCases {
+    public final class EdgeCases {
 
         private final LineTracker tracker = LineTracker.fromLines(List.of("hello"));
         private final Span span = Span.point(SourceLocation.create(1, 1, 0L));
@@ -603,7 +603,7 @@ class ErrorReporterTest {
 
     @Nested
     @DisplayName("parameterized phase-with-span variants")
-    private final class ParameterizedPhaseVariants {
+    public final class ParameterizedPhaseVariants {
 
         private static Stream<Arguments> phaseVariants() {
             final Span span =
