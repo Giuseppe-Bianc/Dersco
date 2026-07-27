@@ -1,0 +1,53 @@
+# Codecov configuration for Dersco.
+#
+# The XML report fed into Codecov is produced by `./gradlew jacocoTestReport`
+# and lands at app/build/reports/jacoco/test/jacocoTestReport.xml. The GitHub
+# Actions workflow at .github/workflows/ci.yml uploads that file via the
+# official codecov-action (v5) and authenticates with the CODECOV_TOKEN
+# repository secret.
+#
+# Targets below define the *project* coverage floor (the long-running goal)
+# and the *patch* coverage floor (the bar every PR must clear). Coverage of
+# auto-generated sources under build/ and gradle wrapper assets is ignored
+# because they are not part of the shipped product.
+
+codecov:
+  require_ci_to_pass: true
+  notify:
+    # Codecov is allowed to post a single comment per PR; further updates
+    # collapse into that thread instead of spamming the timeline.
+    after_n_builds: 1
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...90"
+
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        if_ci_failed: error
+        only_pulls: false
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        if_ci_failed: error
+
+  ignore:
+    - "build/**"
+    - "**/build/**"
+    - "gradle/**"
+    - "**/generated/**"
+
+# Annotations pinned to diff so reviewers see uncovered lines on the PR
+# without leaving the conversation.
+comment:
+  layout: "header, diff, flags, components, files, footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true

@@ -20,6 +20,7 @@ plugins {
     id("com.diffplug.spotless") version "8.8.0"
     id("io.freefair.lombok") version "9.5.0"
     id("com.gradleup.shadow") version "9.6.1"
+    jacoco
 }
 
 group = "org.dersbian"
@@ -107,7 +108,7 @@ spotless {
 }
 
 tasks.named("check") {
-    dependsOn("checkstyleMain", "pmdMain", "spotbugsMain", "spotlessCheck")
+    dependsOn("checkstyleMain", "pmdMain", "spotbugsMain", "spotlessCheck", "jacocoTestReport")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -117,6 +118,28 @@ java {
     }
     withSourcesJar()
     withJavadocJar()
+}
+
+// --- Code coverage ---------------------------------------------------------
+// JaCoCo drives the report consumed by Codecov. Tool version matches the JaCoCo
+// release train; the plugin's own `version` is the source of truth for the
+// agent. We expose the XML report at the conventional path so codecov-action
+// can pick it up without extra config.
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+    // Source sets under test live under app/src/main/java. Tests live under
+    // app/src/test/java. JaCoCo defaults pick these up; declared explicitly
+    // so a future module split does not silently change coverage scope.
+    sourceSets(sourceSets["main"])
 }
 
 application {
