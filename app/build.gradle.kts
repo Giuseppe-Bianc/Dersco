@@ -171,6 +171,7 @@ tasks.shadowJar {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
     testLogging {
         events("passed", "skipped", "failed", "standardOut", "standardError")

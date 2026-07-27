@@ -29,10 +29,13 @@ import picocli.CommandLine;
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
     "PMD.CommentRequired",
-    "PMD.UnitTestAssertionsShouldIncludeMessage",
-    "PMD.UnitTestContainsTooManyAsserts"
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.LongVariable"
 })
 class CheckCommandTest {
+
+    /** Picocli's default exit code for invalid command-line input, per {@code CommandSpec}. */
+    private static final int DEFAULT_INVALID_INPUT_EXIT_CODE = 2;
 
     @Test
     void callInvokesCheckSyntaxWithSourcePath(@TempDir final Path tempDir) throws IOException {
@@ -62,11 +65,10 @@ class CheckCommandTest {
         final Path missing = tempDir.resolve("does-not-exist.dr");
         final RecordingService service = new RecordingService();
         final CheckCommand command = new CheckCommand(service);
-        final CommandLine commandLine = new CommandLine(command);
 
-        final Integer exit = commandLine.execute(missing.toString());
+        final Integer exit = new CommandLine(command).execute(missing.toString());
 
-        assertThat(exit).isEqualTo(commandLine.getCommandSpec().exitCodeOnInvalidInput());
+        assertThat(exit).isEqualTo(DEFAULT_INVALID_INPUT_EXIT_CODE);
         assertThat(service.checked).isEmpty();
     }
 
@@ -74,12 +76,11 @@ class CheckCommandTest {
     void callExitsWithInvalidInputCodeWhenInputIsDirectory(@TempDir final Path tempDir) {
         final RecordingService service = new RecordingService();
         final CheckCommand command = new CheckCommand(service);
-        final CommandLine commandLine = new CommandLine(command);
 
         // tempDir itself is an existing directory; not a regular file.
-        final Integer exit = commandLine.execute(tempDir.toString());
+        final Integer exit = new CommandLine(command).execute(tempDir.toString());
 
-        assertThat(exit).isEqualTo(commandLine.getCommandSpec().exitCodeOnInvalidInput());
+        assertThat(exit).isEqualTo(DEFAULT_INVALID_INPUT_EXIT_CODE);
         assertThat(service.checked).isEmpty();
     }
 

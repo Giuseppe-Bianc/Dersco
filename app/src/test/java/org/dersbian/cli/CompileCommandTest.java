@@ -25,128 +25,129 @@ import picocli.CommandLine.ParameterException;
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
     "PMD.CommentRequired",
-    "PMD.UnitTestAssertionsShouldIncludeMessage",
-    "PMD.UnitTestContainsTooManyAsserts"
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.TooManyMethods"
 })
 class CompileCommandTest {
 
+    private static final String SOURCE_FILE_NAME = "source.dr";
+
     @Test
     void callSucceedsWhenServiceCompletes(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         final Integer exit = new CommandLine(command).execute(source.toString());
 
         assertThat(exit).isEqualTo(0);
-        assertThat(service.requests).hasSize(1);
+        assertThat(service.requestCount()).isEqualTo(1);
     }
 
     @Test
     void callForwardsSourcePathToService(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         new CommandLine(command).execute(source.toString());
 
-        assertThat(service.requests.get(0).source()).isEqualTo(source);
+        assertThat(service.firstSource()).isEqualTo(source);
     }
 
     @Test
     void callForwardsCustomOutputPath(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final Path output = tempDir.resolve("out.bin");
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         new CommandLine(command).execute(source.toString(), "-o", output.toString());
 
-        assertThat(service.requests.get(0).output()).isEqualTo(output);
+        assertThat(service.firstOutput()).isEqualTo(output);
     }
 
     @Test
-    void callDefaultsOutputToAExe(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+    void callDefaultsOutputToDefaultExecutableName(@TempDir final Path tempDir) throws IOException {
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         new CommandLine(command).execute(source.toString());
 
-        assertThat(service.requests.get(0).output().getFileName().toString()).isEqualTo("a.exe");
+        assertThat(service.firstOutputFileName()).isEqualTo("a.exe");
     }
 
     @Test
     void callForwardsOptimizationLevel(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         new CommandLine(command).execute(source.toString(), "-O", "AGGRESSIVE");
 
-        assertThat(service.requests.get(0).optimizationLevel())
-                .isEqualTo(OptimizationLevel.AGGRESSIVE);
+        assertThat(service.firstOptimizationLevel()).isEqualTo(OptimizationLevel.AGGRESSIVE);
     }
 
     @Test
     void callDefaultsOptimizationToNone(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         new CommandLine(command).execute(source.toString());
 
-        assertThat(service.requests.get(0).optimizationLevel()).isEqualTo(OptimizationLevel.NONE);
+        assertThat(service.firstOptimizationLevel()).isEqualTo(OptimizationLevel.NONE);
     }
 
     @Test
     void callForwardsEmitIrFlag(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         new CommandLine(command).execute(source.toString(), "--emit-ir");
 
-        assertThat(service.requests.get(0).emitIntermediateCode()).isTrue();
+        assertThat(service.firstEmitIntermediateCode()).isTrue();
     }
 
     @Test
     void emitIrDefaultsToFalse(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         new CommandLine(command).execute(source.toString());
 
-        assertThat(service.requests.get(0).emitIntermediateCode()).isFalse();
+        assertThat(service.firstEmitIntermediateCode()).isFalse();
     }
 
     @Test
     void callForwardsDiagnosticsFlag(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         new CommandLine(command).execute(source.toString(), "--diagnostics");
 
-        assertThat(service.requests.get(0).diagnostics()).isTrue();
+        assertThat(service.firstDiagnostics()).isTrue();
     }
 
     @Test
     void diagnosticsDefaultsToFalse(@TempDir final Path tempDir) throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final RecordingService service = new RecordingService();
         final CompileCommand command = new CompileCommand(service);
 
         new CommandLine(command).execute(source.toString());
 
-        assertThat(service.requests.get(0).diagnostics()).isFalse();
+        assertThat(service.firstDiagnostics()).isFalse();
     }
 
     @Test
     void callReturnsOneWhenServiceThrowsCompilerException(@TempDir final Path tempDir)
             throws IOException {
-        final Path source = Files.createFile(tempDir.resolve("source.dr"));
+        final Path source = Files.createFile(tempDir.resolve(SOURCE_FILE_NAME));
         final CompileCommand command = new CompileCommand(new ThrowingService());
 
         final Integer exit = new CommandLine(command).execute(source.toString());
@@ -162,9 +163,7 @@ class CompileCommandTest {
 
         final Integer exit = commandLine.execute(missing.toString());
 
-        // picocli's default exit code on invalid input is 2; the ParameterException is logged and
-        // not re-thrown across the execute() boundary.
-        assertThat(exit).isEqualTo(commandLine.getCommandSpec().exitCodeOnInvalidInput());
+        assertThat(exit).isEqualTo(CommandLine.ExitCode.USAGE);
     }
 
     @Test
@@ -175,7 +174,7 @@ class CompileCommandTest {
         // tempDir itself exists and is a directory; not a readable file.
         final Integer exit = commandLine.execute(tempDir.toString());
 
-        assertThat(exit).isEqualTo(commandLine.getCommandSpec().exitCodeOnInvalidInput());
+        assertThat(exit).isEqualTo(CommandLine.ExitCode.USAGE);
     }
 
     @Test
@@ -186,7 +185,7 @@ class CompileCommandTest {
 
         new CommandLine(command).execute(missing.toString());
 
-        assertThat(service.requests).isEmpty();
+        assertThat(service.hasNoRequests()).isTrue();
     }
 
     @Test
@@ -209,6 +208,45 @@ class CompileCommandTest {
         @Override
         public void compile(final CompilationRequest request) {
             requests.add(request);
+        }
+
+        private int requestCount() {
+            return requests.size();
+        }
+
+        private boolean hasNoRequests() {
+            return requests.isEmpty();
+        }
+
+        private Path firstSource() {
+            return firstRequest().source();
+        }
+
+        private Path firstOutput() {
+            return firstRequest().output();
+        }
+
+        private String firstOutputFileName() {
+            final Path fileName = firstOutput().getFileName();
+            return java.util.Objects.requireNonNull(
+                            fileName, "output path has no file name: " + firstOutput())
+                    .toString();
+        }
+
+        private OptimizationLevel firstOptimizationLevel() {
+            return firstRequest().optimizationLevel();
+        }
+
+        private boolean firstEmitIntermediateCode() {
+            return firstRequest().emitIntermediateCode();
+        }
+
+        private boolean firstDiagnostics() {
+            return firstRequest().diagnostics();
+        }
+
+        private CompilationRequest firstRequest() {
+            return requests.get(0);
         }
     }
 

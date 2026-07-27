@@ -15,12 +15,18 @@ import picocli.CommandLine;
  * and prints {@code "dersco <version>"}. Subcommands {@code compile} and {@code check} remain
  * dispatched to their respective classes.
  */
-@SuppressWarnings({
-    "PMD.AtLeastOneConstructor",
-    "PMD.CommentRequired",
-    "PMD.UnitTestAssertionsShouldIncludeMessage"
-})
+@SuppressWarnings("PMD.AtLeastOneConstructor")
 class RootCommandTest {
+
+    @Test
+    void noSubcommandReturnsZeroExitCode() {
+        final CommandLine commandLine = new CommandLine(new RootCommand());
+        commandLine.setOut(new PrintWriter(new StringWriter(), true));
+
+        final int exit = commandLine.execute();
+
+        assertThat(exit).isEqualTo(0);
+    }
 
     @Test
     void noSubcommandPrintsUsageHelp() {
@@ -28,12 +34,21 @@ class RootCommandTest {
         final CommandLine commandLine = new CommandLine(new RootCommand());
         commandLine.setOut(new PrintWriter(out, true));
 
-        final int exit = commandLine.execute();
+        commandLine.execute();
+
+        // Usage synopsis contains the program name and at least one subcommand token.
+        // Chained assertions are considered a single assert by the linter.
+        assertThat(out.toString()).contains("dersco").contains("compile").contains("check");
+    }
+
+    @Test
+    void versionFlagReturnsZeroExitCode() {
+        final CommandLine commandLine = new CommandLine(new RootCommand());
+        commandLine.setOut(new PrintWriter(new StringWriter(), true));
+
+        final int exit = commandLine.execute("--version");
 
         assertThat(exit).isEqualTo(0);
-        // Usage synopsis contains the program name and at least one subcommand token.
-        final String printed = out.toString();
-        assertThat(printed).contains("dersco").contains("compile").contains("check");
     }
 
     @Test
@@ -42,9 +57,8 @@ class RootCommandTest {
         final CommandLine commandLine = new CommandLine(new RootCommand());
         commandLine.setOut(new PrintWriter(out, true));
 
-        final int exit = commandLine.execute("--version");
+        commandLine.execute("--version");
 
-        assertThat(exit).isEqualTo(0);
         assertThat(out.toString()).startsWith("dersco ");
     }
 
@@ -54,7 +68,7 @@ class RootCommandTest {
 
         final int exit = commandLine.execute("bogus");
 
-        // picocli returns its configured exit code on invalid input (default 2).
-        assertThat(exit).isEqualTo(commandLine.getCommandSpec().exitCodeOnInvalidInput());
+        // picocli returns ExitCode.USAGE (default 2) on invalid input.
+        assertThat(exit).isEqualTo(CommandLine.ExitCode.USAGE);
     }
 }

@@ -23,8 +23,13 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("PMD.AtLeastOneConstructor")
 class LoggingMixinTest {
 
+    /** The root logger whose log level is manipulated by the mixin. */
     private Logger root;
+
+    /** Appender used to capture log events during test execution. */
     private ListAppender<ILoggingEvent> appender;
+
+    /** The original log level of the root logger, saved so it can be restored after each test. */
     private Level originalRootLevel;
 
     @BeforeEach
