@@ -126,9 +126,8 @@ java {
 // agent. We expose the XML report at the conventional path so codecov-action
 // can pick it up without extra config.
 jacoco {
-    toolVersion = "0.8.13"
+    toolVersion = "0.8.14"
 }
-
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
     reports {
