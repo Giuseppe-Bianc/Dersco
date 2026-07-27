@@ -25,11 +25,13 @@ class LoggingMixinTest {
 
     private Logger root;
     private ListAppender<ILoggingEvent> appender;
+    private Level originalRootLevel;
 
     @BeforeEach
     void attachAppender() {
         final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         root = context.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        originalRootLevel = root.getLevel();
         appender = new ListAppender<>();
         appender.setContext(context);
         appender.start();
@@ -41,7 +43,7 @@ class LoggingMixinTest {
         root.detachAppender(appender);
         appender.stop();
         // Reset root level so a misbehaving test cannot leak into the next one.
-        root.setLevel(Level.WARN);
+        root.setLevel(originalRootLevel);
     }
 
     @Test
