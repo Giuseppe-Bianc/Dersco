@@ -1120,4 +1120,80 @@ class INumberTest {
         final INumber.Scientific64 s = new INumber.Scientific64(Double.POSITIVE_INFINITY, 0);
         Assertions.assertEquals(Double.POSITIVE_INFINITY, s.base());
     }
+
+    // ── 1. Exponent is the SOLE difference — base bits are identical ──────────
+    @Test
+    @DisplayName("Scientific64: equal bases, exponent is sole discriminator → not equal")
+    void scientific64ExponentIsSoleDiscriminator() {
+        final double base = Math.PI; // non-trivial, identical bit pattern
+        final INumber.Scientific64 a = new INumber.Scientific64(base, 5);
+        final INumber.Scientific64 b = new INumber.Scientific64(base, 6);
+
+        // The base-bits comparison passes; only exponent check makes them unequal
+        Assertions.assertNotEquals(
+                a,
+                b,
+                "Differs only in exponent: the exponent clause must be reached and return false");
+    }
+
+    // ── 2. Exponent boundary: Integer.MAX_VALUE vs Integer.MIN_VALUE ──────────
+    @Test
+    @DisplayName("Scientific64: Integer.MAX_VALUE exponent != Integer.MIN_VALUE exponent")
+    void scientific64MaxVsMinExponent() {
+        final INumber.Scientific64 a = new INumber.Scientific64(1.0, Integer.MAX_VALUE);
+        final INumber.Scientific64 b = new INumber.Scientific64(1.0, Integer.MIN_VALUE);
+        Assertions.assertNotEquals(a, b);
+    }
+
+    // ── 3. Exponent boundary: zero vs one ────────────────────────────────────
+    @Test
+    @DisplayName("Scientific64: exponent 0 != exponent 1 with identical base")
+    void scientific64ZeroVsOneExponent() {
+        final INumber.Scientific64 a = new INumber.Scientific64(1.0, 0);
+        final INumber.Scientific64 b = new INumber.Scientific64(1.0, 1);
+        Assertions.assertNotEquals(a, b);
+    }
+
+    // ── 4. Exponent boundary: negative vs positive ────────────────────────────
+    @Test
+    @DisplayName("Scientific64: negative exponent != positive exponent with identical base")
+    void scientific64NegativeVsPositiveExponent() {
+        final double base = 1.5;
+        final INumber.Scientific64 a = new INumber.Scientific64(base, -1);
+        final INumber.Scientific64 b = new INumber.Scientific64(base, 1);
+        Assertions.assertNotEquals(a, b);
+    }
+
+    // ── 5. Same exponent, same base bits → must be EQUAL (transitivity check) ─
+    @Test
+    @DisplayName("Scientific64: identical base bits and exponent → equal (exponent clause: true)")
+    void scientific64ExponentClauseReturnsTrue() {
+        final double base = 6.626_070_15;
+        final int exp = -34;
+        final INumber.Scientific64 a = new INumber.Scientific64(base, exp);
+        final INumber.Scientific64 b = new INumber.Scientific64(base, exp);
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(a, b),
+                () -> Assertions.assertEquals(a.hashCode(), b.hashCode()));
+    }
+
+    // ── 6. NaN base, differing exponents → not equal ─────────────────────────
+    @Test
+    @DisplayName("Scientific64: NaN base with different exponents are not equal")
+    void scientific64NanBaseDifferentExponents() {
+        // NaN bits are equal → short-circuit does NOT skip exponent check
+        final INumber.Scientific64 a = new INumber.Scientific64(Double.NaN, 0);
+        final INumber.Scientific64 b = new INumber.Scientific64(Double.NaN, 1);
+        Assertions.assertNotEquals(
+                a, b, "NaN bits match, so exponent is the sole discriminator here");
+    }
+
+    // ── 7. +0.0 base, differing exponents → not equal ────────────────────────
+    @Test
+    @DisplayName("Scientific64: +0.0 base with different exponents are not equal")
+    void scientific64PosZeroBaseDifferentExponents() {
+        final INumber.Scientific64 a = new INumber.Scientific64(0.0, 10);
+        final INumber.Scientific64 b = new INumber.Scientific64(0.0, 20);
+        Assertions.assertNotEquals(a, b);
+    }
 }
