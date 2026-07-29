@@ -65,18 +65,18 @@ public record SourceLocation(
     }
 
     /**
-     * Verifica se l'offset UTF-8 è stato calcolato.
+     * Returns whether the UTF-8 offset has been computed.
      *
-     * @return true se l'offset UTF-8 è diverso da {@link #UNKNOWN}.
+     * @return {@code true} if the UTF-8 offset is different from {@link #UNKNOWN}.
      */
     public boolean hasUtf8Offset() {
         return utf8Offset != UNKNOWN;
     }
 
     /**
-     * Verifica se l'offset in code point è stato calcolato.
+     * Returns whether the code-point offset has been computed.
      *
-     * @return true se l'offset in code point è diverso da {@link #UNKNOWN}.
+     * @return {@code true} if the code-point offset is different from {@link #UNKNOWN}.
      */
     public boolean hasCodePointOffset() {
         return codePointOffset != UNKNOWN;

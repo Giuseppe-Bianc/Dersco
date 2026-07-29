@@ -7,16 +7,16 @@ import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.number.INumber;
 
 /**
- * Analisi e gestione dei suffissi di tipo.
+ * Analysis and handling of type suffixes.
  *
- * <p>Fornisce funzionalità per separare i literal numerici nella loro componente numerica e
- * nell'eventuale suffisso di tipo, instradando poi verso il parser specifico appropriato.
+ * <p>Provides functionality for splitting numeric literals into their numeric component and
+ * optional type suffix, then dispatching to the appropriate specific parser.
  *
- * <p>{@link #handleSuffix} restituisce {@code null} in caso di parsing fallito o suffisso
- * sconosciuto, in modo analogo a {@code Option::None} nell'implementazione Rust originale. I metodi
- * di rilevamento del pattern di suffisso ({@link #checkSingleCharSuffix}, {@link
- * #checkTwoCharSuffix}, {@link #checkThreeCharSuffix}) continuano invece a restituire {@code
- * Optional<SuffixPattern>} poiché non producono un {@link INumber}.
+ * <p>{@link #handleSuffix} returns {@code null} on parsing failure or an unknown suffix,
+ * analogously to {@code Option::None} in the original Rust implementation. The suffix-pattern
+ * detection methods ({@link #checkSingleCharSuffix}, {@link #checkTwoCharSuffix}, {@link
+ * #checkThreeCharSuffix}) continue to return {@code Optional<SuffixPattern>} because they do not
+ * produce an {@link INumber}.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @SuppressWarnings({"PMD.ShortVariable", "PMD.OnlyOneReturn", "PMD.LongVariable"})
@@ -28,39 +28,39 @@ public class SuffixParser {
     /** Minimum string length required for a three-character suffix. */
     private static final int THREE_CHAR_MIN_LENGTH = 3;
 
-    /** Rappresenta i possibili pattern di lunghezza del suffisso per i literal numerici. */
+    /** Represents the possible suffix-length patterns for numeric literals. */
     public enum SuffixPattern {
-        /** Suffissi a un carattere: {@code u}, {@code f}, {@code d} (il caso più frequente). */
+        /** Single-character suffixes: {@code u}, {@code f}, {@code d} (the most common case). */
         SINGLE_CHAR(1),
-        /** Suffissi a due caratteri: {@code i8}, {@code u8}. */
+        /** Two-character suffixes: {@code i8}, {@code u8}. */
         TWO_CHAR(2),
-        /** Suffissi a tre caratteri: {@code i16}, {@code i32}, {@code u16}, {@code u32}. */
+        /** Three-character suffixes: {@code i16}, {@code i32}, {@code u16}, {@code u32}. */
         THREE_CHAR(3);
 
-        /** Lunghezza del suffisso espressa in numero di caratteri. */
+        /** Length of the suffix expressed as a character count. */
         private final int charCount;
 
         SuffixPattern(final int length) {
             this.charCount = length;
         }
 
-        /** Restituisce la lunghezza in caratteri di questo pattern di suffisso. */
+        /** Returns the character length of this suffix pattern. */
         public int length() {
             return charCount;
         }
     }
 
     /**
-     * Risultato della separazione di un literal numerico in parte numerica e suffisso opzionale.
+     * Result of splitting a numeric literal into its numeric part and optional suffix.
      *
-     * @param numericPart la porzione numerica, senza suffisso
-     * @param suffix il suffisso (con il case originale preservato), o {@code null} se assente
+     * @param numericPart the numeric portion, without any suffix
+     * @param suffix the suffix (with its original casing preserved), or {@code null} if absent
      */
     public record SplitResult(String numericPart, String suffix) {}
 
     /**
-     * Verifica se l'ultimo carattere è un suffisso a un solo carattere ({@code u}, {@code f} o
-     * {@code d}, senza distinzione tra maiuscole e minuscole).
+     * Returns whether the last character is a single-character suffix ({@code u}, {@code f}, or
+     * {@code d}, case-insensitive).
      */
     public static Optional<SuffixPattern> checkSingleCharSuffix(final String s) {
         if (s.isEmpty()) {
@@ -73,8 +73,8 @@ public class SuffixParser {
     }
 
     /**
-     * Verifica se gli ultimi tre caratteri formano un suffisso valido a tre caratteri ({@code i16},
-     * {@code i32}, {@code u16}, {@code u32}, senza distinzione tra maiuscole e minuscole).
+     * Returns whether the last three characters form a valid three-character suffix ({@code i16},
+     * {@code i32}, {@code u16}, {@code u32}, case-insensitive).
      */
     public static Optional<SuffixPattern> checkThreeCharSuffix(final String s) {
         if (s.length() < THREE_CHAR_MIN_LENGTH) {
@@ -91,8 +91,8 @@ public class SuffixParser {
     }
 
     /**
-     * Verifica se gli ultimi due caratteri formano un suffisso valido a due caratteri ({@code i8},
-     * {@code u8}, senza distinzione tra maiuscole e minuscole).
+     * Returns whether the last two characters form a valid two-character suffix ({@code i8},
+     * {@code u8}, case-insensitive).
      */
     public static Optional<SuffixPattern> checkTwoCharSuffix(final String s) {
         if (s.length() < TWO_CHAR_MIN_LENGTH) {
@@ -107,8 +107,9 @@ public class SuffixParser {
     }
 
     /**
-     * Rileva il pattern di suffisso presente alla fine di {@code s}, controllando prima i pattern a
-     * un carattere (i più frequenti), poi quelli a tre caratteri, infine quelli a due caratteri.
+     * Detects the suffix pattern present at the end of {@code s}, checking single-character
+     * patterns first (the most common), then three-character patterns, and finally two-character
+     * patterns.
      */
     private static Optional<SuffixPattern> detectSuffixPattern(
             final String sufx) { // fix #1: added final
@@ -124,13 +125,13 @@ public class SuffixParser {
     }
 
     /**
-     * Separa un literal numerico nella sua parte numerica e nell'eventuale suffisso di tipo.
+     * Splits a numeric literal into its numeric part and optional type suffix.
      *
-     * <p>Suffissi supportati: {@code u}, {@code f}, {@code d} (un carattere); {@code i8}, {@code
-     * u8} (due caratteri); {@code i16}, {@code i32}, {@code u16}, {@code u32} (tre caratteri).
+     * <p>Supported suffixes: {@code u}, {@code f}, {@code d} (one character); {@code i8}, {@code
+     * u8} (two characters); {@code i16}, {@code i32}, {@code u16}, {@code u32} (three characters).
      *
-     * @param slice stringa completa del literal numerico, incluso l'eventuale suffisso
-     * @return la porzione numerica e il suffisso opzionale (case originale preservato)
+     * @param slice full string of the numeric literal, including any suffix
+     * @return the numeric portion and the optional suffix (original casing preserved)
      */
     public static SplitResult splitNumericAndSuffix(final String slice) {
         final SplitResult result;
@@ -154,24 +155,24 @@ public class SuffixParser {
     }
 
     /**
-     * Instrada il parsing del literal numerico in base al suffisso di tipo.
+     * Routes numeric literal parsing based on the type suffix.
      *
      * <table>
-     *   <caption>Tabella di risoluzione del tipo</caption>
-     *   <tr><th>Suffisso</th><th>Tipo</th><th>Esempio</th></tr>
-     *   <tr><td>(nessuno)</td><td>i64/f64</td>
-     *   <td>{@code 42}→Integer(42), {@code 3.14}→Float64(3.14)</td></tr>
-     *   <tr><td>{@code u}</td><td>u64</td><td>{@code 42u}→UnsignedInteger(42)</td></tr>
-     *   <tr><td>{@code i8}</td><td>i8</td><td>{@code 42i8}→I8(42)</td></tr>
-     *   <tr><td>{@code u16}</td><td>u16</td><td>{@code 1000u16}→U16(1000)</td></tr>
-     *   <tr><td>{@code f}</td><td>f32</td><td>{@code 3.14f}→Float32(3.14)</td></tr>
-     *   <tr><td>{@code d}</td><td>f64</td><td>{@code 3.14d}→Float64(3.14)</td></tr>
+     *   <caption>Type resolution table</caption>
+     *   <tr><th>Suffix</th><th>Type</th><th>Example</th></tr>
+     *   <tr><td>(none)</td><td>i64/f64</td>
+     *   <td>{@code 42}&rarr;Integer(42), {@code 3.14}&rarr;Float64(3.14)</td></tr>
+     *   <tr><td>{@code u}</td><td>u64</td><td>{@code 42u}&rarr;UnsignedInteger(42)</td></tr>
+     *   <tr><td>{@code i8}</td><td>i8</td><td>{@code 42i8}&rarr;I8(42)</td></tr>
+     *   <tr><td>{@code u16}</td><td>u16</td><td>{@code 1000u16}&rarr;U16(1000)</td></tr>
+     *   <tr><td>{@code f}</td><td>f32</td><td>{@code 3.14f}&rarr;Float32(3.14)</td></tr>
+     *   <tr><td>{@code d}</td><td>f64</td><td>{@code 3.14d}&rarr;Float64(3.14)</td></tr>
      * </table>
      *
-     * @param numericPart parte numerica senza suffisso
-     * @param suffix suffisso di tipo opzionale (case-insensitive), può essere {@code null}
-     * @return la {@link INumber} risultante, oppure {@code null} in caso di formato non valido o
-     *     suffisso non supportato
+     * @param numericPart numeric part without suffix
+     * @param suffix optional type suffix (case-insensitive), may be {@code null}
+     * @return the resulting {@link INumber}, or {@code null} if the format is invalid or the suffix
+     *     is unsupported
      */
     @SuppressWarnings("PMD.CyclomaticComplexity")
     public static INumber handleSuffix(final String numericPart, final String suffix) {

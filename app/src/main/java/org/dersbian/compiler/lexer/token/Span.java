@@ -44,7 +44,7 @@ public record Span(SourceLocation start, SourceLocation end) {
     }
 
     /**
-     * Verifica se lo span ha lunghezza zero.
+     * Returns whether the span has zero length.
      *
      * @return {@code true} if empty
      */
@@ -53,7 +53,7 @@ public record Span(SourceLocation start, SourceLocation end) {
     }
 
     /**
-     * Verifica se lo span si estende su più righe.
+     * Returns whether the span extends across multiple lines.
      *
      * @return {@code true} if multiline
      */
@@ -61,19 +61,19 @@ public record Span(SourceLocation start, SourceLocation end) {
         return start.line() != end.line();
     }
 
-    /** Verifica se la posizione ricade nell'intervallo [start, end). */
+    /** Returns whether the given location falls within the interval [start, end). */
     public boolean contains(final SourceLocation location) {
         Objects.requireNonNull(location, "location must not be null");
         return location.offset() >= start.offset() && location.offset() < end.offset();
     }
 
-    /** Verifica se due span condividono almeno un carattere. */
+    /** Returns whether two spans share at least one character. */
     public boolean overlaps(final Span other) {
         Objects.requireNonNull(other, "other must not be null");
         return this.start.offset() < other.end.offset() && other.start.offset() < this.end.offset();
     }
 
-    /** Restituisce lo span minimo che contiene entrambi gli span. */
+    /** Returns the minimum span that contains both spans. */
     public Span merge(final Span other) {
         Objects.requireNonNull(other, "other must not be null");
         final SourceLocation mergedStart =
@@ -83,7 +83,7 @@ public record Span(SourceLocation start, SourceLocation end) {
         return new Span(mergedStart, mergedEnd);
     }
 
-    /** Estrae il testo dallo span. */
+    /** Extracts the text covered by this span from the given source. */
     public String extractFrom(final CharSequence source) {
         Objects.requireNonNull(source, "source must not be null");
         return source.subSequence(Math.toIntExact(start.offset()), Math.toIntExact(end.offset()))

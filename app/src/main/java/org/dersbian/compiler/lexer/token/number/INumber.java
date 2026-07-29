@@ -3,19 +3,19 @@ package org.dersbian.compiler.lexer.token.number;
 import java.util.Objects;
 
 /**
- * Rappresenta i literal numerici nei vari formati supportati dal linguaggio.
+ * Represents numeric literals in the various formats supported by the language.
  *
- * <p>Questa interfaccia sealed cattura le diverse rappresentazioni di numeri trovate nel codice
- * sorgente, preservandone il formato originale per una segnalazione precisa degli errori e
- * un'elaborazione accurata durante la compilazione.
+ * <p>This sealed interface captures the different number representations found in source code,
+ * preserving the original format for precise error reporting and accurate processing during
+ * compilation.
  *
- * <h2>Sicurezza dei tipi</h2>
+ * <h2>Type safety</h2>
  *
- * <p>Ogni record impone i limiti specifici del tipo tramite il tipo primitivo scelto, permettendo
- * di rilevare errori di overflow/underflow già in fase di tokenizzazione, invece di rimandarli a
- * fasi successive della compilazione.
+ * <p>Each record enforces type-specific bounds through the chosen primitive type, allowing
+ * overflow/underflow errors to be detected at tokenization time rather than deferred to later
+ * compilation phases.
  *
- * <h2>Esempi</h2>
+ * <h2>Examples</h2>
  *
  * <pre>{@code
  * Number small     = new Number.I8((byte) -42);
@@ -26,17 +26,17 @@ import java.util.Objects;
  * Number planck    = new Number.Scientific64(6.62607015, -34);
  * }</pre>
  *
- * <p>Nota sulla rappresentazione degli interi senza segno: Java non dispone di tipi primitivi senza
- * segno più stretti di {@code long}. Per {@code u8}, {@code u16} e {@code u32} si usa quindi il
- * tipo con segno immediatamente più largo ({@code short}, {@code int}, {@code long}
- * rispettivamente), che può rappresentare l'intero intervallo non negativo come valore positivo.
- * Per {@code u64} si usa {@code long} conservando il pattern di bit grezzo: la stampa e il parsing
- * decimale sfruttano {@link Long#toUnsignedString} e {@link Long#parseUnsignedLong}.
+ * <p>Note on unsigned integer representation: Java has no primitive types narrower than {@code
+ * long} that are unsigned. For {@code u8}, {@code u16}, and {@code u32} the immediately wider
+ * signed type ({@code short}, {@code int}, {@code long} respectively) is used, since it can
+ * represent the full non-negative range as a positive value. For {@code u64}, {@code long} is used
+ * retaining the raw bit pattern; printing and decimal parsing rely on {@link
+ * Long#toUnsignedString} and {@link Long#parseUnsignedLong}.
  */
 @SuppressWarnings({"AvoidCommonTypeNames", "checkstyle:AbbreviationAsWordInName"})
 public sealed interface INumber {
 
-    /** Literal intero con segno a 8 bit (es. {@code -42i8}). Intervallo: -128..127 */
+    /** Signed 8-bit integer literal (e.g. {@code -42i8}). Range: -128..127. */
     record I8(byte value) implements INumber {
         @Override
         public String toString() {
@@ -44,7 +44,7 @@ public sealed interface INumber {
         }
     }
 
-    /** Literal intero con segno a 16 bit (es. {@code 1234i16}). Intervallo: -32768..32767 */
+    /** Signed 16-bit integer literal (e.g. {@code 1234i16}). Range: -32768..32767. */
     record I16(short value) implements INumber {
         @Override
         public String toString() {
@@ -52,7 +52,7 @@ public sealed interface INumber {
         }
     }
 
-    /** Literal intero con segno a 32 bit (es. {@code 123456i32}). */
+    /** Signed 32-bit integer literal (e.g. {@code 123456i32}). */
     record I32(int value) implements INumber {
         @Override
         public String toString() {
@@ -61,8 +61,8 @@ public sealed interface INumber {
     }
 
     /**
-     * Literal intero con segno a 64 bit (es. {@code -42}, {@code 1234}). Tipo intero predefinito
-     * quando non è specificato alcun suffisso.
+     * Signed 64-bit integer literal (e.g. {@code -42}, {@code 1234}). Default integer type when no
+     * suffix is specified.
      */
     record Integer(long value) implements INumber {
         @Override
@@ -72,9 +72,8 @@ public sealed interface INumber {
     }
 
     /**
-     * Literal intero senza segno a 8 bit (es. {@code 42u8}). Rappresentato come {@code short}
-     * perché Java non ha un tipo a 8 bit capace di contenere l'intero intervallo 0..255 come valore
-     * positivo.
+     * Unsigned 8-bit integer literal (e.g. {@code 42u8}). Represented as {@code short} because Java
+     * has no 8-bit type capable of holding the full 0..255 range as a positive value.
      */
     record U8(short value) implements INumber {
         @Override
@@ -84,8 +83,8 @@ public sealed interface INumber {
     }
 
     /**
-     * Literal intero senza segno a 16 bit (es. {@code 1234u16}). Rappresentato come {@code int} per
-     * contenere l'intervallo 0..65535.
+     * Unsigned 16-bit integer literal (e.g. {@code 1234u16}). Represented as {@code int} to hold
+     * the 0..65535 range.
      */
     record U16(int value) implements INumber {
         @Override
@@ -95,8 +94,8 @@ public sealed interface INumber {
     }
 
     /**
-     * Literal intero senza segno a 32 bit (es. {@code 123456u32}). Rappresentato come {@code long}
-     * per contenere l'intervallo 0..4294967295.
+     * Unsigned 32-bit integer literal (e.g. {@code 123456u32}). Represented as {@code long} to hold
+     * the 0..4294967295 range.
      */
     record U32(long value) implements INumber {
         @Override
@@ -106,9 +105,9 @@ public sealed interface INumber {
     }
 
     /**
-     * Literal intero senza segno a 64 bit (es. {@code 42u}, {@code 1234u}). Rappresentato come
-     * {@code long} contenente il pattern di bit grezzo; usare {@link Long#toUnsignedString(long)}
-     * per la stampa quando il valore può superare {@link Long#MAX_VALUE}.
+     * Unsigned 64-bit integer literal (e.g. {@code 42u}, {@code 1234u}). Represented as a {@code
+     * long} holding the raw bit pattern; use {@link Long#toUnsignedString(long)} for printing when
+     * the value may exceed {@link Long#MAX_VALUE}.
      */
     record UnsignedInteger(long value) implements INumber {
         @Override
@@ -117,11 +116,11 @@ public sealed interface INumber {
         }
     }
 
-    /** Literal a virgola mobile a 32 bit (es. {@code 3.14f}, {@code 6.022e23f}). */
+    /** 32-bit floating-point literal (e.g. {@code 3.14f}, {@code 6.022e23f}). */
     record Float32(float value) implements INumber {
         /**
-         * Confronto bit-a-bit (via {@link Float#floatToRawIntBits}) per gestire NaN e zero con
-         * segno in modo coerente, analogamente a {@code to_bits()} in Rust.
+         * Bit-by-bit comparison (via {@link Float#floatToRawIntBits}) to handle NaN and signed
+         * zero consistently, analogous to {@code to_bits()} in Rust.
          */
         @Override
         public boolean equals(final Object obj) {
@@ -140,7 +139,7 @@ public sealed interface INumber {
         }
     }
 
-    /** Literal a virgola mobile a 64 bit (es. {@code 3.14159}, {@code 6.02214076e23}). */
+    /** 64-bit floating-point literal (e.g. {@code 3.14159}, {@code 6.02214076e23}). */
     record Float64(double value) implements INumber {
         @Override
         public boolean equals(final Object obj) {
@@ -161,11 +160,11 @@ public sealed interface INumber {
     }
 
     /**
-     * Notazione scientifica con base e esponente a 32 bit (es. {@code 6.022e23f}). Memorizza il
-     * numero nella forma: base × 10^esponente.
+     * Scientific notation with a 32-bit base and exponent (e.g. {@code 6.022e23f}). Stores the
+     * number in the form: base × 10^exponent.
      *
-     * @param base valore di base (mantissa)
-     * @param exponent esponente (potenza di 10)
+     * @param base base value (mantissa)
+     * @param exponent exponent (power of 10)
      */
     record Scientific32(float base, int exponent) implements INumber {
         @Override
@@ -187,11 +186,11 @@ public sealed interface INumber {
     }
 
     /**
-     * Notazione scientifica con base e esponente a 64 bit (es. {@code 6.02214076e23}). Memorizza il
-     * numero nella forma: base × 10^esponente.
+     * Scientific notation with a 64-bit base and exponent (e.g. {@code 6.02214076e23}). Stores the
+     * number in the form: base × 10^exponent.
      *
-     * @param base valore di base (mantissa)
-     * @param exponent esponente (potenza di 10)
+     * @param base base value (mantissa)
+     * @param exponent exponent (power of 10)
      */
     record Scientific64(double base, int exponent) implements INumber {
         @Override

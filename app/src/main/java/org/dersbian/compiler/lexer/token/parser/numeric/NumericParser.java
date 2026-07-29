@@ -6,24 +6,24 @@ import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.number.INumber;
 
 /**
- * Funzionalità principale di parsing dei literal numerici decimali.
+ * Core parsing functionality for decimal numeric literals.
  *
- * <p>Contiene la logica di parsing per interi, numeri a virgola mobile e notazione scientifica.
+ * <p>Contains the parsing logic for integers, floating-point numbers, and scientific notation.
  *
- * <p>Tutti i metodi restituiscono {@code null} in caso di parsing fallito, in modo analogo a {@code
- * Option::None} nell'implementazione Rust originale.
+ * <p>All methods return {@code null} on parsing failure, analogously to {@code Option::None} in the
+ * original Rust implementation.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @SuppressWarnings({"PMD.ShortVariable", "PMD.OnlyOneReturn"})
 public class NumericParser {
 
     /**
-     * Effettua il parsing di un literal numerico in una {@link INumber} strutturata.
+     * Parses a numeric literal into a structured {@link INumber}.
      *
-     * @param slice testo completo del literal così come riconosciuto dal lexer (parte numerica +
-     *     suffisso opzionale)
-     * @return la {@link INumber} risultante, oppure {@code null} in caso di formato non valido o
-     *     overflow/underflow
+     * @param slice full text of the literal as recognized by the lexer (numeric part + optional
+     *     suffix)
+     * @return the resulting {@link INumber}, or {@code null} if the format is invalid or an
+     *     overflow/underflow occurred
      */
     public static INumber parseNumber(final String slice) {
         final SuffixParser.SplitResult split = SuffixParser.splitNumericAndSuffix(slice);
@@ -31,20 +31,20 @@ public class NumericParser {
     }
 
     /**
-     * Effettua il parsing di un intero senza segno entro un intervallo specifico, restituendo il
-     * risultato tramite {@code mapFn}.
+     * Parses an unsigned integer within a specific range, returning the result through {@code
+     * mapFn}.
      *
-     * <p>Sostituisce, per necessità del sistema di tipi Java, la funzione generica Rust {@code
-     * parse_integer::<T>}: poiché Java non offre tipi primitivi realmente generici né interi senza
-     * segno stretti, il parsing avviene sempre su {@code long} seguito da un controllo esplicito
-     * dei limiti del tipo di destinazione.
+     * <p>This replaces, due to Java's type system constraints, the generic Rust function {@code
+     * parse_integer::<T>}: since Java offers no truly generic primitive types nor narrow unsigned
+     * integers, parsing always operates on {@code long} followed by an explicit bounds check for the
+     * target type.
      *
-     * @param numericPart la stringa numerica senza suffisso
-     * @param max valore massimo consentito (il minimo è sempre 0, poiché {@link
-     *     #isValidIntegerLiteral} esclude il segno)
-     * @param mapFn funzione che avvolge il valore in una variante di {@link INumber}
-     * @return il numero avvolto, oppure {@code null} se il formato non è valido o il valore eccede
-     *     l'intervallo
+     * @param numericPart the numeric string without a suffix
+     * @param max the maximum allowed value (the minimum is always 0, since {@link
+     *     #isValidIntegerLiteral} excludes sign characters)
+     * @param mapFn function that wraps the value in an {@link INumber} variant
+     * @return the wrapped number, or {@code null} if the format is invalid or the value exceeds the
+     *     range
      */
     public static INumber parseIntegerInRange(
             final String numericPart, final long max, final LongFunction<INumber> mapFn) {
@@ -63,12 +63,12 @@ public class NumericParser {
     }
 
     /**
-     * Effettua il parsing di un intero senza segno a 64 bit (suffisso {@code u}), coprendo l'intero
-     * intervallo 0..2^64-1 tramite {@link Long#parseUnsignedLong(String)}.
+     * Parses an unsigned 64-bit integer (suffix {@code u}), covering the full
+     * 0..2^64&#8722;1 range via {@link Long#parseUnsignedLong(String)}.
      *
-     * @param numericPart la stringa numerica senza suffisso
-     * @return {@code INumber.UnsignedInteger}, oppure {@code null} se il formato non è valido o il
-     *     valore eccede u64::MAX
+     * @param numericPart the numeric string without a suffix
+     * @return an {@code INumber.UnsignedInteger}, or {@code null} if the format is invalid or the
+     *     value exceeds u64::MAX
      */
     public static INumber parseUnsigned64(final String numericPart) {
         if (!isValidIntegerLiteral(numericPart)) {
@@ -83,19 +83,19 @@ public class NumericParser {
     }
 
     /**
-     * Verifica che una stringa rappresenti un literal intero puro.
+     * Validates that a string represents a pure integer literal.
      *
-     * <p>Un literal intero valido deve:
+     * <p>A valid integer literal must:
      *
      * <ul>
-     *   <li>contenere solo cifre ASCII (0-9);
-     *   <li>non contenere un punto decimale ({@code .});
-     *   <li>non contenere un marcatore di esponente ({@code e} o {@code E});
-     *   <li>non contenere un carattere di segno (gestito come token separato dal lexer).
+     *   <li>contain only ASCII digits (0-9);
+     *   <li>not contain a decimal point ({@code .});
+     *   <li>not contain an exponent marker ({@code e} or {@code E});
+     *   <li>not contain a sign character (handled as a separate token by the lexer).
      * </ul>
      *
-     * @param numericPart la stringa numerica da validare
-     * @return {@code true} se la stringa è un literal intero valido
+     * @param numericPart the numeric string to validate
+     * @return {@code true} if the string is a valid integer literal
      */
     public static boolean isValidIntegerLiteral(final String numericPart) {
         if (numericPart.isEmpty()) {
@@ -114,13 +114,13 @@ public class NumericParser {
     }
 
     /**
-     * Effettua il parsing di stringhe numeriche con suffisso float a 32 bit ({@code f}).
+     * Parses numeric strings with a 32-bit float suffix ({@code f}).
      *
-     * <p>Gestisce sia la notazione decimale semplice sia quella scientifica, producendo
-     * rispettivamente {@link INumber.Float32} o {@link INumber.Scientific32}.
+     * <p>Handles both simple decimal notation and scientific notation, producing
+     * {@link INumber.Float32} or {@link INumber.Scientific32} respectively.
      *
-     * @param numericPart la stringa numerica privata del suffisso {@code f}
-     * @return il numero risultante, oppure {@code null} se il parsing fallisce
+     * @param numericPart the numeric string with the {@code f} suffix already removed
+     * @return the resulting number, or {@code null} if parsing fails
      */
     public static INumber handleFloatSuffix(final String numericPart) {
         final INumber scientific = parseScientific(numericPart, true);
@@ -135,15 +135,14 @@ public class NumericParser {
     }
 
     /**
-     * Effettua il parsing di stringhe numeriche senza suffisso o con suffisso {@code d}.
+     * Parses numeric strings with no suffix or with the {@code d} suffix.
      *
-     * <p>Implementa le regole di inferenza del tipo predefinito: literal interi (senza
-     * decimale/esponente) → i64; literal a virgola mobile → f64; notazione scientifica →
-     * Scientific64.
+     * <p>Implements the default type-inference rules: integer literals (no decimal/exponent)
+     * &rarr; i64; floating-point literals &rarr; f64; scientific notation &rarr; Scientific64.
      *
-     * @param numericPart la stringa numerica senza suffisso (o con il suffisso {@code d} già
-     *     rimosso)
-     * @return il numero risultante, oppure {@code null} se il parsing fallisce
+     * @param numericPart the numeric string without a suffix (or with the {@code d} suffix already
+     *     removed)
+     * @return the resulting number, or {@code null} if parsing fails
      */
     public static INumber handleDefaultSuffix(final String numericPart) {
         final INumber scientific = parseScientific(numericPart, false);
@@ -151,15 +150,15 @@ public class NumericParser {
     }
 
     /**
-     * Effettua il parsing di numeri in notazione non scientifica (interi e float semplici).
+     * Parses non-scientific numbers (plain integers and floats).
      *
-     * <p>Determina il tipo appropriato in base alla presenza di un punto decimale: assente → intero
-     * {@code i64}; presente → {@code f64}.
+     * <p>Determines the appropriate type based on the presence of a decimal point: absent &rarr;
+     * {@code i64}; present &rarr; {@code f64}.
      *
-     * @param numericPart la stringa numerica da analizzare
-     * @return {@code INumber.Integer} per i literal senza punto decimale, {@code INumber.Float64}
-     *     per quelli con punto decimale, oppure {@code null} se il parsing fallisce (overflow,
-     *     underflow o formato non valido)
+     * @param numericPart the numeric string to analyse
+     * @return {@code INumber.Integer} for literals without a decimal point, {@code INumber.Float64}
+     *     for those with one, or {@code null} if parsing fails (overflow, underflow, or invalid
+     *     format)
      */
     public static INumber handleNonScientific(final String numericPart) {
         try {
@@ -173,16 +172,15 @@ public class NumericParser {
     }
 
     /**
-     * Effettua il parsing di numeri in notazione scientifica (es. {@code "6.022e23"}).
+     * Parses numbers in scientific notation (e.g. {@code "6.022e23"}).
      *
-     * <p>Formato: {@code base[e|E][+|-]esponente}, dove la base può essere un numero intero o a
-     * virgola mobile.
+     * <p>Format: {@code base[e|E][+|-]exponent}, where the base may be an integer or a
+     * floating-point number.
      *
-     * @param s stringa numerica completa, potenzialmente in notazione scientifica
-     * @param isF32 se {@code true} la base viene interpretata come float a 32 bit, altrimenti come
-     *     64 bit
-     * @return {@code INumber.Scientific32}/{@code INumber.Scientific64}, oppure {@code null} se non
-     *     si tratta di notazione scientifica o il parsing fallisce
+     * @param s full numeric string, potentially in scientific notation
+     * @param isF32 if {@code true} the base is interpreted as a 32-bit float, otherwise as 64-bit
+     * @return {@code INumber.Scientific32}/{@code INumber.Scientific64}, or {@code null} if the
+     *     string is not in scientific notation or parsing fails
      */
     public static INumber parseScientific(final String s, final boolean isF32) {
         final int pos = indexOfExponentMarker(s);
