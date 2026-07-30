@@ -36,8 +36,8 @@ public class NumericParser {
      *
      * <p>This replaces, due to Java's type system constraints, the generic Rust function {@code
      * parse_integer::<T>}: since Java offers no truly generic primitive types nor narrow unsigned
-     * integers, parsing always operates on {@code long} followed by an explicit bounds check for the
-     * target type.
+     * integers, parsing always operates on {@code long} followed by an explicit bounds check for
+     * the target type.
      *
      * @param numericPart the numeric string without a suffix
      * @param max the maximum allowed value (the minimum is always 0, since {@link
@@ -63,8 +63,8 @@ public class NumericParser {
     }
 
     /**
-     * Parses an unsigned 64-bit integer (suffix {@code u}), covering the full
-     * 0..2^64&#8722;1 range via {@link Long#parseUnsignedLong(String)}.
+     * Parses an unsigned 64-bit integer (suffix {@code u}), covering the full 0..2^64&#8722;1 range
+     * via {@link Long#parseUnsignedLong(String)}.
      *
      * @param numericPart the numeric string without a suffix
      * @return an {@code INumber.UnsignedInteger}, or {@code null} if the format is invalid or the
@@ -116,8 +116,8 @@ public class NumericParser {
     /**
      * Parses numeric strings with a 32-bit float suffix ({@code f}).
      *
-     * <p>Handles both simple decimal notation and scientific notation, producing
-     * {@link INumber.Float32} or {@link INumber.Scientific32} respectively.
+     * <p>Handles both simple decimal notation and scientific notation, producing {@link
+     * INumber.Float32} or {@link INumber.Scientific32} respectively.
      *
      * @param numericPart the numeric string with the {@code f} suffix already removed
      * @return the resulting number, or {@code null} if parsing fails
@@ -137,8 +137,8 @@ public class NumericParser {
     /**
      * Parses numeric strings with no suffix or with the {@code d} suffix.
      *
-     * <p>Implements the default type-inference rules: integer literals (no decimal/exponent)
-     * &rarr; i64; floating-point literals &rarr; f64; scientific notation &rarr; Scientific64.
+     * <p>Implements the default type-inference rules: integer literals (no decimal/exponent) &rarr;
+     * i64; floating-point literals &rarr; f64; scientific notation &rarr; Scientific64.
      *
      * @param numericPart the numeric string without a suffix (or with the {@code d} suffix already
      *     removed)

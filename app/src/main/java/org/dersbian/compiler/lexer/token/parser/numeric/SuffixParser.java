@@ -91,8 +91,8 @@ public class SuffixParser {
     }
 
     /**
-     * Returns whether the last two characters form a valid two-character suffix ({@code i8},
-     * {@code u8}, case-insensitive).
+     * Returns whether the last two characters form a valid two-character suffix ({@code i8}, {@code
+     * u8}, case-insensitive).
      */
     public static Optional<SuffixPattern> checkTwoCharSuffix(final String s) {
         if (s.length() < TWO_CHAR_MIN_LENGTH) {

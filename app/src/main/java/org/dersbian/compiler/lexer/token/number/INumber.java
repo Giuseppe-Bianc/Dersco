@@ -30,8 +30,8 @@ import java.util.Objects;
  * long} that are unsigned. For {@code u8}, {@code u16}, and {@code u32} the immediately wider
  * signed type ({@code short}, {@code int}, {@code long} respectively) is used, since it can
  * represent the full non-negative range as a positive value. For {@code u64}, {@code long} is used
- * retaining the raw bit pattern; printing and decimal parsing rely on {@link
- * Long#toUnsignedString} and {@link Long#parseUnsignedLong}.
+ * retaining the raw bit pattern; printing and decimal parsing rely on {@link Long#toUnsignedString}
+ * and {@link Long#parseUnsignedLong}.
  */
 @SuppressWarnings({"AvoidCommonTypeNames", "checkstyle:AbbreviationAsWordInName"})
 public sealed interface INumber {
@@ -119,8 +119,8 @@ public sealed interface INumber {
     /** 32-bit floating-point literal (e.g. {@code 3.14f}, {@code 6.022e23f}). */
     record Float32(float value) implements INumber {
         /**
-         * Bit-by-bit comparison (via {@link Float#floatToRawIntBits}) to handle NaN and signed
-         * zero consistently, analogous to {@code to_bits()} in Rust.
+         * Bit-by-bit comparison (via {@link Float#floatToRawIntBits}) to handle NaN and signed zero
+         * consistently, analogous to {@code to_bits()} in Rust.
          */
         @Override
         public boolean equals(final Object obj) {
@@ -195,9 +195,15 @@ public sealed interface INumber {
     record Scientific64(double base, int exponent) implements INumber {
         @Override
         public boolean equals(final Object obj) {
-            return obj instanceof Scientific64 other
-                    && Double.doubleToRawLongBits(base) == Double.doubleToRawLongBits(other.base())
-                    && exponent == other.exponent();
+            if (!(obj instanceof Scientific64 other)) {
+                return false;
+            }
+
+            final boolean sameBase =
+                    Double.doubleToRawLongBits(base) == Double.doubleToRawLongBits(other.base());
+            final boolean sameExponent = exponent == other.exponent();
+
+            return sameBase && sameExponent;
         }
 
         @Override
