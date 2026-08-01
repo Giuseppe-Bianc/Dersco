@@ -9,9 +9,7 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
     "PMD.CommentRequired",
-    "PMD.UnitTestAssertionsShouldIncludeMessage",
-    "PMD.TooManyMethods",
-    "PMD.UnitTestContainsTooManyAsserts"
+    "PMD.UnitTestAssertionsShouldIncludeMessage"
 })
 class FileSizeReportTest {
 
@@ -49,7 +47,7 @@ class FileSizeReportTest {
     }
 
     @Test
-    void toStringRendersTheExpectedReportForZeroBytes() {
+    void rendersTheExpectedReportForZeroBytes() {
         final FileSizeReport report =
                 new FileSizeReport(new FileSizeInfo(0L), SizeSystems.SI_SYSTEM, SizeSystems.IEC);
 
@@ -59,7 +57,7 @@ class FileSizeReportTest {
     }
 
     @Test
-    void toStringRendersNegativeBytesUsingUnsignedRepresentation() {
+    void rendersNegativeBytesUsingUnsignedRepresentation() {
         final FileSizeReport report =
                 new FileSizeReport(new FileSizeInfo(-1L), SizeSystems.SI_SYSTEM, SizeSystems.IEC);
 
@@ -72,13 +70,15 @@ class FileSizeReportTest {
             final long bytes, final FormattedSize siSize, final FormattedSize iecSize) {
         final String separator = "-".repeat(41);
         final String bytesLine =
-                String.format(Locale.ROOT, "Bytes : %s\n", Long.toUnsignedString(bytes));
-        final String headerLine = String.format(Locale.ROOT, "%-20s %-20s\n", "SI", "IEC");
+                String.format(Locale.ROOT, "Bytes : %s", Long.toUnsignedString(bytes));
+        final String headerLine = String.format(Locale.ROOT, "%-20s %-20s", "SI", "IEC");
 
         return bytesLine
+                + '\n'
                 + separator
                 + '\n'
                 + headerLine
+                + '\n'
                 + separator
                 + '\n'
                 + new FormattedSizePair(siSize, iecSize);
