@@ -1,53 +1,67 @@
-# Codecov configuration for Dersco.
+# codecov.yml
+# Riferimento ufficiale allo schema completo:
+# https://docs.codecov.com/docs/codecov-yaml
 #
-# The XML report fed into Codecov is produced by `./gradlew jacocoTestReport`
-# and lands at app/build/reports/jacoco/test/jacocoTestReport.xml. The GitHub
-# Actions workflow at .github/workflows/ci.yml uploads that file via the
-# official codecov-action (v5) and authenticates with the CODECOV_TOKEN
-# repository secret.
-#
-# Targets below define the *project* coverage floor (the long-running goal)
-# and the *patch* coverage floor (the bar every PR must clear). Coverage of
-# auto-generated sources under build/ and gradle wrapper assets is ignored
-# because they are not part of the shipped product.
+# Validare sempre il file prima del commit con:
+#   curl -X POST --data-binary @codecov.yml https://codecov.io/validate
 
 codecov:
+  # Il report di copertura viene processato solo se lo stato della CI
+  # (workflow GitHub Actions) è terminato con successo, evitando di
+  # pubblicare metriche relative a build fallite o incomplete.
   require_ci_to_pass: true
+
   notify:
-    # Codecov is allowed to post a single comment per PR; further updates
-    # collapse into that thread instead of spamming the timeline.
-    after_n_builds: 1
+    # Attende che tutti gli upload attesi (in questo caso 1, dato il
+    # singolo flag "unittests") siano arrivati prima di notificare
+    # lo stato finale su GitHub, evitando notifiche premature.
     wait_for_ci: true
 
 coverage:
-  precision: 2
-  round: down
-  range: "70...90"
+  precision: 2      # due cifre decimali nelle percentuali riportate
+  round: down       # arrotondamento per difetto, più conservativo
+  range: "70...100" # intervallo colore rosso→verde nei report/badge
 
   status:
     project:
       default:
-        target: auto
-        threshold: 1%
-        if_ci_failed: error
+        target: auto        # confronta rispetto alla copertura del commit base
+        threshold: 1%        # tollera una regressione massima dell'1%
+        base: auto
+        if_ci_failed: error  # se la CI fallisce, lo status Codecov è "error"
+        informational: false # lo status BLOCCA la PR se non soddisfatto
         only_pulls: false
     patch:
       default:
-        target: 80%
+        target: 80%          # il codice NUOVO/modificato deve avere >= 80% coverage
         threshold: 5%
+        base: auto
         if_ci_failed: error
+        informational: false
 
-  ignore:
-    - "build/**"
-    - "**/build/**"
-    - "gradle/**"
-    - "**/generated/**"
+flag_management:
+  default_rules:
+    carryforward: false
+  individual_flags:
+    - name: unittests
+      paths:
+        - app/src/main
+      carryforward: false
 
-# Annotations pinned to diff so reviewers see uncovered lines on the PR
-# without leaving the conversation.
 comment:
-  layout: "header, diff, flags, components, files, footer"
+  layout: "header, diff, flags, components, tree, reach, footer"
   behavior: default
-  require_changes: false
+  require_changes: false   # commenta anche se la copertura non cambia
   require_base: false
-  require_head: true
+  require_head: true       # richiede almeno il report della testa del branch
+  hide_project_coverage: false
+
+github_checks:
+  annotations: true   # annotazioni inline sulle righe non coperte nella PR
+
+ignore:
+  - "app/src/test/**"
+  - "**/build/**"
+  - "**/generated/**"
+  - "**/*Test.java"
+  - "**/*Tests.java"
