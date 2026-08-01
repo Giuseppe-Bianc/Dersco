@@ -19,7 +19,7 @@ codecov:
     wait_for_ci: true
 
 coverage:
-  precision: 2      # due cifre decimali nelle percentuali riportate
+  precision: 3      # due cifre decimali nelle percentuali riportate
   round: down       # arrotondamento per difetto, più conservativo
   range: "70...100" # intervallo colore rosso→verde nei report/badge
 
@@ -54,7 +54,7 @@ comment:
   behavior: default
   require_changes: false   # commenta anche se la copertura non cambia
   require_base: false
-  require_head: true       # richiede almeno il report della testa del branch
+  require_head: false
   hide_project_coverage: false
 
 github_checks:
