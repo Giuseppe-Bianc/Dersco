@@ -10,6 +10,7 @@ codecov:
   # (workflow GitHub Actions) è terminato con successo, evitando di
   # pubblicare metriche relative a build fallite o incomplete.
   require_ci_to_pass: true
+  max_report_age: false
 
   notify:
     # Attende che tutti gli upload attesi (in questo caso 1, dato il
