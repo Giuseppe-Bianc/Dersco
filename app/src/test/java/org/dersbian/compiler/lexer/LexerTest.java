@@ -20,7 +20,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
-    "PMD.AvoidInstantiatingObjectsInLoops",
     "PMD.CommentRequired",
     "PMD.TooManyMethods",
     "PMD.UnitTestAssertionsShouldIncludeMessage",
@@ -172,7 +171,7 @@ class LexerTest {
     }
 
     @Test
-    void dotIsNotConsumedAsPartOfAnIntegerWithoutAFollowingDigit() {
+    void rangeAndMethodCallUseDotTokens() {
         final LexerResult result = tokenize("1..5 42.toString()");
 
         assertEquals(
@@ -214,7 +213,7 @@ class LexerTest {
         final LexerResult result = tokenize(source);
 
         final List<TokenKind> expectedTokens =
-                source.equals("#q12")
+                "#q12".equals(source)
                         ? List.of(new TokenKind.IdentifierAscii("q12"), Simple.Special.EOF)
                         : List.of(Simple.Special.EOF);
         assertEquals(expectedTokens, kinds(result));
