@@ -265,6 +265,29 @@ class LexerTest {
     }
 
     @Test
+    void excessiveUnicodeEscapeDigitsConsumeTheClosingBraceAndResumeLexing() {
+        final String excessiveEscape = "\\" + "u{12345}";
+        final LexerResult result = tokenize("\"" + excessiveEscape + "\" tail");
+
+        assertEquals(
+                List.of(
+                        new TokenKind.StringLiteral(""),
+                        new TokenKind.IdentifierAscii("tail"),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertEquals(List.of(ErrorCode.E0007), errorCodes(result));
+    }
+
+    @Test
+    void excessiveUnicodeEscapeDigitsAreDrainedWhenTheSourceEndsWithoutClosingBrace() {
+        final String excessiveEscape = "\\" + "u{12345";
+        final LexerResult result = tokenize("\"" + excessiveEscape);
+
+        assertEquals(List.of(new TokenKind.StringLiteral(""), Simple.Special.EOF), kinds(result));
+        assertEquals(List.of(ErrorCode.E0007, ErrorCode.E0005), errorCodes(result));
+    }
+
+    @Test
     void unterminatedStringStopsAtLineTerminatorAndReportsError() {
         final LexerResult result = tokenize("\"hello\nworld");
 
