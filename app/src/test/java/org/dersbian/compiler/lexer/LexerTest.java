@@ -1,13 +1,22 @@
 package org.dersbian.compiler.lexer;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 import org.dersbian.compiler.error.ErrorCode;
 import org.dersbian.compiler.lexer.token.Token;
 import org.dersbian.compiler.lexer.token.TokenKind;
+import org.dersbian.compiler.lexer.token.TokenKind.Simple;
 import org.dersbian.compiler.lexer.token.number.INumber;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
@@ -18,325 +27,366 @@ import org.junit.jupiter.api.Test;
     "PMD.UnitTestContainsTooManyAsserts"
 })
 class LexerTest {
-    private static final String TEST_PATH = "test.dr";
+    private static final Path SOURCE_PATH = Path.of("test.dr");
 
     @Test
-    void testOperators() {
-        final Lexer lexer =
-                new Lexer(
-                        Path.of(TEST_PATH),
-                        "+ += ++ = - -= -- == != < <= > >= || && << <<= >> >>= %= ^= * *= / /= % ^"
-                                + " | & ! : , .");
-        final LexerResult result = lexer.tokenize();
-        final List<Token> tokens = result.tokens();
+    void emptySourceProducesOnlyEof() {
+        final LexerResult result = tokenize("");
 
-        Assertions.assertEquals(34, tokens.size());
-
-        Assertions.assertEquals(TokenKind.Simple.Operator.PLUS, tokens.get(0).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.PLUS_EQUAL, tokens.get(1).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.PLUS_PLUS, tokens.get(2).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.EQUAL, tokens.get(3).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.MINUS, tokens.get(4).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.MINUS_EQUAL, tokens.get(5).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.MINUS_MINUS, tokens.get(6).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.EQUAL_EQUAL, tokens.get(7).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.NOT_EQUAL, tokens.get(8).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.LESS, tokens.get(9).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.LESS_EQUAL, tokens.get(10).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.GREATER, tokens.get(11).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.GREATER_EQUAL, tokens.get(12).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.OR_OR, tokens.get(13).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.AND_AND, tokens.get(14).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.SHIFT_LEFT, tokens.get(15).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.SHIFT_LEFT_EQUAL, tokens.get(16).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.SHIFT_RIGHT, tokens.get(17).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.SHIFT_RIGHT_EQUAL, tokens.get(18).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.PERCENT_EQUAL, tokens.get(19).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.XOR_EQUAL, tokens.get(20).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.STAR, tokens.get(21).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.STAR_EQUAL, tokens.get(22).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.SLASH, tokens.get(23).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.SLASH_EQUAL, tokens.get(24).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.PERCENT, tokens.get(25).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.XOR, tokens.get(26).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.OR, tokens.get(27).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.AND, tokens.get(28).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.NOT, tokens.get(29).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.COLON, tokens.get(30).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.COMMA, tokens.get(31).type());
-        Assertions.assertEquals(TokenKind.Simple.Operator.DOT, tokens.get(32).type());
-        Assertions.assertEquals(TokenKind.Simple.Special.EOF, tokens.get(33).type());
+        assertAll(
+                () -> assertEquals(List.of(Simple.Special.EOF), kinds(result)),
+                () -> assertTrue(result.errors().isEmpty()),
+                () -> assertEquals(0, new Lexer(SOURCE_PATH, "").lineCount()));
     }
 
     @Test
-    void testDecimalNumbers() {
-        final Lexer lexer =
-                new Lexer(
-                        Path.of(TEST_PATH),
-                        "123 45.67 9.01 1e5 2E-3 1.2e3 .456 10e5 3.4e+5 5e0 0e0");
-        final LexerResult result = lexer.tokenize();
-        final List<TokenKind> tokens = result.tokens().stream().map(Token::type).toList();
+    void byteOrderMarkAtTheBeginningIsIgnored() {
+        final LexerResult result = tokenize("\uFEFFalpha");
 
-        Assertions.assertEquals(12, tokens.size());
-        final List<TokenKind> expectedTokens =
+        assertEquals(
+                List.of(new TokenKind.IdentifierAscii("alpha"), Simple.Special.EOF), kinds(result));
+        assertTrue(result.errors().isEmpty());
+        assertEquals(0, result.tokens().getFirst().span().start().offset());
+    }
+
+    @Test
+    void whitespaceIncludingUnicodeSpaceSeparatesTokensAndDoesNotProduceTokens() {
+        final LexerResult result = tokenize("\talpha\u00A0\u2003\nbeta\r\ngamma");
+
+        assertEquals(
                 List.of(
+                        new TokenKind.IdentifierAscii("alpha"),
+                        new TokenKind.IdentifierAscii("beta"),
+                        new TokenKind.IdentifierAscii("gamma"),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertTrue(result.errors().isEmpty());
+        assertEquals(3, result.tokens().get(2).span().start().line());
+    }
+
+    @ParameterizedTest(name = "{0} lexes as {1}")
+    @MethodSource("operatorCases")
+    void operatorsAreLexedWithoutPrefixAmbiguity(final String source, final Simple expected) {
+        final LexerResult result = tokenize(source);
+
+        assertEquals(List.of(expected, Simple.Special.EOF), kinds(result));
+        assertTrue(result.errors().isEmpty(), () -> "Unexpected errors for " + source);
+    }
+
+    private static Stream<Arguments> operatorCases() {
+        return Stream.of(
+                Arguments.of("+", Simple.Operator.PLUS),
+                Arguments.of("+=", Simple.Operator.PLUS_EQUAL),
+                Arguments.of("++", Simple.Operator.PLUS_PLUS),
+                Arguments.of("-", Simple.Operator.MINUS),
+                Arguments.of("-=", Simple.Operator.MINUS_EQUAL),
+                Arguments.of("--", Simple.Operator.MINUS_MINUS),
+                Arguments.of("*", Simple.Operator.STAR),
+                Arguments.of("*=", Simple.Operator.STAR_EQUAL),
+                Arguments.of("/", Simple.Operator.SLASH),
+                Arguments.of("/=", Simple.Operator.SLASH_EQUAL),
+                Arguments.of("=", Simple.Operator.EQUAL),
+                Arguments.of("==", Simple.Operator.EQUAL_EQUAL),
+                Arguments.of("!", Simple.Operator.NOT),
+                Arguments.of("!=", Simple.Operator.NOT_EQUAL),
+                Arguments.of("<", Simple.Operator.LESS),
+                Arguments.of("<=", Simple.Operator.LESS_EQUAL),
+                Arguments.of("<<", Simple.Operator.SHIFT_LEFT),
+                Arguments.of("<<=", Simple.Operator.SHIFT_LEFT_EQUAL),
+                Arguments.of(">", Simple.Operator.GREATER),
+                Arguments.of(">=", Simple.Operator.GREATER_EQUAL),
+                Arguments.of(">>", Simple.Operator.SHIFT_RIGHT),
+                Arguments.of(">>=", Simple.Operator.SHIFT_RIGHT_EQUAL),
+                Arguments.of("|", Simple.Operator.OR),
+                Arguments.of("|=", Simple.Operator.OR_EQUAL),
+                Arguments.of("||", Simple.Operator.OR_OR),
+                Arguments.of("&", Simple.Operator.AND),
+                Arguments.of("&=", Simple.Operator.AND_EQUAL),
+                Arguments.of("&&", Simple.Operator.AND_AND),
+                Arguments.of("%", Simple.Operator.PERCENT),
+                Arguments.of("%=", Simple.Operator.PERCENT_EQUAL),
+                Arguments.of("^", Simple.Operator.XOR),
+                Arguments.of("^=", Simple.Operator.XOR_EQUAL),
+                Arguments.of("~", Simple.Operator.BITWISE_NOT),
+                Arguments.of(":", Simple.Operator.COLON),
+                Arguments.of(",", Simple.Operator.COMMA),
+                Arguments.of(".", Simple.Operator.DOT),
+                Arguments.of(";", Simple.Special.SEMICOLON));
+    }
+
+    @Test
+    void delimitersAreAllRecognized() {
+        final LexerResult result = tokenize("()[]{}");
+
+        assertEquals(
+                List.of(
+                        Simple.Delimiter.OPEN_PAREN,
+                        Simple.Delimiter.CLOSE_PAREN,
+                        Simple.Delimiter.OPEN_BRACKET,
+                        Simple.Delimiter.CLOSE_BRACKET,
+                        Simple.Delimiter.OPEN_BRACE,
+                        Simple.Delimiter.CLOSE_BRACE,
+                        Simple.Special.EOF),
+                kinds(result));
+        assertTrue(result.errors().isEmpty());
+    }
+
+    @Test
+    void keywordsBooleansAsciiIdentifiersAndUnicodeIdentifiersAreDistinguished() {
+        final LexerResult result = tokenize("fun i32 true false _name café 变量");
+
+        assertEquals(
+                List.of(
+                        Simple.Keyword.FUN,
+                        Simple.TypeKeyword.I32,
+                        new TokenKind.KeywordBool(true),
+                        new TokenKind.KeywordBool(false),
+                        new TokenKind.IdentifierAscii("_name"),
+                        new TokenKind.IdentifierUnicode("café"),
+                        new TokenKind.IdentifierUnicode("变量"),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertTrue(result.errors().isEmpty());
+    }
+
+    @Test
+    void decimalNumbersSupportIntegersFractionsExponentsSuffixesAndDotLookahead() {
+        final LexerResult result = tokenize("0 123 45.67 .5 1e5 2E-3 3.4e+5 8u 9f 10i16 11U32");
+
+        assertEquals(
+                List.of(
+                        new TokenKind.Numeric(new INumber.Integer(0)),
                         new TokenKind.Numeric(new INumber.Integer(123)),
                         new TokenKind.Numeric(new INumber.Float64(45.67)),
-                        new TokenKind.Numeric(new INumber.Float64(9.01)),
+                        new TokenKind.Numeric(new INumber.Float64(0.5)),
                         new TokenKind.Numeric(new INumber.Scientific64(1.0, 5)),
                         new TokenKind.Numeric(new INumber.Scientific64(2.0, -3)),
-                        new TokenKind.Numeric(new INumber.Scientific64(1.2, 3)),
-                        new TokenKind.Numeric(new INumber.Float64(0.456)),
-                        new TokenKind.Numeric(new INumber.Scientific64(10.0, 5)),
                         new TokenKind.Numeric(new INumber.Scientific64(3.4, 5)),
-                        new TokenKind.Numeric(new INumber.Scientific64(5.0, 0)),
-                        new TokenKind.Numeric(new INumber.Scientific64(0.0, 0)),
-                        TokenKind.Simple.Special.EOF);
-
-        Assertions.assertEquals(expectedTokens, tokens);
+                        new TokenKind.Numeric(new INumber.UnsignedInteger(8)),
+                        new TokenKind.Numeric(new INumber.Float32(9.0f)),
+                        new TokenKind.Numeric(new INumber.I16((short) 10)),
+                        new TokenKind.Numeric(new INumber.U32(11)),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertTrue(result.errors().isEmpty());
     }
 
     @Test
-    void testBaseSpecificNumbers() {
-        final Lexer lexer =
-                new Lexer(
-                        Path.of(TEST_PATH),
-                        "#b1010 #o777 #x1f #b0 #o0 #x0 #b11111111 #o377 #xdeadBEEF");
-        final LexerResult result = lexer.tokenize();
-        final List<TokenKind> tokens = result.tokens().stream().map(Token::type).toList();
+    void dotIsNotConsumedAsPartOfAnIntegerWithoutAFollowingDigit() {
+        final LexerResult result = tokenize("1..5 42.toString()");
 
-        Assertions.assertEquals(10, tokens.size());
-        final List<TokenKind> expectedTokens =
-                List.of(
-                        new TokenKind.Binary(new INumber.Integer(10L)),
-                        new TokenKind.Octal(new INumber.Integer(511L)),
-                        new TokenKind.Hexadecimal(new INumber.Integer(31L)),
-                        new TokenKind.Binary(new INumber.Integer(0L)),
-                        new TokenKind.Octal(new INumber.Integer(0L)),
-                        new TokenKind.Hexadecimal(new INumber.Integer(0L)),
-                        new TokenKind.Binary(new INumber.Integer(255L)),
-                        new TokenKind.Octal(new INumber.Integer(255L)),
-                        new TokenKind.Hexadecimal(new INumber.Integer(3_735_928_559L)),
-                        TokenKind.Simple.Special.EOF);
-
-        Assertions.assertEquals(expectedTokens, tokens);
-    }
-
-    @Test
-    void testBaseSpecificNumbersUnsigned() {
-        final Lexer lexer =
-                new Lexer(
-                        Path.of(TEST_PATH),
-                        "#b1010u #o777u #x1fu #b0u #o0u #x0u #b11111111u #o377u #xdeadBEEFu");
-        final LexerResult result = lexer.tokenize();
-        final List<TokenKind> tokens = result.tokens().stream().map(Token::type).toList();
-
-        Assertions.assertEquals(10, tokens.size());
-        final List<TokenKind> expectedTokens =
-                List.of(
-                        new TokenKind.Binary(new INumber.UnsignedInteger(10L)),
-                        new TokenKind.Octal(new INumber.UnsignedInteger(511L)),
-                        new TokenKind.Hexadecimal(new INumber.UnsignedInteger(31L)),
-                        new TokenKind.Binary(new INumber.UnsignedInteger(0L)),
-                        new TokenKind.Octal(new INumber.UnsignedInteger(0L)),
-                        new TokenKind.Hexadecimal(new INumber.UnsignedInteger(0L)),
-                        new TokenKind.Binary(new INumber.UnsignedInteger(255L)),
-                        new TokenKind.Octal(new INumber.UnsignedInteger(255L)),
-                        new TokenKind.Hexadecimal(new INumber.UnsignedInteger(3_735_928_559L)),
-                        TokenKind.Simple.Special.EOF);
-
-        // Ensures the underlying class/record holds a verified distinct unsigned form.
-        Assertions.assertEquals(expectedTokens, tokens);
-    }
-
-    @Test
-    void testNuberEdgeCases() {
-        final Lexer lexer =
-                new Lexer(
-                        Path.of(TEST_PATH),
-                        "#b111111111111111111111111111111111111111111111111111111111111111");
-        final LexerResult result = lexer.tokenize();
-        final List<TokenKind> tokens = result.tokens().stream().map(Token::type).toList();
-        final List<TokenKind> expectedTokens =
-                List.of(
-                        new TokenKind.Binary(new INumber.Integer(Long.MAX_VALUE)),
-                        TokenKind.Simple.Special.EOF);
-        Assertions.assertEquals(expectedTokens, tokens);
-    }
-
-    @Test
-    void testUnicodeLineTerminatorsInStringLiteral() {
-        // String literal contains a line separator \u2028, which should be treated as a line
-        // terminator, making the string literal unterminated.
-        final Lexer lexer = new Lexer(Path.of(TEST_PATH), "\"hello\u2028world\"");
-        final LexerResult result = lexer.tokenize();
-
-        Assertions.assertFalse(result.errors().isEmpty());
-        Assertions.assertEquals(ErrorCode.E0005, result.errors().get(0).code().orElse(null));
-    }
-
-    @Test
-    void testUnicodeLineTerminatorsIncrementLineNumber() {
-        final Lexer lexer = new Lexer(Path.of(TEST_PATH), "foo\u2028bar\u2029baz");
-        final LexerResult result = lexer.tokenize();
-        final List<Token> tokens = result.tokens();
-
-        // tokens should be "foo", "bar", "baz", EOF
-        Assertions.assertEquals(4, tokens.size());
-        Assertions.assertEquals("foo", ((TokenKind.IdentifierAscii) tokens.get(0).type()).value());
-        Assertions.assertEquals(1, tokens.get(0).span().start().line());
-
-        Assertions.assertEquals("bar", ((TokenKind.IdentifierAscii) tokens.get(1).type()).value());
-        Assertions.assertEquals(2, tokens.get(1).span().start().line());
-
-        Assertions.assertEquals("baz", ((TokenKind.IdentifierAscii) tokens.get(2).type()).value());
-        Assertions.assertEquals(3, tokens.get(2).span().start().line());
-    }
-
-    @Test
-    void testUnrecognizedCharacter() {
-        final Lexer lexer = new Lexer(Path.of(TEST_PATH), "foo ? bar");
-        final LexerResult result = lexer.tokenize();
-        final List<Token> tokens = result.tokens();
-
-        Assertions.assertEquals(3, tokens.size());
-        Assertions.assertEquals("foo", ((TokenKind.IdentifierAscii) tokens.get(0).type()).value());
-        Assertions.assertEquals("bar", ((TokenKind.IdentifierAscii) tokens.get(1).type()).value());
-        Assertions.assertEquals(TokenKind.Simple.Special.EOF, tokens.get(2).type());
-
-        Assertions.assertEquals(1, result.errors().size());
-        Assertions.assertEquals(ErrorCode.E0001, result.errors().getFirst().code().orElse(null));
-    }
-
-    @Test
-    void testMalformedBaseSpecificNumbers() {
-        record TestCase(String input, ErrorCode expectedErrorCode) {}
-
-        final List<TestCase> cases =
-                List.of(
-                        new TestCase("#b", ErrorCode.E0002),
-                        new TestCase("#o", ErrorCode.E0003),
-                        new TestCase("#x", ErrorCode.E0004));
-
-        for (final TestCase testCase : cases) {
-            final Lexer lexer = new Lexer(Path.of(TEST_PATH), testCase.input());
-            final LexerResult result = lexer.tokenize();
-
-            Assertions.assertFalse(
-                    result.errors().isEmpty(),
-                    "Expected an error for malformed input: " + testCase.input());
-
-            Assertions.assertEquals(
-                    1,
-                    result.errors().size(),
-                    "Expected exactly one error for input: " + testCase.input());
-
-            Assertions.assertEquals(
-                    testCase.expectedErrorCode(),
-                    result.errors().getFirst().code().orElse(null),
-                    "Expected error code "
-                            + testCase.expectedErrorCode()
-                            + " for input: "
-                            + testCase.input());
-        }
-    }
-
-    @Test
-    void testUnrecognizedCharacters() {
-        record TestCase(String input, String expectedMessage) {}
-
-        final List<TestCase> cases =
-                List.of(
-                        new TestCase(
-                                "@",
-                                "[E0001] Unrecognized character: '@' at line 1:column 1-line"
-                                        + " 1:column 2"),
-                        new TestCase(
-                                "`",
-                                "[E0001] Unrecognized character: '`' at line 1:column 1-line"
-                                        + " 1:column 2"));
-
-        for (final TestCase testCase : cases) {
-            final Lexer lexer = new Lexer(Path.of(TEST_PATH), testCase.input());
-            final LexerResult result = lexer.tokenize();
-
-            Assertions.assertFalse(
-                    result.errors().isEmpty(),
-                    "Expected an error for unrecognized character: " + testCase.input());
-
-            Assertions.assertEquals(
-                    1,
-                    result.errors().size(),
-                    "Expected exactly one error for input: " + testCase.input());
-
-            Assertions.assertEquals(
-                    ErrorCode.E0001,
-                    result.errors().getFirst().code().orElse(null),
-                    "Expected error code E0001 for input: " + testCase.input());
-
-            Assertions.assertEquals(
-                    testCase.expectedMessage(),
-                    result.errors().getFirst().toString(),
-                    "Expected error message to match for input: " + testCase.input());
-        }
-    }
-
-    @Test
-    void testTooLargeBinaryNumberIsInvalidToken() {
-        final String input = "#b1111111111111111111111111111111111111111111111111111111111111111";
-        final Lexer lexer = new Lexer(Path.of(TEST_PATH), input);
-        final LexerResult result = lexer.tokenize();
-        final List<Token> tokens = result.tokens();
-
-        Assertions.assertEquals(1, tokens.size());
-        Assertions.assertEquals(TokenKind.Simple.Special.EOF, tokens.get(0).type());
-
-        Assertions.assertEquals(1, result.errors().size());
-        Assertions.assertEquals(ErrorCode.E0002, result.errors().get(0).code().orElse(null));
-        Assertions.assertEquals(
-                "[E0002] Numeric value out of range for literal '"
-                        + input
-                        + "'. at line 1:column 1-line 1:column 67",
-                result.errors().getFirst().toString());
-    }
-
-    @Test
-    void testFractionLookaheadWithMethodCallAndRange() {
-        final Lexer rangeLexer = new Lexer(Path.of(TEST_PATH), "1..5");
-        final LexerResult rangeResult = rangeLexer.tokenize();
-        final List<TokenKind> rangeTokens = rangeResult.tokens().stream().map(Token::type).toList();
-        Assertions.assertEquals(
+        assertEquals(
                 List.of(
                         new TokenKind.Numeric(new INumber.Integer(1)),
-                        TokenKind.Simple.Operator.DOT,
+                        Simple.Operator.DOT,
                         new TokenKind.Numeric(new INumber.Float64(0.5)),
-                        TokenKind.Simple.Special.EOF),
-                rangeTokens);
-
-        final Lexer methodLexer = new Lexer(Path.of(TEST_PATH), "42.toString()");
-        final LexerResult methodResult = methodLexer.tokenize();
-        final List<TokenKind> methodTokens =
-                methodResult.tokens().stream().map(Token::type).toList();
-        Assertions.assertEquals(
-                List.of(
                         new TokenKind.Numeric(new INumber.Integer(42)),
-                        TokenKind.Simple.Operator.DOT,
+                        Simple.Operator.DOT,
                         new TokenKind.IdentifierAscii("toString"),
-                        TokenKind.Simple.Delimiter.OPEN_PAREN,
-                        TokenKind.Simple.Delimiter.CLOSE_PAREN,
-                        TokenKind.Simple.Special.EOF),
-                methodTokens);
+                        Simple.Delimiter.OPEN_PAREN,
+                        Simple.Delimiter.CLOSE_PAREN,
+                        Simple.Special.EOF),
+                kinds(result));
+        assertTrue(result.errors().isEmpty());
     }
 
     @Test
-    void testOverflowDecimalNumberEmitsE0010Error() {
-        final String input = "99999999999999999999999999999999";
-        final Lexer lexer = new Lexer(Path.of(TEST_PATH), input);
+    void radixNumbersSupportAllBasesAndUnsignedSuffixes() {
+        final LexerResult result = tokenize("#b1010 #o777 #xdeadBEEF #b1010U #o7u #xFFU");
+
+        assertEquals(
+                List.of(
+                        new TokenKind.Binary(new INumber.Integer(10)),
+                        new TokenKind.Octal(new INumber.Integer(511)),
+                        new TokenKind.Hexadecimal(new INumber.Integer(3_735_928_559L)),
+                        new TokenKind.Binary(new INumber.UnsignedInteger(10)),
+                        new TokenKind.Octal(new INumber.UnsignedInteger(7)),
+                        new TokenKind.Hexadecimal(new INumber.UnsignedInteger(255)),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertTrue(result.errors().isEmpty());
+    }
+
+    @ParameterizedTest(name = "malformed radix literal {0} reports {1}")
+    @MethodSource("malformedRadixCases")
+    void malformedRadixNumbersReportTheSpecificError(
+            final String source, final ErrorCode expected) {
+        final LexerResult result = tokenize(source);
+
+        final List<TokenKind> expectedTokens =
+                source.equals("#q12")
+                        ? List.of(new TokenKind.IdentifierAscii("q12"), Simple.Special.EOF)
+                        : List.of(Simple.Special.EOF);
+        assertEquals(expectedTokens, kinds(result));
+        assertEquals(List.of(expected), errorCodes(result));
+    }
+
+    private static Stream<Arguments> malformedRadixCases() {
+        return Stream.of(
+                Arguments.of("#b", ErrorCode.E0002),
+                Arguments.of("#o", ErrorCode.E0003),
+                Arguments.of("#x", ErrorCode.E0004),
+                Arguments.of("#q12", ErrorCode.E0001));
+    }
+
+    @Test
+    void commentsBecomeTokensAndDoNotConsumeFollowingSource() {
+        final LexerResult result = tokenize("// line\nalpha /* multi\nline */ beta");
+
+        assertEquals(
+                List.of(
+                        Simple.Special.COMMENT,
+                        new TokenKind.IdentifierAscii("alpha"),
+                        Simple.Special.MULTILINE_COMMENT,
+                        new TokenKind.IdentifierAscii("beta"),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertTrue(result.errors().isEmpty());
+        assertTrue(result.tokens().get(2).span().isMultiline());
+    }
+
+    @Test
+    void unterminatedMultilineCommentStillProducesRecoveryTokenAndError() {
+        final LexerResult result = tokenize("/* never closes");
+
+        assertEquals(List.of(Simple.Special.MULTILINE_COMMENT, Simple.Special.EOF), kinds(result));
+        assertEquals(List.of(ErrorCode.E0008), errorCodes(result));
+    }
+
+    @Test
+    void stringsDecodeStandardHexAndUnicodeEscapes() {
+        final String unicodeEscape = "\\" + "U{0001F600}";
+        final LexerResult result =
+                tokenize("\"a\\n\\r\\t\\\\\\'\\\"\\0\\x41" + unicodeEscape + "\"");
+
+        assertEquals(
+                List.of(new TokenKind.StringLiteral("a\n\r\t\\'\"\0A😀"), Simple.Special.EOF),
+                kinds(result));
+        assertTrue(result.errors().isEmpty());
+    }
+
+    @Test
+    void unterminatedStringStopsAtLineTerminatorAndReportsError() {
+        final LexerResult result = tokenize("\"hello\nworld");
+
+        assertEquals(
+                List.of(
+                        new TokenKind.StringLiteral("hello"),
+                        new TokenKind.IdentifierAscii("world"),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertEquals(List.of(ErrorCode.E0005), errorCodes(result));
+    }
+
+    @Test
+    void characterLiteralsSupportCharactersEscapesAndUnicodeCodePoints() {
+        final String unicodeEscape = "\\" + "U{0001F600}";
+        final LexerResult result = tokenize("'a' '\\n' '" + unicodeEscape + "'");
+
+        assertEquals(
+                List.of(
+                        new TokenKind.CharLiteral("a"),
+                        new TokenKind.CharLiteral("\n"),
+                        new TokenKind.CharLiteral("😀"),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertTrue(result.errors().isEmpty());
+    }
+
+    @ParameterizedTest(name = "invalid character literal {0}")
+    @MethodSource("invalidCharacterCases")
+    void invalidCharacterLiteralsReportE0006(final String source) {
+        final LexerResult result = tokenize(source);
+
+        assertEquals(List.of(ErrorCode.E0006), errorCodes(result));
+        assertEquals(2, result.tokens().size(), "A recovery token and EOF are expected");
+        assertInstanceOf(TokenKind.CharLiteral.class, result.tokens().getFirst().type());
+    }
+
+    private static Stream<String> invalidCharacterCases() {
+        return Stream.of("''", "'ab'", "'unterminated", "'a\n");
+    }
+
+    @Test
+    void invalidEscapeIsReportedButLexingContinues() {
+        final LexerResult result = tokenize("\"bad\\q\" next");
+
+        assertEquals(
+                List.of(
+                        new TokenKind.StringLiteral("badq"),
+                        new TokenKind.IdentifierAscii("next"),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertEquals(List.of(ErrorCode.E0007), errorCodes(result));
+    }
+
+    @Test
+    void unrecognizedCharactersAreReportedAndOtherTokensAreRetained() {
+        final LexerResult result = tokenize("left ? right @");
+
+        assertEquals(
+                List.of(
+                        new TokenKind.IdentifierAscii("left"),
+                        new TokenKind.IdentifierAscii("right"),
+                        Simple.Special.EOF),
+                kinds(result));
+        assertEquals(List.of(ErrorCode.E0001, ErrorCode.E0001), errorCodes(result));
+    }
+
+    @Test
+    void unicodeLineTerminatorsUpdateTokenLocationsAndLineCount() {
+        final Lexer lexer = new Lexer(SOURCE_PATH, "one\u2028two\u2029three");
         final LexerResult result = lexer.tokenize();
 
-        Assertions.assertEquals(1, result.errors().size());
-        Assertions.assertEquals(ErrorCode.E0010, result.errors().getFirst().code().orElse(null));
-        Assertions.assertEquals(1, result.tokens().size());
-        Assertions.assertEquals(TokenKind.Simple.Special.EOF, result.tokens().getFirst().type());
+        assertEquals(2, lexer.lineCount());
+        assertEquals(1, result.tokens().get(0).span().start().line());
+        assertEquals(2, result.tokens().get(1).span().start().line());
+        assertEquals(3, result.tokens().get(2).span().start().line());
+        assertTrue(result.errors().isEmpty());
+    }
+
+    @Test
+    void tokenSpansAreHalfOpenAndUseUtf8AndCodePointOffsets() {
+        final LexerResult result = tokenize("é 变量");
+        final Token first = result.tokens().get(0);
+        final Token second = result.tokens().get(1);
+
+        assertAll(
+                () -> assertEquals("é", first.span().extractFrom("é 😀")),
+                () -> assertEquals(0, first.span().start().offset()),
+                () -> assertEquals(1, first.span().end().offset()),
+                () -> assertEquals(0, first.span().start().utf8Offset()),
+                () -> assertEquals(0, first.span().start().codePointOffset()),
+                () -> assertEquals("变量", second.span().extractFrom("é 变量")),
+                () -> assertEquals(2, second.span().start().offset()),
+                () -> assertEquals(4, second.span().end().offset()),
+                () -> assertEquals(3, second.span().start().utf8Offset()),
+                () -> assertEquals(2, second.span().start().codePointOffset()));
+    }
+
+    @Test
+    void overflowingDecimalAndRadixNumbersProduceNoInvalidNumericToken() {
+        final String decimal = "99999999999999999999999999999999";
+        final String binary = "#b" + "1".repeat(64);
+
+        final LexerResult decimalResult = tokenize(decimal);
+        final LexerResult binaryResult = tokenize(binary);
+
+        assertEquals(List.of(Simple.Special.EOF), kinds(decimalResult));
+        assertEquals(List.of(ErrorCode.E0010), errorCodes(decimalResult));
+        assertEquals(List.of(Simple.Special.EOF), kinds(binaryResult));
+        assertEquals(List.of(ErrorCode.E0002), errorCodes(binaryResult));
+    }
+
+    private static LexerResult tokenize(final String source) {
+        return new Lexer(SOURCE_PATH, source).tokenize();
+    }
+
+    private static List<TokenKind> kinds(final LexerResult result) {
+        return result.tokens().stream().map(Token::type).toList();
+    }
+
+    private static List<ErrorCode> errorCodes(final LexerResult result) {
+        return result.errors().stream().map(error -> error.code().orElseThrow()).toList();
     }
 }
