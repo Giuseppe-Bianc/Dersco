@@ -1,28 +1,49 @@
 # AGENTS.md
 
-This repository is a Java 25 Gradle application. Keep changes aligned with the existing toolchain and quality gates in [app/build.gradle.kts](app/build.gradle.kts) and [settings.gradle.kts](settings.gradle.kts).
+## Project Layout
+
+This is a Gradle 9.6.1 multi-project build with one application module, `app`. Run the wrapper from the repository root and scope module-specific work to `:app`.
+
+- Build layout and Java 25 toolchain: [settings.gradle.kts](settings.gradle.kts) and [app/build.gradle.kts](app/build.gradle.kts).
+- Dependency versions: [gradle/libs.versions.toml](gradle/libs.versions.toml).
+- Static-analysis configurations: [app/config](app/config) (Checkstyle and PMD).
+- Production code: [app/src/main/java/org/dersbian](app/src/main/java/org/dersbian).
+- Runtime logging configuration: [app/src/main/resources/logback.xml](app/src/main/resources/logback.xml).
+- Unit tests: [app/src/test](app/src/test), mirroring production packages where applicable.
+- Manual Dersco source samples: [dr_files](dr_files). These are useful for CLI smoke tests; do not treat them as automated test fixtures unless a test explicitly uses them.
+
+## Code Architecture
+
+- `org.dersbian.App` is bootstrap only: it constructs the picocli command line, installs `CliExecutionExceptionHandler`, executes it, and maps the result to `System.exit`.
+- `org.dersbian.cli` owns picocli commands, logging options, version reporting, input validation, and CLI exception-to-exit-code handling. New commands belong here and must be registered by `RootCommand`.
+- `CheckCommand` calls `ICompilerService.checkSyntax(Path)`. `CompileCommand` creates `CompilationRequest` from `-o`/`--output`, `-O`/`--optimize`, `--emit-ir`, and `--diagnostics`, then calls `ICompilerService.compile`.
+- `org.dersbian.compiler` defines the public service boundary (`ICompilerService`), request/options types, `CompilerException`, constants, and `DefaultCompilerService` orchestration.
+- `org.dersbian.compiler.lexer` owns Unicode code-point traversal (`SourceCursor`), BOM stripping, line tracking setup, and tokenization. Keep lexical rules and recovery here.
+- `org.dersbian.compiler.lexer.token` owns `Token`, `TokenKind`, `SourceId`, `SourceLocation`, and `Span`. Numeric value records belong in `lexer.token.number`; numeric-literal parsing belongs in `lexer.token.parser.numeric`.
+- `org.dersbian.compiler.error` owns the sealed `CompileError` hierarchy, error codes/phases, and ANSI source-context rendering in `ErrorReporter`. `org.dersbian.compiler.location.LineTracker` resolves source lines for that rendering. Errors are data: do not print diagnostics from token, lexer, or error-model classes.
+- `org.dersbian.util` contains general-purpose path and file-size formatting helpers only; compiler-domain behavior belongs under `org.dersbian.compiler`.
+
+The implemented pipeline reads UTF-8 source, strips a leading BOM, tokenizes it, and renders lexical diagnostics with `ErrorReporter`. Although the public method is named `checkSyntax`, no parser is wired in. `DefaultCompilerService.compile` currently delegates only to that lexical check: it does not create the requested output, emit IR, apply optimization, perform semantic/type analysis, or generate code. The error model includes types for later phases, but those phases are not implemented. Do not present them as working behavior or couple lexer changes to them prematurely.
 
 ## Working Rules
 
-- Use Java 25 semantics and target the configured Gradle toolchain before introducing newer or preview language features.
-- When a change depends on Java language or platform behavior, prefer the official Java SE docs, JEPs, and standard library documentation as the source of truth.
-- Prefer small, targeted edits that preserve the current package structure under [app/src/main/java](app/src/main/java) and mirrored tests under [app/src/test/java](app/src/test/java).
-- Keep production code compatible with the configured static-analysis setup: Checkstyle, PMD, SpotBugs, Error Prone, and Spotless are enforced by the build.
-- Do not duplicate documentation that already exists in the repo. Link to existing docs instead of copying them.
-- Follow the project's existing conventions for final classes, descriptive test names, and package-private test visibility when that pattern already fits the code.
+- Use Java 25 semantics and the configured Gradle toolchain; do not introduce preview features without an explicit build change.
+- Prefer small, targeted edits that retain the package boundaries above and add tests in the corresponding package under `app/src/test/java`.
+- Follow the existing conventions: immutable records and sealed hierarchies for small closed value models, `final` concrete classes when extension is not intended, and package-private JUnit test classes with descriptive test names.
+- Tests use JUnit Jupiter and AssertJ. Use `@TempDir` for filesystem cases instead of repository-local temporary files.
+- Preserve UTF-8 handling for source files and diagnostic output.
+- Keep production code compatible with the enforced quality gates: Checkstyle, PMD, SpotBugs, Error Prone (`-Werror`), Spotless, and JaCoCo.
+- The Java formatter is Spotless with Google Java Format in AOSP style (four-space indentation). Let Spotless format Java rather than formatting by hand.
+- When Java or platform behavior matters, prefer official Java SE documentation, JEPs, and standard-library documentation as the source of truth.
 
 ## Validation
 
-- Prefer `./gradlew test` for focused verification and `./gradlew check` for full quality-gate validation.
-- If you touch formatting-sensitive Java code, verify with Spotless rather than hand-formatting against a guess.
-- If a change affects CLI wiring or packaging, also consider `./gradlew run` or `./gradlew shadowJar` as the relevant follow-up check.
-
-## Reference Files
-
-- Build and toolchain: [app/build.gradle.kts](app/build.gradle.kts)
-- Build layout: [settings.gradle.kts](settings.gradle.kts)
-- Project overview: [README.md](README.md)
+- Run focused tests with `./gradlew :app:test` (or `./gradlew :app:test --tests "*ClassNameTest"`). On Windows, use `./gradlew.bat` if the shell does not resolve the script wrapper.
+- Run `./gradlew :app:spotlessCheck` after editing Java; use `./gradlew :app:spotlessApply` to apply the configured formatter.
+- Run `./gradlew :app:check` for all tests and quality gates: Checkstyle, PMD, SpotBugs, Spotless, and JaCoCo reporting.
+- For CLI wiring, exercise `./gradlew :app:run --args="check dr_files/simple_test.dr"` or the relevant command. A successful `compile` invocation currently performs the same lexical check and does not create its configured output file.
+- For distributable changes, verify `./gradlew :app:shadowJar`; the executable JAR is written under `app/build/libs/`.
 
 ## Ongoing Refinement
 
-- Use `/chronicle improve` to capture recurring friction and keep these instructions aligned with what actually slows development down.
+- Use `/chronicle improve` to capture recurring friction and keep these instructions aligned with the repository as it evolves.
