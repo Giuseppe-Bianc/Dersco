@@ -6,5 +6,14 @@ public enum UnaryOp {
     NEGATE,
 
     /** Logical NOT operator (!). */
-    NOT
+    NOT,
+
+    /** Bitwise complement operator (~). */
+    BITWISE_NOT,
+
+    /** Increment operator (++). */
+    INCREMENT,
+
+    /** Decrement operator (--). */
+    DECREMENT
 }
