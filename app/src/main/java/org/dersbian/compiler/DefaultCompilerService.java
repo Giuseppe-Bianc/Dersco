@@ -31,9 +31,7 @@ public final class DefaultCompilerService implements ICompilerService {
                         new FileSizeInfo(source.toFile().length()),
                         SizeSystems.SI_SYSTEM,
                         SizeSystems.IEC);
-        if (log.isDebugEnabled()) {
-            log.debug("Read file size:\n{}", sizeReport);
-        }
+        log.debug("Read file size:\n{}", sizeReport);
         final String sourceContent;
         try {
             sourceContent = Files.readString(source, StandardCharsets.UTF_8);
@@ -42,9 +40,8 @@ public final class DefaultCompilerService implements ICompilerService {
         }
         final Lexer lexer = new Lexer(source, sourceContent);
         final int nLines = lexer.lineCount();
-        if (log.isDebugEnabled()) {
-            log.debug("Line count: {}", nLines);
-        }
+        log.debug("Line count: {}", nLines);
+
         final LexerResult result = lexer.tokenize();
         final ErrorReporter errorReporter =
                 new ErrorReporter(lexer.getLineTracker(), source.toString());
@@ -54,11 +51,10 @@ public final class DefaultCompilerService implements ICompilerService {
             throw new CompilerException(
                     "Compilation failed with " + result.errors().size() + " error(s)");
         }
-        if (log.isDebugEnabled()) {
-            for (final Token token : result.tokens()) {
-                log.debug("Token: {}", token);
-            }
-        } // TODO: wire up the real parser.
+        for (final Token token : result.tokens()) {
+            log.debug("Token: {}", token);
+        }
+        // TODO: wire up the real parser.
     }
 
     @Override
