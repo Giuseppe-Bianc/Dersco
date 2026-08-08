@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.dersbian.compiler.lexer.token.Span;
+import org.dersbian.compiler.syntax.ast.visitor.StmtVisitor;
 
 /** Abstract syntax tree node representing a statement. */
 @SuppressWarnings({"PMD.ShortClassName", "PMD.AvoidDuplicateLiterals"})
@@ -28,6 +29,18 @@ public sealed interface Stmt
     Span span();
 
     /**
+     * Accepts a {@link StmtVisitor}, dispatching to the method that corresponds to the concrete
+     * type of this node.
+     *
+     * @param <R> result type of the visitor
+     * @param <C> context type threaded through the traversal
+     * @param visitor visitor instance to dispatch to
+     * @param ctx traversal context
+     * @return result produced by the visitor for this node
+     */
+    <R, C> R accept(StmtVisitor<R, C> visitor, C ctx);
+
+    /**
      * Expression statement.
      *
      * @param expr wrapped expression
@@ -40,6 +53,11 @@ public sealed interface Stmt
         @Override
         public Span span() {
             return expr.span();
+        }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitExpression(this, ctx);
         }
     }
 
@@ -68,6 +86,11 @@ public sealed interface Stmt
                             Objects.requireNonNull(initializers, "initializers must not be null"));
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitVarDeclaration(this, ctx);
+        }
     }
 
     /**
@@ -90,6 +113,11 @@ public sealed interface Stmt
             body = List.copyOf(Objects.requireNonNull(body, "body must not be null"));
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitFunction(this, ctx);
+        }
     }
 
     /**
@@ -110,6 +138,11 @@ public sealed interface Stmt
             elseBranch = elseBranch.map(List::copyOf);
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitIf(this, ctx);
+        }
     }
 
     /**
@@ -124,6 +157,11 @@ public sealed interface Stmt
             Objects.requireNonNull(condition, "condition must not be null");
             body = List.copyOf(Objects.requireNonNull(body, "body must not be null"));
             Objects.requireNonNull(span, "span must not be null");
+        }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitWhile(this, ctx);
         }
     }
 
@@ -150,6 +188,11 @@ public sealed interface Stmt
             body = List.copyOf(Objects.requireNonNull(body, "body must not be null"));
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitFor(this, ctx);
+        }
     }
 
     /**
@@ -164,6 +207,11 @@ public sealed interface Stmt
                     List.copyOf(Objects.requireNonNull(statements, "statements must not be null"));
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitBlock(this, ctx);
+        }
     }
 
     /**
@@ -177,6 +225,11 @@ public sealed interface Stmt
             Objects.requireNonNull(value, "value must not be null");
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitReturn(this, ctx);
+        }
     }
 
     /**
@@ -188,6 +241,11 @@ public sealed interface Stmt
         public Break {
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitBreak(this, ctx);
+        }
     }
 
     /**
@@ -198,6 +256,11 @@ public sealed interface Stmt
     record Continue(Span span) implements Stmt {
         public Continue {
             Objects.requireNonNull(span, "span must not be null");
+        }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitContinue(this, ctx);
         }
     }
 
@@ -211,6 +274,11 @@ public sealed interface Stmt
         public MainFunction {
             body = List.copyOf(Objects.requireNonNull(body, "body must not be null"));
             Objects.requireNonNull(span, "span must not be null");
+        }
+
+        @Override
+        public <R, C> R accept(final StmtVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitMainFunction(this, ctx);
         }
     }
 }

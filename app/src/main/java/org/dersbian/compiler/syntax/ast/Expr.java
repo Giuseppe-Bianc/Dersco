@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.lexer.token.number.INumber;
+import org.dersbian.compiler.syntax.ast.visitor.ExprVisitor;
 
 /** Abstract syntax tree node representing an expression. */
 @SuppressWarnings({"PMD.ShortClassName", "PMD.ShortVariable", "PMD.AvoidDuplicateLiterals"})
@@ -27,6 +28,22 @@ public sealed interface Expr
     Span span();
 
     /**
+     * Accepts an {@link ExprVisitor}, dispatching to the method that corresponds to the concrete
+     * type of this node (double dispatch).
+     *
+     * <p>Each permitted record implements this method by calling the specific {@code visit}
+     * overload on {@code visitor}, passing itself as the first argument. No {@code instanceof}
+     * chain is involved: the concrete type is known at compile time within each record body.
+     *
+     * @param <R> result type of the visitor
+     * @param <C> context type threaded through the traversal
+     * @param visitor visitor instance to dispatch to
+     * @param ctx traversal context, may be {@code null} if the visitor does not use it
+     * @return result produced by the visitor for this node
+     */
+    <R, C> R accept(ExprVisitor<R, C> visitor, C ctx);
+
+    /**
      * Binary operation expression.
      *
      * @param left left operand
@@ -40,6 +57,19 @@ public sealed interface Expr
             Objects.requireNonNull(op, "op must not be null");
             Objects.requireNonNull(right, "right must not be null");
             Objects.requireNonNull(span, "span must not be null");
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * <p>Does <em>not</em> automatically recurse into {@link #left()} or {@link #right()}.
+         * Child traversal is the responsibility of the visitor implementation, which calls {@code
+         * left().accept(visitor, ctx)} and {@code right().accept(visitor, ctx)} as needed. This
+         * separation keeps control flow in the visitor, not scattered across node classes.
+         */
+        @Override
+        public <R, C> R accept(final ExprVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitBinary(this, ctx);
         }
     }
 
@@ -56,6 +86,11 @@ public sealed interface Expr
             Objects.requireNonNull(expr, "expr must not be null");
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final ExprVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitUnary(this, ctx);
+        }
     }
 
     /**
@@ -68,6 +103,11 @@ public sealed interface Expr
         public Grouping {
             Objects.requireNonNull(expr, "expr must not be null");
             Objects.requireNonNull(span, "span must not be null");
+        }
+
+        @Override
+        public <R, C> R accept(final ExprVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitGrouping(this, ctx);
         }
     }
 
@@ -82,6 +122,11 @@ public sealed interface Expr
             Objects.requireNonNull(value, "value must not be null");
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final ExprVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitLiteral(this, ctx);
+        }
     }
 
     /**
@@ -95,6 +140,11 @@ public sealed interface Expr
             elements = List.copyOf(Objects.requireNonNull(elements, "elements must not be null"));
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final ExprVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitArrayLiteral(this, ctx);
+        }
     }
 
     /**
@@ -107,6 +157,11 @@ public sealed interface Expr
         public Variable {
             Objects.requireNonNull(name, "name must not be null");
             Objects.requireNonNull(span, "span must not be null");
+        }
+
+        @Override
+        public <R, C> R accept(final ExprVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitVariable(this, ctx);
         }
     }
 
@@ -122,6 +177,11 @@ public sealed interface Expr
             Objects.requireNonNull(target, "target must not be null");
             Objects.requireNonNull(value, "value must not be null");
             Objects.requireNonNull(span, "span must not be null");
+        }
+
+        @Override
+        public <R, C> R accept(final ExprVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitAssign(this, ctx);
         }
     }
 
@@ -139,6 +199,11 @@ public sealed interface Expr
                     List.copyOf(Objects.requireNonNull(arguments, "arguments must not be null"));
             Objects.requireNonNull(span, "span must not be null");
         }
+
+        @Override
+        public <R, C> R accept(final ExprVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitCall(this, ctx);
+        }
     }
 
     /**
@@ -153,6 +218,11 @@ public sealed interface Expr
             Objects.requireNonNull(array, "array must not be null");
             Objects.requireNonNull(index, "index must not be null");
             Objects.requireNonNull(span, "span must not be null");
+        }
+
+        @Override
+        public <R, C> R accept(final ExprVisitor<R, C> visitor, final C ctx) {
+            return visitor.visitArrayAccess(this, ctx);
         }
     }
 
