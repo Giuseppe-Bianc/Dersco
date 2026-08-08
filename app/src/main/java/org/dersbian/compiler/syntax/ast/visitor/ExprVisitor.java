@@ -11,7 +11,7 @@ import org.dersbian.compiler.syntax.ast.Expr;
  * overload without any {@code instanceof} chain.
  *
  * <p>The type parameter {@code R} is the result produced by each visit method. Use {@link Void}
- * (returning {@code null}) for visitor that operate only for side effects. The context parameter
+ * (returning {@code null}) for visitors that operate only for side effects. The context parameter
  * {@code C} carries any traversal state (symbol table, type environment, configuration) needed by
  * the implementation; pass {@code Void} and {@code null} when no context is required.
  *

@@ -1,6 +1,9 @@
 package org.dersbian.compiler.syntax.ast.visitor;
 
 import lombok.NoArgsConstructor;
+
+import java.util.List;
+
 import org.dersbian.compiler.syntax.ast.Expr;
 import org.dersbian.compiler.syntax.ast.LiteralValue;
 import org.dersbian.compiler.syntax.ast.Parameter;
@@ -191,10 +194,8 @@ public abstract class AbstractAstVisitor<R, C> implements AstVisitor<R, C> {
         for (final Stmt s : stmt.thenBranch()) {
             result = aggregateResult(result, s.accept(this, ctx));
         }
-        if (stmt.elseBranch().isPresent()) {
-            for (final Stmt s : stmt.elseBranch().get()) {
-                result = aggregateResult(result, s.accept(this, ctx));
-            }
+        for (final Stmt s : stmt.elseBranch().orElse(List.of())) {
+            result = aggregateResult(result, s.accept(this, ctx));
         }
         return result;
     }
