@@ -268,7 +268,10 @@ class AstVisitorTest {
 
         final Stmt.VarDeclaration init =
                 new Stmt.VarDeclaration(
-                        List.of("i"), new Type.I32(), true, List.of(boolLit(true)), SPAN);
+                        List.of(new Stmt.VarBinding("i", Optional.of(boolLit(true)))),
+                        new Type.I32(),
+                        true,
+                        SPAN);
         final Expr condition = var(COND_VAR);
         final Expr increment = var("inc");
         final Stmt body = new Stmt.Expression(var("body"));

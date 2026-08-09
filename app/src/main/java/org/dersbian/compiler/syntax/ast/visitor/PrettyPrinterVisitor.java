@@ -1,10 +1,12 @@
 package org.dersbian.compiler.syntax.ast.visitor;
 
+import java.util.List;
 import lombok.NoArgsConstructor;
 import org.dersbian.compiler.syntax.ast.Expr;
 import org.dersbian.compiler.syntax.ast.LiteralValue;
 import org.dersbian.compiler.syntax.ast.Parameter;
 import org.dersbian.compiler.syntax.ast.Stmt;
+import org.dersbian.compiler.syntax.ast.Stmt.VarBinding;
 import org.dersbian.compiler.syntax.ast.Type;
 
 /**
@@ -133,22 +135,31 @@ public final class PrettyPrinterVisitor extends AbstractAstVisitor<String, Void>
         final String typeName = stmt.typeAnnotation().accept(this, null);
         final StringBuilder sb = new StringBuilder(indent());
         sb.append(mutability).append("var ");
-        for (int i = 0; i < stmt.variables().size(); i++) {
+
+        final List<VarBinding> bindings = stmt.bindings();
+        for (int i = 0; i < bindings.size(); i++) {
             if (i > 0) {
                 sb.append(", ");
             }
-            sb.append(stmt.variables().get(i));
+            sb.append(bindings.get(i).name());
         }
         sb.append(": ").append(typeName);
-        if (!stmt.initializers().isEmpty()) {
+
+        final boolean anyInitializers =
+                bindings.stream().anyMatch(b -> b.initializer().isPresent());
+        if (anyInitializers) {
             sb.append(" = ");
-            for (int i = 0; i < stmt.initializers().size(); i++) {
+            for (int i = 0; i < bindings.size(); i++) {
                 if (i > 0) {
                     sb.append(", ");
                 }
-                sb.append(stmt.initializers().get(i).accept(this, null));
+                bindings.get(i)
+                        .initializer()
+                        .ifPresentOrElse(
+                                expr -> sb.append(expr.accept(this, null)), () -> sb.append('_'));
             }
         }
+
         return sb.append(';').toString();
     }
 

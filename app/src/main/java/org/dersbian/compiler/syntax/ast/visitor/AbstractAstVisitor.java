@@ -1,6 +1,7 @@
 package org.dersbian.compiler.syntax.ast.visitor;
 
 import java.util.List;
+import java.util.Optional;
 import lombok.NoArgsConstructor;
 import org.dersbian.compiler.syntax.ast.Expr;
 import org.dersbian.compiler.syntax.ast.LiteralValue;
@@ -160,8 +161,11 @@ public abstract class AbstractAstVisitor<R, C> implements AstVisitor<R, C> {
     @Override
     public R visitVarDeclaration(final Stmt.VarDeclaration stmt, final C ctx) {
         R result = stmt.typeAnnotation().accept(this, ctx);
-        for (final Expr init : stmt.initializers()) {
-            result = aggregateResult(result, init.accept(this, ctx));
+        for (final Stmt.VarBinding binding : stmt.bindings()) {
+            final Optional<Expr> initializer = binding.initializer();
+            if (initializer.isPresent()) {
+                result = aggregateResult(result, initializer.get().accept(this, ctx));
+            }
         }
         return result;
     }

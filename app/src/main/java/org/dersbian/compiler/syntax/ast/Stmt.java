@@ -62,28 +62,27 @@ public sealed interface Stmt
     }
 
     /**
+     * Pairs a variable name with an optional initializer expression.
+     *
+     * @param name variable name
+     * @param initializer optional initializer expression
+     */
+    record VarBinding(String name, Optional<Expr> initializer) {}
+
+    /**
      * Variable declaration statement.
      *
-     * @param variables list of variable names declared
+     * @param bindings list of variable bindings declared
      * @param typeAnnotation type annotation for declared variables
      * @param isMutable whether variables are mutable
-     * @param initializers optional initializers for declared variables
      * @param span source extent
      */
     record VarDeclaration(
-            List<String> variables,
-            Type typeAnnotation,
-            boolean isMutable,
-            List<Expr> initializers,
-            Span span)
+            List<VarBinding> bindings, Type typeAnnotation, boolean isMutable, Span span)
             implements Stmt {
         public VarDeclaration {
-            variables =
-                    List.copyOf(Objects.requireNonNull(variables, "variables must not be null"));
+            bindings = List.copyOf(Objects.requireNonNull(bindings, "bindings must not be null"));
             Objects.requireNonNull(typeAnnotation, "typeAnnotation must not be null");
-            initializers =
-                    List.copyOf(
-                            Objects.requireNonNull(initializers, "initializers must not be null"));
             Objects.requireNonNull(span, "span must not be null");
         }
 

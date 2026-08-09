@@ -206,10 +206,9 @@ class AstTest {
 
         final Stmt varDecl =
                 new Stmt.VarDeclaration(
-                        "x" != null ? List.of("x") : List.of(),
+                        List.of(new Stmt.VarBinding("x", Optional.of(varX))),
                         new Type.I32(),
                         true,
-                        List.of(varX),
                         span);
         assertThat(varDecl.span()).isEqualTo(span);
     }
