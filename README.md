@@ -3,7 +3,7 @@
 [![CI / CD Workflow](https://github.com/Giuseppe-Bianc/Dersco/actions/workflows/ci.yml/badge.svg)](https://github.com/Giuseppe-Bianc/Dersco/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Giuseppe-Bianc/Dersco/graph/badge.svg)](https://codecov.io/gh/Giuseppe-Bianc/Dersco)
 [![Java 25](https://img.shields.io/badge/Java-25-orange.svg)](https://jdk.java.net/25/)
-[![Gradle](https://img.shields.io/badge/Gradle-9.6-blue.svg)](https://gradle.org)
+[![Gradle](https://img.shields.io/badge/Gradle-9.7-blue.svg)](https://gradle.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
 **Dersco** is a modern compiler infrastructure for the Dersco programming language, targeting **Java 25** and built with **Gradle**. It features a robust token model, rich diagnostic error reporting with source context rendering, and strict static-analysis quality gates.
