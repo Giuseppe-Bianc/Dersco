@@ -73,6 +73,7 @@ public sealed interface Stmt
             Objects.requireNonNull(initializer, "initializer must not be null");
         }
     }
+
     /**
      * Variable declaration statement.
      *
