@@ -67,8 +67,12 @@ public sealed interface Stmt
      * @param name variable name
      * @param initializer optional initializer expression
      */
-    record VarBinding(String name, Optional<Expr> initializer) {}
-
+    record VarBinding(String name, Optional<Expr> initializer) {
+        public VarBinding {
+            Objects.requireNonNull(name, "name must not be null");
+            Objects.requireNonNull(initializer, "initializer must not be null");
+        }
+    }
     /**
      * Variable declaration statement.
      *
