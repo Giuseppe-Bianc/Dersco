@@ -249,7 +249,8 @@ class AstVisitorTest {
                 new Stmt.If(
                         condition,
                         new Stmt.Block(List.of(thenStmt), SPAN),
-                        Optional.of(List.of(elseStmt)),
+                        new org.dersbian.compiler.syntax.ast.ElseBranch.Block(
+                                new Stmt.Block(List.of(elseStmt), SPAN)),
                         SPAN);
 
         final AstVisitor<Void, Void> orderRecorder =

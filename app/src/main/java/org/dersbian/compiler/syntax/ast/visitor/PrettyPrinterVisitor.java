@@ -2,6 +2,7 @@ package org.dersbian.compiler.syntax.ast.visitor;
 
 import java.util.List;
 import lombok.NoArgsConstructor;
+import org.dersbian.compiler.syntax.ast.ElseBranch;
 import org.dersbian.compiler.syntax.ast.Expr;
 import org.dersbian.compiler.syntax.ast.LiteralValue;
 import org.dersbian.compiler.syntax.ast.Parameter;
@@ -192,14 +193,14 @@ public final class PrettyPrinterVisitor extends AbstractAstVisitor<String, Void>
         sb.append(stmt.thenBranch().accept(this, null)).append('\n');
         indentLevel--;
         sb.append(indent()).append('}');
-        if (stmt.elseBranch().isPresent()) {
-            sb.append(" else {\n");
-            indentLevel++;
-            for (final Stmt s : stmt.elseBranch().get()) {
-                sb.append(s.accept(this, null)).append('\n');
+        switch (stmt.elseBranch()) {
+            case ElseBranch.None _ -> {
+                /* nothing */
             }
-            indentLevel--;
-            sb.append(indent()).append('}');
+            case ElseBranch.Block b ->
+                    sb.append(" else ").append(b.block().accept(this, null)).append('\n');
+            case ElseBranch.ElseIf e ->
+                    sb.append(" else ").append(e.ifStmt().accept(this, null)).append('\n');
         }
         return sb.toString();
     }

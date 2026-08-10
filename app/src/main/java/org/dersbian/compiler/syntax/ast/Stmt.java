@@ -131,13 +131,11 @@ public sealed interface Stmt
      * @param elseBranch optional statement list executed if condition is false
      * @param span source extent
      */
-    record If(Expr condition, Block thenBranch, Optional<List<Stmt>> elseBranch, Span span)
-            implements Stmt {
+    record If(Expr condition, Block thenBranch, ElseBranch elseBranch, Span span) implements Stmt {
         public If {
             Objects.requireNonNull(condition, "condition must not be null");
             Objects.requireNonNull(thenBranch, "thenBranch must not be null");
             Objects.requireNonNull(elseBranch, "elseBranch must not be null");
-            elseBranch = elseBranch.map(List::copyOf);
             Objects.requireNonNull(span, "span must not be null");
         }
 

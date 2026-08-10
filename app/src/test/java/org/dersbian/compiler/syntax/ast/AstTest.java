@@ -179,9 +179,18 @@ class AstTest {
                         span);
         assertThat(funcStmt.span()).isEqualTo(span);
 
-        final Stmt ifStmt =
-                new Stmt.If(varX, new Stmt.Block(List.of(exprStmt), span), Optional.empty(), span);
+        final Stmt.If ifStmt =
+                new Stmt.If(
+                        varX, new Stmt.Block(List.of(exprStmt), span), new ElseBranch.None(), span);
         assertThat(ifStmt.span()).isEqualTo(span);
+
+        final Stmt.If elseIfStmt =
+                new Stmt.If(
+                        varX,
+                        new Stmt.Block(List.of(exprStmt), span),
+                        new ElseBranch.ElseIf(ifStmt),
+                        span);
+        assertThat(elseIfStmt.elseBranch()).isInstanceOf(ElseBranch.ElseIf.class);
 
         final Stmt whileStmt = new Stmt.While(varX, new Stmt.Block(List.of(exprStmt), span), span);
         assertThat(whileStmt.span()).isEqualTo(span);
