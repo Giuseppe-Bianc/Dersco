@@ -178,9 +178,7 @@ public final class PrettyPrinterVisitor extends AbstractAstVisitor<String, Void>
         }
         sb.append("): ").append(stmt.returnType().accept(this, null)).append(" {\n");
         indentLevel++;
-        for (final Stmt s : stmt.body().statements()) {
-            sb.append(s.accept(this, null)).append('\n');
-        }
+        sb.append(stmt.body().accept(this, null)).append('\n');
         indentLevel--;
         sb.append(indent()).append('}');
         return sb.toString();
@@ -211,9 +209,7 @@ public final class PrettyPrinterVisitor extends AbstractAstVisitor<String, Void>
         final StringBuilder sb = new StringBuilder(indent());
         sb.append("while (").append(stmt.condition().accept(this, null)).append(") {\n");
         indentLevel++;
-        for (final Stmt s : stmt.body().statements()) {
-            sb.append(s.accept(this, null)).append('\n');
-        }
+        sb.append(stmt.body().accept(this, null)).append('\n');
         indentLevel--;
         sb.append(indent()).append('}');
         return sb.toString();
@@ -229,9 +225,7 @@ public final class PrettyPrinterVisitor extends AbstractAstVisitor<String, Void>
         stmt.increment().ifPresent(inc -> sb.append(inc.accept(this, null)));
         sb.append(") {\n");
         indentLevel++;
-        for (final Stmt s : stmt.body().statements()) {
-            sb.append(s.accept(this, null)).append('\n');
-        }
+        sb.append(stmt.body().accept(this, null)).append('\n');
         indentLevel--;
         sb.append(indent()).append('}');
         return sb.toString();
