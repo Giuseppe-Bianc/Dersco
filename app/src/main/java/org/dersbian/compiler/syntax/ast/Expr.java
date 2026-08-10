@@ -80,7 +80,7 @@ public sealed interface Expr
      * @param expr operand expression
      * @param span source extent
      */
-    record Unary(UnaryOp op, Expr expr, Span span) implements Expr {
+    record Unary(UnaryOp op, UnaryOpSide side, Expr expr, Span span) implements Expr {
         public Unary {
             Objects.requireNonNull(op, "op must not be null");
             Objects.requireNonNull(expr, "expr must not be null");

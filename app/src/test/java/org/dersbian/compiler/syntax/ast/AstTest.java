@@ -68,7 +68,7 @@ class AstTest {
         assertThat(binary.right()).isEqualTo(lit1);
         assertThat(binary.span()).isEqualTo(span);
 
-        final Expr.Unary unary = new Expr.Unary(UnaryOp.NEGATE, varX, span);
+        final Expr.Unary unary = new Expr.Unary(UnaryOp.NEGATE, UnaryOpSide.POSTFIX, varX, span);
         assertThat(unary.op()).isEqualTo(UnaryOp.NEGATE);
 
         final Expr.Grouping grouping = new Expr.Grouping(binary, span);

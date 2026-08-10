@@ -12,6 +12,7 @@ import org.dersbian.compiler.syntax.ast.Parameter;
 import org.dersbian.compiler.syntax.ast.Stmt;
 import org.dersbian.compiler.syntax.ast.Type;
 import org.dersbian.compiler.syntax.ast.UnaryOp;
+import org.dersbian.compiler.syntax.ast.UnaryOpSide;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -113,7 +114,8 @@ class AstVisitorTest {
     @Test
     @DisplayName("Expr.Unary dispatches to visitUnary")
     void unaryDispatch() {
-        new Expr.Unary(UnaryOp.NEGATE, boolLit(true), SPAN).accept(recorder, null);
+        new Expr.Unary(UnaryOp.NEGATE, UnaryOpSide.PREFIX, boolLit(true), SPAN)
+                .accept(recorder, null);
         Assertions.assertTrue(recorder.visited.contains("visitUnary"));
     }
 
