@@ -106,15 +106,14 @@ public sealed interface Stmt
      * @param body statement list forming function body
      * @param span source extent
      */
-    record Function(
-            String name, List<Parameter> parameters, Type returnType, List<Stmt> body, Span span)
+    record Function(String name, List<Parameter> parameters, Type returnType, Block body, Span span)
             implements Stmt {
         public Function {
             Objects.requireNonNull(name, "name must not be null");
             parameters =
                     List.copyOf(Objects.requireNonNull(parameters, "parameters must not be null"));
             Objects.requireNonNull(returnType, "returnType must not be null");
-            body = List.copyOf(Objects.requireNonNull(body, "body must not be null"));
+            Objects.requireNonNull(body, "body must not be null");
             Objects.requireNonNull(span, "span must not be null");
         }
 
@@ -156,10 +155,10 @@ public sealed interface Stmt
      * @param body loop body statements
      * @param span source extent
      */
-    record While(Expr condition, List<Stmt> body, Span span) implements Stmt {
+    record While(Expr condition, Block body, Span span) implements Stmt {
         public While {
             Objects.requireNonNull(condition, "condition must not be null");
-            body = List.copyOf(Objects.requireNonNull(body, "body must not be null"));
+            Objects.requireNonNull(body, "body must not be null");
             Objects.requireNonNull(span, "span must not be null");
         }
 
@@ -182,14 +181,14 @@ public sealed interface Stmt
             Optional<Stmt> initializer,
             Optional<Expr> condition,
             Optional<Expr> increment,
-            List<Stmt> body,
+            Block body,
             Span span)
             implements Stmt {
         public For {
             Objects.requireNonNull(initializer, "initializer must not be null");
             Objects.requireNonNull(condition, "condition must not be null");
             Objects.requireNonNull(increment, "increment must not be null");
-            body = List.copyOf(Objects.requireNonNull(body, "body must not be null"));
+            Objects.requireNonNull(body, "body must not be null");
             Objects.requireNonNull(span, "span must not be null");
         }
 

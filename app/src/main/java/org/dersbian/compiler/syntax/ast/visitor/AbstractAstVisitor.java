@@ -180,9 +180,7 @@ public abstract class AbstractAstVisitor<R, C> implements AstVisitor<R, C> {
         for (final Parameter param : stmt.parameters()) {
             result = aggregateResult(result, param.typeAnnotation().accept(this, ctx));
         }
-        for (final Stmt s : stmt.body()) {
-            result = aggregateResult(result, s.accept(this, ctx));
-        }
+        result = aggregateResult(result, stmt.body().accept(this, ctx));
         return result;
     }
 
@@ -206,9 +204,7 @@ public abstract class AbstractAstVisitor<R, C> implements AstVisitor<R, C> {
     @Override
     public R visitWhile(final Stmt.While stmt, final C ctx) {
         R result = stmt.condition().accept(this, ctx);
-        for (final Stmt s : stmt.body()) {
-            result = aggregateResult(result, s.accept(this, ctx));
-        }
+        result = aggregateResult(result, stmt.body().accept(this, ctx));
         return result;
     }
 
@@ -228,9 +224,7 @@ public abstract class AbstractAstVisitor<R, C> implements AstVisitor<R, C> {
         if (stmt.increment().isPresent()) {
             result = aggregateResult(result, stmt.increment().get().accept(this, ctx));
         }
-        for (final Stmt s : stmt.body()) {
-            result = aggregateResult(result, s.accept(this, ctx));
-        }
+        result = aggregateResult(result, stmt.body().accept(this, ctx));
         return result;
     }
 

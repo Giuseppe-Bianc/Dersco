@@ -171,13 +171,18 @@ class AstTest {
 
         final Parameter param = new Parameter("x", new Type.I32(), span);
         final Stmt funcStmt =
-                new Stmt.Function("foo", List.of(param), new Type.VoidT(), List.of(exprStmt), span);
+                new Stmt.Function(
+                        "foo",
+                        List.of(param),
+                        new Type.VoidT(),
+                        new Stmt.Block(List.of(exprStmt), span),
+                        span);
         assertThat(funcStmt.span()).isEqualTo(span);
 
         final Stmt ifStmt = new Stmt.If(varX, List.of(exprStmt), Optional.empty(), span);
         assertThat(ifStmt.span()).isEqualTo(span);
 
-        final Stmt whileStmt = new Stmt.While(varX, List.of(exprStmt), span);
+        final Stmt whileStmt = new Stmt.While(varX, new Stmt.Block(List.of(exprStmt), span), span);
         assertThat(whileStmt.span()).isEqualTo(span);
 
         final Stmt forStmt =
@@ -185,7 +190,7 @@ class AstTest {
                         Optional.empty(),
                         Optional.of(varX),
                         Optional.empty(),
-                        List.of(exprStmt),
+                        new Stmt.Block(List.of(exprStmt), span),
                         span);
         assertThat(forStmt.span()).isEqualTo(span);
 

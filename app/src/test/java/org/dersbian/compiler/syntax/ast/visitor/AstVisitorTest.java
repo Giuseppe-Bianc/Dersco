@@ -86,11 +86,14 @@ class AstVisitorTest {
                         new Parameter("x", new Type.I32(), SPAN),
                         new Parameter("y", new Type.I32(), SPAN)),
                 new Type.I32(),
-                List.of(
-                        new Stmt.Return(
-                                Optional.of(
-                                        new Expr.Binary(var("x"), BinaryOp.ADD, var("y"), SPAN)),
-                                SPAN)),
+                new Stmt.Block(
+                        List.of(
+                                new Stmt.Return(
+                                        Optional.of(
+                                                new Expr.Binary(
+                                                        var("x"), BinaryOp.ADD, var("y"), SPAN)),
+                                        SPAN)),
+                        SPAN),
                 SPAN);
     }
 
@@ -283,7 +286,7 @@ class AstVisitorTest {
                         Optional.of(init),
                         Optional.of(condition),
                         Optional.of(increment),
-                        List.of(body),
+                        new Stmt.Block(List.of(body), SPAN),
                         SPAN);
 
         final AstVisitor<Void, Void> orderRecorder =
