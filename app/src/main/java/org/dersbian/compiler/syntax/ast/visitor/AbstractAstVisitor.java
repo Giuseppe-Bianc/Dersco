@@ -196,9 +196,8 @@ public abstract class AbstractAstVisitor<R, C> implements AstVisitor<R, C> {
             case ElseBranch.None _ -> {
                 /* nothing */
             }
-            case ElseBranch.Block b -> aggregateResult(result, b.block().accept(this, ctx));
-            case ElseBranch.ElseIf e -> aggregateResult(result, e.ifStmt().accept(this, ctx));
-        }
+            case ElseBranch.Block b -> result = aggregateResult(result, b.block().accept(this, ctx));
+            case ElseBranch.ElseIf e -> result = aggregateResult(result, e.ifStmt().accept(this, ctx));        }
         return result;
     }
 
