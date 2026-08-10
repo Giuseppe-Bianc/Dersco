@@ -191,9 +191,7 @@ public abstract class AbstractAstVisitor<R, C> implements AstVisitor<R, C> {
     @Override
     public R visitIf(final Stmt.If stmt, final C ctx) {
         R result = stmt.condition().accept(this, ctx);
-        for (final Stmt s : stmt.thenBranch()) {
-            result = aggregateResult(result, s.accept(this, ctx));
-        }
+        result = aggregateResult(result, stmt.thenBranch().accept(this, ctx));
         for (final Stmt s : stmt.elseBranch().orElse(List.of())) {
             result = aggregateResult(result, s.accept(this, ctx));
         }
@@ -260,9 +258,7 @@ public abstract class AbstractAstVisitor<R, C> implements AstVisitor<R, C> {
     @Override
     public R visitMainFunction(final Stmt.MainFunction stmt, final C ctx) {
         R result = defaultResult();
-        for (final Stmt s : stmt.body()) {
-            result = aggregateResult(result, s.accept(this, ctx));
-        }
+        result = aggregateResult(result, stmt.body().accept(this, ctx));
         return result;
     }
 

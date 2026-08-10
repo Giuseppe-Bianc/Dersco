@@ -179,7 +179,8 @@ class AstTest {
                         span);
         assertThat(funcStmt.span()).isEqualTo(span);
 
-        final Stmt ifStmt = new Stmt.If(varX, List.of(exprStmt), Optional.empty(), span);
+        final Stmt ifStmt =
+                new Stmt.If(varX, new Stmt.Block(List.of(exprStmt), span), Optional.empty(), span);
         assertThat(ifStmt.span()).isEqualTo(span);
 
         final Stmt whileStmt = new Stmt.While(varX, new Stmt.Block(List.of(exprStmt), span), span);
@@ -206,7 +207,7 @@ class AstTest {
         final Stmt continueStmt = new Stmt.Continue(span);
         assertThat(continueStmt.span()).isEqualTo(span);
 
-        final Stmt mainStmt = new Stmt.MainFunction(List.of(exprStmt), span);
+        final Stmt mainStmt = new Stmt.MainFunction(new Stmt.Block(List.of(exprStmt), span), span);
         assertThat(mainStmt.span()).isEqualTo(span);
 
         final Stmt varDecl =

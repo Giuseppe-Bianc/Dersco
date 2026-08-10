@@ -246,7 +246,11 @@ class AstVisitorTest {
         final Stmt elseStmt = new Stmt.Expression(var("else"));
 
         final Stmt.If ifNode =
-                new Stmt.If(condition, List.of(thenStmt), Optional.of(List.of(elseStmt)), SPAN);
+                new Stmt.If(
+                        condition,
+                        new Stmt.Block(List.of(thenStmt), SPAN),
+                        Optional.of(List.of(elseStmt)),
+                        SPAN);
 
         final AstVisitor<Void, Void> orderRecorder =
                 new AbstractAstVisitor<>() {

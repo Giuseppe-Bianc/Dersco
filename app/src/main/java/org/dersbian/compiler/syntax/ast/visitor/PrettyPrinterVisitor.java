@@ -191,9 +191,7 @@ public final class PrettyPrinterVisitor extends AbstractAstVisitor<String, Void>
         final StringBuilder sb = new StringBuilder(indent());
         sb.append("if (").append(stmt.condition().accept(this, null)).append(") {\n");
         indentLevel++;
-        for (final Stmt s : stmt.thenBranch()) {
-            sb.append(s.accept(this, null)).append('\n');
-        }
+        sb.append(stmt.thenBranch().accept(this, null)).append('\n');
         indentLevel--;
         sb.append(indent()).append('}');
         if (stmt.elseBranch().isPresent()) {
@@ -272,9 +270,7 @@ public final class PrettyPrinterVisitor extends AbstractAstVisitor<String, Void>
     public String visitMainFunction(final Stmt.MainFunction stmt, final Void ctx) {
         final StringBuilder sb = new StringBuilder(indent()).append("main {\n");
         indentLevel++;
-        for (final Stmt s : stmt.body()) {
-            sb.append(s.accept(this, null)).append('\n');
-        }
+        sb.append(stmt.body().accept(this, null)).append('\n');
         indentLevel--;
         sb.append(indent()).append('}');
         return sb.toString();
