@@ -6,8 +6,6 @@ import java.util.List;
 import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
-import org.dersbian.compiler.syntax.ast.visitor.AstVisitor;
-import org.dersbian.compiler.syntax.ast.visitor.PrettyPrinterVisitor;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -17,11 +15,7 @@ import org.junit.jupiter.api.Test;
  * ElseIf(Stmt.If)}. Exhaustiveness is verified by a visitor that switches over all three variants
  * -- adding a fourth variant would fail compilation.
  */
-@SuppressWarnings({
-    "PMD.CommentRequired",
-    "PMD.UnitTestContainsTooManyAsserts",
-    "PMD.ShortVariable"
-})
+@SuppressWarnings({"PMD.CommentRequired", "PMD.UnitTestContainsTooManyAsserts"})
 @NoArgsConstructor
 class ElseBranchTest {
 
@@ -69,7 +63,7 @@ class ElseBranchTest {
     @Test
     void prettyPrinterOmitsElseForNone() {
         final Stmt.If ifStmt = wrap(var("c"), block(), new ElseBranch.None());
-        final String out = ifStmt.accept(new PrettyPrinterVisitor(), null);
+        final String out = AstPrinter.print(ifStmt);
         assertThat(out).doesNotContain("else");
     }
 
@@ -81,7 +75,7 @@ class ElseBranchTest {
                         block(),
                         new ElseBranch.Block(
                                 block(new Stmt.Return(java.util.Optional.empty(), SPAN))));
-        final String out = ifStmt.accept(new PrettyPrinterVisitor(), null);
+        final String out = AstPrinter.print(ifStmt);
         assertThat(out).contains("else {");
     }
 
@@ -89,48 +83,33 @@ class ElseBranchTest {
     void prettyPrinterRendersElseIfForElseIf() {
         final Stmt.If inner = wrap(var("d"), block(), new ElseBranch.None());
         final Stmt.If outer = wrap(var("c"), block(), new ElseBranch.ElseIf(inner));
-        final String out = outer.accept(new PrettyPrinterVisitor(), null);
+        final String out = AstPrinter.print(outer);
         assertThat(out).contains("else if (d)");
     }
 
     /**
-     * Compile-time exhaustiveness check: if a fourth {@link ElseBranch} variant is added, this
-     * visitor will fail to compile and the test will not even start.
+     * Compile-time exhaustiveness check: if a fourth {@link ElseBranch} variant is added, the
+     * pattern-matching switch in this test will fail to compile and the test will not even start.
      */
     @Test
     void visitElseBranchExhaustivelyHandled() {
         final java.util.Set<String> visited = new java.util.LinkedHashSet<>();
-        final AstVisitor<Void, Void> recorder =
-                new org.dersbian.compiler.syntax.ast.visitor.AbstractAstVisitor<>() {
-                    @Override
-                    protected Void defaultResult() {
-                        return null;
-                    }
-
-                    @Override
-                    public Void visitIf(final Stmt.If stmt, final Void ctx) {
-                        switch (stmt.elseBranch()) {
-                            case ElseBranch.None _ -> visited.add("none");
-                            case ElseBranch.Block b -> {
-                                visited.add("block");
-                                b.block().accept(this, null);
-                            }
-                            case ElseBranch.ElseIf e -> {
-                                visited.add("elseif");
-                                e.ifStmt().accept(this, null);
-                            }
-                        }
-                        return stmt.condition().accept(this, null);
+        final java.util.function.Consumer<Stmt.If> classify =
+                stmt -> {
+                    switch (stmt.elseBranch()) {
+                        case ElseBranch.None _ -> visited.add("none");
+                        case ElseBranch.Block _ -> visited.add("block");
+                        case ElseBranch.ElseIf _ -> visited.add("elseif");
                     }
                 };
 
-        wrap(var("c"), block(), new ElseBranch.None()).accept(recorder, null);
-        wrap(var("c"), block(), new ElseBranch.Block(block())).accept(recorder, null);
-        wrap(
+        classify.accept(wrap(var("c"), block(), new ElseBranch.None()));
+        classify.accept(wrap(var("c"), block(), new ElseBranch.Block(block())));
+        classify.accept(
+                wrap(
                         var("c"),
                         block(),
-                        new ElseBranch.ElseIf(wrap(var("d"), block(), new ElseBranch.None())))
-                .accept(recorder, null);
+                        new ElseBranch.ElseIf(wrap(var("d"), block(), new ElseBranch.None()))));
 
         assertThat(visited).containsExactlyInAnyOrder("none", "block", "elseif");
     }
