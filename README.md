@@ -52,7 +52,7 @@ Dersco/
 ## Prerequisites
 
 - **Java 25 SDK** (or allow Gradle's Foojay Toolchain Resolver to provision it automatically).
-- **Gradle 9.6** (included via `./gradlew` wrapper).
+- **Gradle 9.7** (included via `./gradlew` wrapper).
 
 ---
 
