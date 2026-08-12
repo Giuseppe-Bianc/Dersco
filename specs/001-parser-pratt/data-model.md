@@ -26,6 +26,7 @@ public record ParseResult(
 ```
 
 **Invariants**:
+
 - Both lists are non-null and unmodifiable.
 - `statements` contains the top-level nodes parsed before or between errors; it may be
   non-empty even when `hasErrors()` is true (error recovery continues parsing).
@@ -59,10 +60,12 @@ final class TokenCursor {
 ```
 
 **Fields**:
+
 - `tokens: List<Token>` — comment-filtered, immutable copy
 - `pos: int` — current index (0-based)
 
 **Invariants**:
+
 - `peek()` never returns a `COMMENT` or `MULTILINE_COMMENT` token.
 - `peek()` always returns an `EOF` token when `isAtEnd()` is true (never throws).
 - `expect()` emits at most one error per call; it does not synchronize.
@@ -105,6 +108,7 @@ record BindingPower(int left, int right) {
 | 130 | — | (postfix/call/index) `++` `--` `(` `[` |
 
 **Invariants**:
+
 - Left-associative: `right = left + 1`
 - Right-associative: `right = left - 1`
 - Prefix tokens have no `left` value (they terminate the infix loop).
@@ -126,10 +130,12 @@ final class ExpressionParser {
 ```
 
 **Fields**:
+
 - `cursor: TokenCursor` — shared with `StatementParser`
 - `errors: List<CompileError.SyntaxError>` — mutable accumulator, shared with `Parser`
 
 **Key responsibilities**:
+
 - `parsePrimary()` handles: integer/float/bool/string/char/nullptr literals, identifiers,
   `(expr)` grouping, prefix unary (`-`, `!`, `~`, `++`, `--`), and array literals `{…}`.
 - `parseExpression(minBp)` runs the Pratt loop: peek for infix; if `infix.left >= minBp`,
@@ -166,6 +172,7 @@ final class StatementParser {
 ```
 
 **Fields**:
+
 - `cursor: TokenCursor` — shared
 - `exprParser: ExpressionParser` — shared
 - `errors: List<CompileError.SyntaxError>` — shared mutable accumulator
@@ -199,6 +206,7 @@ public final class Parser {
 ```
 
 **Fields**:
+
 - `cursor: TokenCursor`
 - `errors: List<CompileError.SyntaxError>` — mutable; drained into `ParseResult`
 - `exprParser: ExpressionParser`
@@ -206,6 +214,7 @@ public final class Parser {
 - `source: Path` — for error context
 
 **Algorithm** (`parse()`):
+
 1. Construct internal components.
 2. Loop: while `!cursor.isAtEnd()`, call `stmtParser.parseStatement()` and collect results.
 3. Return `new ParseResult(statements, errors)`.
@@ -286,7 +295,7 @@ All primitive types (`I8`…`U64`, `F32`, `F64`, `Char`, `StringT`, `Bool`), `Cu
 
 ### `CompileError.SyntaxError`
 
-```
+```text
 SyntaxError(
     errorCode:    Optional<ErrorCode>,
     errorMessage: String,
@@ -296,6 +305,7 @@ SyntaxError(
 ```
 
 **Validation rules**:
+
 - `errorMessage` and `errorSpan` are non-null (enforced by factory method).
 - `errorCode` is `Optional.of(ErrorCode.E1005)` for operator errors; for parser-specific
   errors a new `ErrorCode` entry may be needed — researched separately (see research.md §2).

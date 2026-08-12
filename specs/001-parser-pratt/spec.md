@@ -275,7 +275,6 @@ points to the erroneous token and whose message names the expected token or cons
 - Preview Java features are not used; the implementation relies solely on Java 25 stable features
   (sealed interfaces, records, pattern matching for switch) already present in the codebase.
 
-
 ---
 
 ## Clarifications

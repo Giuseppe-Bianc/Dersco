@@ -31,7 +31,7 @@ The grammar below reflects this; no `;` appears after `return`, `break`, `contin
 
 ## Top-Level Program
 
-```
+```text
 program       ::= statement* EOF
 ```
 
@@ -42,7 +42,7 @@ A successful parse with no errors has `hasErrors() == false`.
 
 ## Statements
 
-```
+```text
 statement     ::= funDecl
                 | varDecl
                 | mainBlock
@@ -124,7 +124,7 @@ exprStmt      ::= expression
 
 ## Types
 
-```
+```text
 type          ::= 'i8' | 'i16' | 'i32' | 'i64'
                 | 'u8' | 'u16' | 'u32' | 'u64'
                 | 'f32' | 'f64'
@@ -143,7 +143,7 @@ type          ::= 'i8' | 'i16' | 'i32' | 'i64'
 
 ## Expressions (Pratt precedence, lowest → highest)
 
-```
+```text
 expression    ::= assignExpr
 
 assignExpr    ::= unary assignOp assignExpr         // right-assoc
@@ -226,13 +226,14 @@ From lowest (1) to highest (13):
 
 When the parser encounters an unexpected token, it must produce a
 `CompileError.SyntaxError` with:
+
 - `errorSpan`: the span of the unexpected token (or the span of the last consumed token
   if at EOF).
 - `errorMessage`: a human-readable string that names the expected token or construct and
   the token actually found. Examples:
-  - `"Expected ':' after variable name, found 'i32'"`
-  - `"Expected ')' to close function call, found '}'"` 
-  - `"Unexpected end of file after '+'"`  (EOF mid-expression)
+    - `"Expected ':' after variable name, found 'i32'"`
+    - `"Expected ')' to close function call, found '}'"` 
+    - `"Unexpected end of file after '+'"`  (EOF mid-expression)
 - `errorCode`: `Optional.of(ErrorCode.E1005)` where applicable; `Optional.empty()` for
   parser-specific errors without a matching code.
 - `errorHelp`: `Optional.empty()` unless a corrective suggestion is obvious.

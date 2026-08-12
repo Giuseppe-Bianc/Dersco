@@ -23,6 +23,7 @@ after lexing and surface parse errors through `ErrorReporter`.
 for switch; no preview features)
 
 **Primary Dependencies**:
+
 - `org.dersbian.compiler.lexer.token.Token` / `TokenKind` / `Span` — token model already defined
 - `org.dersbian.compiler.syntax.ast.*` — `Expr`, `Stmt`, `BinaryOp`, `UnaryOp`, `UnaryOpSide`,
   `Type`, `LiteralValue`, `Parameter`, `ElseBranch` — all already defined
@@ -42,6 +43,7 @@ for switch; no preview features)
 **Performance Goals**: Parse a 200-line `.dr` file in < 100 ms on a development machine (SC-007)
 
 **Constraints**:
+
 - Zero preview features (Constitution I)
 - All quality gates must pass: Checkstyle, PMD, SpotBugs, Error Prone `-Werror`, Spotless
   (Google Java Format AOSP, 4-space indent), JaCoCo ≥ 80% branch coverage on parser classes

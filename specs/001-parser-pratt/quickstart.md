@@ -61,6 +61,7 @@ comply with Google Java Format AOSP style (4-space indent).
 **Expected**: All tests pass. No failures, no unexpected skips.
 
 Key scenarios that MUST pass:
+
 - `1 + 2 * 3` → `Binary(Literal(1), ADD, Binary(Literal(2), MULTIPLY, Literal(3)))`
   (multiplicative binds tighter than additive — SC-002)
 - `a - b - c` → `Binary(Binary(Variable(a), SUBTRACT, Variable(b)), SUBTRACT, Variable(c))`
@@ -83,6 +84,7 @@ Key scenarios that MUST pass:
 ```
 
 **Expected**: `BUILD SUCCESSFUL`. All gates pass:
+
 - Checkstyle — no rule violations in new parser classes
 - PMD — no PMD violations
 - SpotBugs — no bug findings
@@ -138,6 +140,7 @@ of a 200-line file is in the low milliseconds). If the run time exceeds 5 second
 investigate; the JVM startup alone should keep wall-clock time below 3 s.
 
 Alternatively, verify with a dedicated JUnit benchmark in `ParserTest`:
+
 ```java
 @Test void parseLargeToyProgramUnder100ms() {
     long start = System.nanoTime();

@@ -7,10 +7,12 @@
 ## 1. Parsing Strategy
 
 ### Decision
+
 Combine **Recursive Descent** for statement-level rules (declarations, control flow) with
 **Pratt Parsing** (top-down operator precedence) for all expression-level constructs.
 
 ### Rationale
+
 - Recursive Descent maps cleanly onto the fixed statement grammar: each keyword (`fun`, `if`,
   `while`, `for`, `var`, `const`, `return`, `break`, `continue`, `main`) has exactly one
   dispatch branch. Control flow and nesting are expressed naturally as recursive calls.
@@ -24,6 +26,7 @@ Combine **Recursive Descent** for statement-level rules (declarations, control f
   Compiler in Go). No academic uncertainty remains.
 
 ### Alternatives Considered
+
 - **ANTLR / parser generator**: Rejected — introduces a new build-time dependency, generates
   code that would clash with the project's Checkstyle/Spotless/SpotBugs gates, and is not
   aligned with the codebase's hand-written style.
@@ -39,6 +42,7 @@ Combine **Recursive Descent** for statement-level rules (declarations, control f
 ## 2. Class Decomposition (FR-010)
 
 ### Decision
+
 Five classes, each with a single responsibility:
 
 | Class | Responsibility |
@@ -53,11 +57,13 @@ Five classes, each with a single responsibility:
 class for FR-010 purposes.
 
 ### Rationale
+
 FR-010 explicitly prohibits a single class from owning more than one of: tokenization,
 expression parsing, statement parsing, error collection. This decomposition satisfies that
 constraint and makes each class independently unit-testable.
 
 ### Alternatives Considered
+
 - **Merging `ExpressionParser` into `Parser`**: Rejected — violates FR-010.
 - **One class with inner record for expression state**: Rejected — still co-locates
   statement and expression logic in a single compilation unit.
@@ -67,6 +73,7 @@ constraint and makes each class independently unit-testable.
 ## 3. Binding Power Representation
 
 ### Decision
+
 A package-private `record BindingPower(int left, int right)` paired with a static lookup
 method `BindingPower.of(TokenKind)` returning `Optional<BindingPower>`. An absent value
 means the token cannot act as an infix operator and terminates the Pratt loop.
@@ -93,10 +100,12 @@ Right-associativity is encoded as `right-bp = left-bp - 1` (so the loop recurs w
 left-associativity as `right-bp = left-bp + 1`.
 
 ### Rationale
+
 Multiples of 10 leave room for future levels without renumbering. The `Optional<BindingPower>`
 sentinel avoids a separate `isInfix(TokenKind)` predicate and keeps the loop condition clean.
 
 ### Alternatives Considered
+
 - **Enum with left/right fields**: Viable but ties `BindingPower` to a closed set of
   operators; a `record` + `switch` in a static factory is equally readable and easier to
   extend.
@@ -108,12 +117,14 @@ sentinel avoids a separate `isInfix(TokenKind)` predicate and keeps the loop con
 ## 4. Comment Filtering (FR-011)
 
 ### Decision
+
 `TokenCursor` filters `TokenKind.Simple.Special.COMMENT` and
 `TokenKind.Simple.Special.MULTILINE_COMMENT` tokens during construction (or lazily on each
 `advance()` call). Both variants are silently discarded before any `peek()` or grammar rule
 ever sees them.
 
 ### Rationale
+
 The spec explicitly mandates that comment tokens never reach a parse function or trigger
 a parse error (FR-011). Filtering at the cursor level is the cleanest single point of
 enforcement; it avoids scattered `if (isComment) continue` guards in every grammar method.
@@ -124,6 +135,7 @@ fully materialized by the `Lexer`; the memory overhead is bounded and the cursor
 simple.
 
 ### Alternatives Considered
+
 - **Filter in `Lexer`**: Rejected — the lexer currently emits all tokens including comments
   (they are used by external tools/IDE integrations). The spec says the *cursor* filters, not
   the lexer.
@@ -135,6 +147,7 @@ simple.
 ## 5. Error Recovery Strategy (FR-008)
 
 ### Decision
+
 **Synchronization-point recovery**: when a syntax error is detected, emit a
 `CompileError.SyntaxError`, add it to the error list, then call `synchronize()` which
 advances the cursor past the next `}` token (block boundary). As a secondary heuristic,
@@ -149,12 +162,14 @@ point. No error cap (FR-008). No exception is thrown for recoverable errors (FR-
 > because `;` only appears in `for` headers, never as a statement terminator.
 
 ### Rationale
+
 Recovery at block-close (`}`) prevents a single malformed block from cascading errors
 through the rest of the file. Stopping at statement-opening keywords catches errors in
 non-block contexts (top-level declarations). This is consistent with the actual grammar
 and with hand-written parsers for brace-delimited, no-semicolon languages.
 
 ### Alternatives Considered
+
 - **Synchronize to `;` as in original spec**: `;` appears only inside `for` headers in
   Dersco; using it as a sync point would cause the parser to overshoot into the `for`
   condition or increment clause, producing confusing secondary errors.
@@ -169,6 +184,7 @@ and with hand-written parsers for brace-delimited, no-semicolon languages.
 ## 6. Compound Assignment Representation (FR-004b)
 
 ### Decision
+
 `Expr.Assign(target, Expr.Binary(target, op, rhs))` where `op` is the non-compound
 `BinaryOp` (e.g., `ADD` for `+=`). No new `Expr` variant is introduced.
 
@@ -177,11 +193,13 @@ or array-access expression is parsed once but referenced twice in the AST). The 
 validity check is deferred to the semantic phase.
 
 ### Rationale
+
 Confirmed by the spec clarification session (2026-08-12, Q1). Reusing `Expr.Assign` and
 `Expr.Binary` avoids adding a new sealed variant (which would require updating `AstPrinter`,
 `NodeCounter`, and any future visitor).
 
 ### Alternatives Considered
+
 - **New `Expr.CompoundAssign` variant**: Rejected per spec clarification.
 - **`Expr.Assign` with a non-null `op` field**: Would require changing the existing sealed
   record, which is out of scope.
@@ -191,6 +209,7 @@ Confirmed by the spec clarification session (2026-08-12, Q1). Reusing `Expr.Assi
 ## 7. `ParseResult` vs Exception API (FR-001)
 
 ### Decision
+
 `parse()` always returns a `ParseResult` record; it never throws for recoverable syntax
 errors. A `CompilerException` may still propagate if an unexpected `null` or truly
 unrecoverable internal condition occurs (e.g., cursor state corruption), but those are bugs,
@@ -207,11 +226,13 @@ public record ParseResult(List<Stmt> statements, List<CompileError.SyntaxError> 
 ```
 
 ### Rationale
+
 Confirmed by spec clarification (2026-08-12, Q3). The caller (`DefaultCompilerService`)
 inspects `result.hasErrors()` to decide whether to surface errors via `ErrorReporter`. This
 matches the `LexerResult` precedent already in the codebase.
 
 ### Alternatives Considered
+
 - **Throw on first error**: Rejected by spec.
 - **Dual API (result + exception)**: Rejected by spec.
 
@@ -220,6 +241,7 @@ matches the `LexerResult` precedent already in the codebase.
 ## 8. `DefaultCompilerService` Integration
 
 ### Decision
+
 After `lexer.tokenize()`, `DefaultCompilerService.checkSyntax` constructs a `Parser` with
 `result.tokens()`, calls `parser.parse()`, collects `ParseResult.errors()`, renders them
 through `ErrorReporter`, and throws `CompilerException` if any errors exist. The existing
@@ -239,10 +261,12 @@ if (!parseErrorReport.isEmpty()) {
 ```
 
 ### Rationale
+
 Minimal change to the existing service; keeps the lexer and parser error paths symmetric
 (both funnel through `ErrorReporter`). Per the spec assumption, the resulting AST is not
 passed to any downstream phase yet.
 
 ### Alternatives Considered
+
 - **Combine lex + parse into a single `LexParseResult`**: Rejected — premature coupling;
   the lexer and parser have independent error sets and are independently testable.
