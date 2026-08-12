@@ -155,7 +155,9 @@ points to the erroneous token and whose message names the expected token or cons
 ### Functional Requirements
 
 - **FR-001**: The parser MUST consume a `List<Token>` (or equivalent token iterator) produced by
-  the existing `Lexer` and produce a `List<Stmt>` representing the top-level program structure.
+  the existing `Lexer` and produce a `ParseResult` value carrying both a `List<Stmt>` representing
+  the top-level program structure and a `List<CompileError.SyntaxError>` collecting all parse
+  errors encountered during the run. `parse()` MUST NOT throw for recoverable syntax errors.
 - **FR-002**: The parser MUST implement Recursive Descent for all statement-level constructs:
   function declarations (`fun`), the `main` block, variable/constant declarations (`var`/`const`),
   `if`/`else if`/`else`, `while`, `for`, `return`, `break`, `continue`, and expression statements.
@@ -177,6 +179,10 @@ points to the erroneous token and whose message names the expected token or cons
   11. Multiplicative (`*`, `/`, `%`) — left-associative
   12. Prefix unary (`-`, `!`, `~`, `++`, `--`) — right-associative (applied to the right operand)
   13. Postfix unary (`++`, `--`) and call/index (`(…)`, `[…]`) — left-associative (highest)
+- **FR-004b**: Compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`,
+  `<<=`, `>>=`) MUST be parsed as `Expr.Assign(target, Expr.Binary(target, op, rhs))` where `op`
+  is the corresponding non-compound `BinaryOp` (e.g., `ADD` for `+=`). No new `Expr` variant is
+  introduced; the target sub-expression is re-evaluated syntactically on both sides.
 - **FR-005**: The parser MUST produce `Expr.Binary`, `Expr.Unary`, `Expr.Grouping`,
   `Expr.Literal`, `Expr.ArrayLiteral`, `Expr.Variable`, `Expr.Assign`, `Expr.Call`, and
   `Expr.ArrayAccess` nodes using the existing sealed `Expr` hierarchy without modification.
@@ -188,18 +194,28 @@ points to the erroneous token and whose message names the expected token or cons
   the correct `Span` of the offending token and a message naming the expected token or construct.
 - **FR-008**: The parser MUST support basic error recovery: upon encountering a syntax error it
   MUST advance to the nearest synchronization point (next `;` or `}`) and continue parsing so
-  that multiple errors in one file can be reported in a single pass.
+  that all errors in one file are reported in a single pass. There is no cap on the number of
+  errors collected; the parser MUST NOT abort early due to error count alone.
 - **FR-009**: The parser MUST reside in the package `org.dersbian.compiler.syntax` (or a
   sub-package thereof) and MUST NOT introduce dependencies on semantic or code-generation phases.
 - **FR-010**: The tokenization, expression parsing, statement parsing, and error collection
   responsibilities MUST be held by distinct classes or methods; no single class may own more than
   one of these responsibilities.
+- **FR-011**: The token cursor MUST silently discard all `TokenKind.Simple.Special.COMMENT` and
+  `TokenKind.Simple.Special.MULTILINE_COMMENT` tokens before any grammar rule or Pratt loop step
+  processes them. Comment tokens MUST never reach a parse function or trigger a parse error.
+- **FR-012**: The parser MUST emit no log output during a parse run. All results — parsed
+  statements and collected errors — MUST flow exclusively through `ParseResult`. No SLF4J or
+  other logging calls are permitted inside parser classes.
 
 ### Key Entities
 
 - **Parser**: The top-level class that accepts a token stream and exposes a `parse()` method
-  returning `List<Stmt>` and a separate `errors()` accessor returning collected
-  `CompileError.SyntaxError` instances.
+  returning a `ParseResult` record carrying `List<Stmt> statements` and
+  `List<CompileError.SyntaxError> errors`. Never throws for recoverable syntax errors.
+- **ParseResult**: An immutable value record bundling the parsed statement list and the collected
+  error list. Callers (e.g., `DefaultCompilerService`) inspect `errors()` to determine whether the
+  parse succeeded cleanly.
 - **PrattExpressionParser** (or equivalent inner structure): The component responsible for
   parsing expressions using binding-power arithmetic. Delegates to the token stream for lookahead
   and consumption.
@@ -244,9 +260,8 @@ points to the erroneous token and whose message names the expected token or cons
 - The existing `Expr`, `Stmt`, `BinaryOp`, `UnaryOp`, `Type`, `LiteralValue`, and `Span`
   types are sufficient to represent all syntactic constructs currently defined by the language;
   no new AST node types are required for this feature.
-- `Expr.Assign` is used for all assignment forms (`=`, `+=`, `-=`, etc.); compound assignment
-  operators are distinguished at the `BinaryOp` level within the assigned value expression, not
-  by a separate AST node variant.
+- Compound assignment operators are represented as `Expr.Assign(target, Expr.Binary(target, op, rhs))`
+  per FR-004b; no new `Expr` variant is needed. This is now a requirement, not merely an assumption.
 - The `main` block is syntactically distinct from a `fun` declaration and is parsed into a
   `Stmt.MainFunction`; the parser does not treat it as a regular function.
 - Multi-dimensional array literals (e.g., `{{1i8, 2i8}, {3i8, 4i8}}`) are represented as
@@ -259,3 +274,16 @@ points to the erroneous token and whose message names the expected token or cons
   service does not need to pass the resulting AST to any downstream phase.
 - Preview Java features are not used; the implementation relies solely on Java 25 stable features
   (sealed interfaces, records, pattern matching for switch) already present in the codebase.
+
+
+---
+
+## Clarifications
+
+### Session 2026-08-12
+
+- Q: When a compound assignment operator like `+=` or `<<=` appears in an expression, how should the parser represent it in the AST? → A: Option A — `Expr.Assign(target, Expr.Binary(target, op, rhs))`; no new AST variant introduced.
+- Q: How should the parser treat `COMMENT` and `MULTILINE_COMMENT` tokens that the lexer emits — should they be silently skipped during parsing, or preserved? → A: Option A — silently filtered by the token cursor before any grammar rule sees them.
+- Q: How should the parser surface collected errors to its caller — result object, throw on first error, or dual API? → A: Option A — `parse()` returns a `ParseResult` carrying both `List<Stmt>` and `List<CompileError.SyntaxError>`; no exception thrown for recoverable syntax errors.
+- Q: Should the parser impose a maximum number of syntax errors before aborting, or collect all errors? → A: Option A — unbounded; the parser always attempts to collect every error and MUST NOT abort early due to error count.
+- Q: Should the parser emit any log output during a parse run, or remain completely silent? → A: Option A — completely silent; all information flows through `ParseResult` only; no logging calls permitted inside parser classes.
