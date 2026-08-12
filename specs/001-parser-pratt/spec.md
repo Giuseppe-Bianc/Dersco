@@ -136,7 +136,7 @@ points to the erroneous token and whose message names the expected token or cons
   partial or null right operand, depending on the chosen recovery strategy.
 - What happens when an operator appears where a primary expression is expected?
   → The parser emits a structured error and attempts to skip to a synchronization point
-  (e.g., the next `;` or `}`).
+  (the next `}` or the next statement-opening keyword).
 - How does the parser handle deeply nested expressions (e.g., 100+ levels of parentheses)?
   → The Pratt loop is iterative, not recursive on precedence climbs, so stack depth is bounded
   by the depth of syntactic nesting (blocks, function calls), not by operator chaining.
@@ -167,11 +167,11 @@ points to the erroneous token and whose message names the expected token or cons
 - **FR-004**: The precedence table MUST reflect the following ordering, from lowest to highest
   binding power:
   1. Assignment operators (`=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`) — right-associative
-  2. Logical OR (`||`) — left-associative
-  3. Logical AND (`&&`) — left-associative
-  4. Bitwise OR (`|`) — left-associative
-  5. Bitwise XOR (`^`) — left-associative
-  6. Bitwise AND (`&`) — left-associative
+  2. Logical OR (`||`) — left-associative (`TokenKind.Simple.Operator.OR_OR`)
+  3. Logical AND (`&&`) — left-associative (`TokenKind.Simple.Operator.AND_AND`)
+  4. Bitwise OR (`|`) — left-associative (`TokenKind.Simple.Operator.OR`)
+  5. Bitwise XOR (`^`) — left-associative (`TokenKind.Simple.Operator.XOR`)
+  6. Bitwise AND (`&`) — left-associative (`TokenKind.Simple.Operator.AND`)
   7. Equality (`==`, `!=`) — left-associative
   8. Relational (`<`, `<=`, `>`, `>=`) — left-associative
   9. Shift (`<<`, `>>`) — left-associative
@@ -193,9 +193,11 @@ points to the erroneous token and whose message names the expected token or cons
 - **FR-007**: Every parse error MUST be represented as a `CompileError.SyntaxError` carrying
   the correct `Span` of the offending token and a message naming the expected token or construct.
 - **FR-008**: The parser MUST support basic error recovery: upon encountering a syntax error it
-  MUST advance to the nearest synchronization point (next `;` or `}`) and continue parsing so
-  that all errors in one file are reported in a single pass. There is no cap on the number of
-  errors collected; the parser MUST NOT abort early due to error count alone.
+  MUST advance to the nearest synchronization point — the next `}` (consumed) or the next
+  statement-opening keyword (`fun`, `var`, `const`, `if`, `while`, `for`, `return`, `break`,
+  `continue`, `main`) (not consumed) — and continue parsing so that all errors in one file are
+  reported in a single pass. There is no cap on the number of errors collected; the parser MUST
+  NOT abort early due to error count alone.
 - **FR-009**: The parser MUST reside in the package `org.dersbian.compiler.syntax` (or a
   sub-package thereof) and MUST NOT introduce dependencies on semantic or code-generation phases.
 - **FR-010**: The tokenization, expression parsing, statement parsing, and error collection
@@ -267,8 +269,10 @@ points to the erroneous token and whose message names the expected token or cons
 - Multi-dimensional array literals (e.g., `{{1i8, 2i8}, {3i8, 4i8}}`) are represented as
   nested `Expr.ArrayLiteral` nodes; the parser does not need to enforce dimension consistency
   (that is a semantic concern).
-- Error recovery targets synchronization at `;` and `}` tokens only; more sophisticated
-  recovery strategies (e.g., inserting missing tokens) are out of scope for this feature.
+- Error recovery targets synchronization at `}` (consumed) and statement-opening keywords
+  (`fun`, `var`, `const`, `if`, `while`, `for`, `return`, `break`, `continue`, `main`) (not
+  consumed) only; more sophisticated recovery strategies (e.g., inserting missing tokens) are
+  out of scope for this feature.
 - The `DefaultCompilerService` integration (wiring the parser into `checkSyntax`/`compile`) is
   within scope for this feature: the parser must be invokable from the service layer, but the
   service does not need to pass the resulting AST to any downstream phase.
