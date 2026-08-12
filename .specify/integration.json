@@ -2,14 +2,19 @@
   "version": "0.16.2",
   "integration_state_schema": 1,
   "installed_integrations": [
-    "codex"
+    "codex",
+    "kiro-cli"
   ],
   "integration_settings": {
     "codex": {
       "script": "py",
       "invoke_separator": "-"
+    },
+    "kiro-cli": {
+      "script": "py",
+      "invoke_separator": "."
     }
   },
-  "integration": "codex",
-  "default_integration": "codex"
+  "integration": "kiro-cli",
+  "default_integration": "kiro-cli"
 }
