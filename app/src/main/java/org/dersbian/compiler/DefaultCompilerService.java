@@ -18,8 +18,7 @@ import org.dersbian.util.SizeSystems;
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
     "PMD.MethodArgumentCouldBeFinal",
-    "PMD.AvoidUncheckedExceptionsInSignatures",
-    "PMD.SystemPrintln"
+    "PMD.AvoidUncheckedExceptionsInSignatures"
 })
 public final class DefaultCompilerService implements ICompilerService {
 
@@ -47,7 +46,7 @@ public final class DefaultCompilerService implements ICompilerService {
                 new ErrorReporter(lexer.getLineTracker(), source.toString());
         final String errorReport = errorReporter.reportErrors(result.errors());
         if (!errorReport.isEmpty()) {
-            System.out.println(errorReport);
+            IO.println(errorReport);
             throw new CompilerException(
                     "Compilation failed with " + result.errors().size() + " error(s)");
         }
