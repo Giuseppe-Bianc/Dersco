@@ -202,7 +202,11 @@ points to the erroneous token and whose message names the expected token or cons
   sub-package thereof) and MUST NOT introduce dependencies on semantic or code-generation phases.
 - **FR-010**: The tokenization, expression parsing, statement parsing, and error collection
   responsibilities MUST be held by distinct classes or methods; no single class may own more than
-  one of these responsibilities.
+  one of these responsibilities. "Error collection" does NOT mean a dedicated class: it refers to
+  a single mutable `List<CompileError.SyntaxError>` that is constructed once by `Parser`, passed
+  by reference to `TokenCursor`, `ExpressionParser`, and `StatementParser`, and snapshotted into
+  the final immutable `ParseResult` (analogous to how `LexerResult` defensively copies its error
+  list). No `ErrorCollector` class is introduced.
 - **FR-011**: The token cursor MUST silently discard all `TokenKind.Simple.Special.COMMENT` and
   `TokenKind.Simple.Special.MULTILINE_COMMENT` tokens before any grammar rule or Pratt loop step
   processes them. Comment tokens MUST never reach a parse function or trigger a parse error.
@@ -218,9 +222,8 @@ points to the erroneous token and whose message names the expected token or cons
 - **ParseResult**: An immutable value record bundling the parsed statement list and the collected
   error list. Callers (e.g., `DefaultCompilerService`) inspect `errors()` to determine whether the
   parse succeeded cleanly.
-- **PrattExpressionParser** (or equivalent inner structure): The component responsible for
-  parsing expressions using binding-power arithmetic. Delegates to the token stream for lookahead
-  and consumption.
+- **ExpressionParser**: The component responsible for parsing expressions using binding-power
+  arithmetic (Pratt loop). Delegates to `TokenCursor` for lookahead and consumption.
 - **BindingPower**: A value object or enum encoding the left-binding-power and right-binding-power
   of each operator, used by the Pratt loop to decide when to stop consuming the right-hand side.
 - **ParseError** (mapped to `CompileError.SyntaxError`): The structured error representation

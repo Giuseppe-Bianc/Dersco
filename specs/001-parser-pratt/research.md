@@ -155,11 +155,13 @@ the cursor also stops at the next statement-opening keyword (`fun`, `var`, `cons
 `while`, `for`, `return`, `break`, `continue`, `main`). Parsing then resumes from that
 point. No error cap (FR-008). No exception is thrown for recoverable errors (FR-001).
 
-> **Note**: The original spec (FR-008) mentions `; or }` as synchronization points. Since
-> Dersco does not use semicolons as statement terminators (confirmed by all canonical
-> `dr_files/` samples), `}` and statement-opening keywords are the practical sync points.
-> The spec's mention of `;` likely reflects a C-family assumption; it is inert in practice
-> because `;` only appears in `for` headers, never as a statement terminator.
+> **Why not `;`**: An earlier draft of FR-008 listed `; or }` as synchronization points,
+> inheriting a C-family assumption. That wording was incorrect for Dersco: semicolons are
+> not statement terminators — they appear only as the two separators inside `for` loop
+> headers (`for (init ; cond ; incr)`). Using `;` as a sync point would cause the parser to
+> overshoot into `for` condition or increment clauses, producing confusing secondary errors.
+> FR-008 has been updated to specify `}` and statement-opening keywords as the sole sync
+> points. This decision is final.
 
 ### Rationale
 
@@ -170,9 +172,9 @@ and with hand-written parsers for brace-delimited, no-semicolon languages.
 
 ### Alternatives Considered
 
-- **Synchronize to `;` as in original spec**: `;` appears only inside `for` headers in
-  Dersco; using it as a sync point would cause the parser to overshoot into the `for`
-  condition or increment clause, producing confusing secondary errors.
+- **Synchronize to `;`**: Rejected — `;` is not a statement terminator in Dersco and
+  appears only inside `for` headers. Using it as a sync point would cause the parser to
+  overshoot into `for` condition or increment clauses, producing confusing secondary errors.
 - **No secondary keyword sync, only `}`**: Simpler but misses top-level errors where
   there is no enclosing `}` to synchronize to.
 - **Error productions in the grammar**: Too complex for the scope of this feature; deferred

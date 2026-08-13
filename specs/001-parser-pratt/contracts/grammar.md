@@ -72,6 +72,16 @@ elseBranch    ::= 'else' ( ifStmt | block )
 
 whileStmt     ::= 'while' expression block
 
+> **`if` and `while` condition syntax**: All canonical `.dr` source files write the condition
+> with surrounding parentheses: `if (expr) { }` and `while (expr) { }`. The parentheses are
+> **not** special syntax for these keywords — the parser parses a plain `expression` and the
+> `(` / `)` are consumed as `Expr.Grouping` by `parsePrimary()`. The grammar rule above
+> (`'if' expression block`) is therefore correct: the grouping is part of the expression, not
+> of the statement rule. Writing `if true { }` (without parentheses) is syntactically
+> accepted by the same rule, but is not idiomatic Dersco and does not appear in any canonical
+> sample. Implementations MUST parse the condition as a plain expression and MUST NOT require
+> or strip parentheses at the statement level.
+
 forStmt       ::= 'for' '(' forInit? ';' expression? ';' expression? ')' block
 forInit       ::= varDecl | expression
 
@@ -109,8 +119,8 @@ exprStmt      ::= expression
 | `varDecl` (`var`) | `Stmt.VarDeclaration(isMutable=true)` |
 | `varDecl` (`const`) | `Stmt.VarDeclaration(isMutable=false)` |
 | `mainBlock` | `Stmt.MainFunction` |
-| `ifStmt` (no else) | `Stmt.If(elseBranch=ElseBranch.Empty)` |
-| `ifStmt` (else block) | `Stmt.If(elseBranch=ElseBranch.Else)` |
+| `ifStmt` (no else) | `Stmt.If(elseBranch=ElseBranch.None)` |
+| `ifStmt` (else block) | `Stmt.If(elseBranch=ElseBranch.Block)` |
 | `ifStmt` (else if) | `Stmt.If(elseBranch=ElseBranch.ElseIf)` |
 | `whileStmt` | `Stmt.While` |
 | `forStmt` | `Stmt.For` |

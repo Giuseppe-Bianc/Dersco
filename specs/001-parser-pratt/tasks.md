@@ -42,7 +42,7 @@ any parsing logic exists.
   (1) `emptyParseResultHasNoErrorsAndNoStatements` — constructs `new ParseResult(List.of(), List.of())`,
   asserts `hasErrors()` is `false`, `errors()` is empty, `statements()` is empty;
   (2) `parseResultWithErrorsReportsHasErrors` — constructs result with one synthetic
-  `CompileError.SyntaxError` (use `CompileError.syntaxError(null, "test", Span.point(new SourceLocation(0,1,1)), null)`),
+  `CompileError.SyntaxError` (use `CompileError.syntaxError(null, "test", Span.point(SourceLocation.create(1, 1, 0L)), null)`),
   asserts `hasErrors()` is `true`, `errors().size()` is 1;
   (3) `statementsListIsUnmodifiable` — asserts that `statements()` throws
   `UnsupportedOperationException` on `add()`;
@@ -115,7 +115,7 @@ written. Nothing in Phase 3+ can start until T006–T010 are complete.
 
 - [ ] T006 [TEST] Write `TokenCursorTest` in package `org.dersbian.compiler.syntax`.
   Class must be package-private. Build helper: add a `private static List<Token> tokens(TokenKind... kinds)`
-  method that creates `Token` instances using `Token.create(new SourceId.Generated("test"), kind, Span.point(new SourceLocation(0,1,1)))`.
+  method that creates `Token` instances using `Token.create(new SourceId.Generated("test"), kind, Span.point(SourceLocation.create(1, 1, 0L)))`.
   Required test methods:
   (1) `peekReturnsFirstNonCommentToken` — given tokens `[COMMENT, PLUS]`, `peek()` returns the `PLUS` token (comment filtered);
   (2) `advanceConsumesAndReturnsToken` — given `[PLUS, MINUS]`, first `advance()` returns `PLUS`, second returns `MINUS`;
@@ -135,7 +135,7 @@ written. Nothing in Phase 3+ can start until T006–T010 are complete.
   `app/src/test/java/org/dersbian/compiler/syntax/TokenCursorTest.java`
 
 - [ ] T007 Create `TokenCursor.java` as a package-private `final class` in package
-  `org.dersbian.compiler.syntax`. Fields: `private final List<Token> tokens` (comment-filtered
+  `org.dersbian.compiler.syntax` (FR-008 — sync-point recovery contract). Fields: `private final List<Token> tokens` (comment-filtered
   immutable copy built in constructor), `private int pos = 0`. Constructor
   `TokenCursor(List<Token> tokens)`: null-check the input list, then build `this.tokens` by
   streaming the input, filtering out `TokenKind.Simple.Special.COMMENT` and
@@ -473,10 +473,12 @@ into the correct `Stmt` variant with correct fields.
     `Type.Custom("")` as a placeholder type annotation for untyped shorthand `var a,b = 1,2`.
   Return `Stmt.VarDeclaration(bindings, typeAnnotation, isMutable, span)`.
 
-  `Stmt parseIf()` — consume `if`, parse condition expression (which may or may not be parenthesized;
-  the grammar shows `if expression block` but all sample files wrap the condition in `()`; parse
-  as a plain expression — the `(` and `)` will be consumed as `Expr.Grouping`), call `parseBlock()`
-  for thenBranch, then:
+  `Stmt parseIf()` — consume `if`, parse condition expression as a plain `expression` via
+  `exprParser.parseExpression(0)`. The canonical Dersco style wraps the condition in parentheses
+  (`if (expr) { }`) — those parentheses are consumed by `parsePrimary()` as `Expr.Grouping`
+  and require no special handling at the statement level. Writing `if true { }` (without
+  parentheses) is also grammatically accepted by the same rule (the parser MUST NOT require or
+  strip parentheses). After parsing the condition, call `parseBlock()` for thenBranch, then:
     - if `check(Keyword.ELSE)`: consume `else`; if `check(Keyword.IF)`: recursively parse `parseIf()`,
       wrap in `ElseBranch.ElseIf(nestedIf)`;
       else: parse block, wrap in `ElseBranch.Block(block)`.
@@ -586,7 +588,7 @@ every error-recovery path and error message contract independently.
   `app/src/test/java/org/dersbian/compiler/syntax/ParserErrorRecoveryTest.java`
 
 - [ ] T019 [US4] Create `Parser.java` as a `public final class` in package
-  `org.dersbian.compiler.syntax`. Constructor:
+  `org.dersbian.compiler.syntax` (FR-008 — error recovery loop, no early abort). Constructor:
   `public Parser(List<Token> tokens, Path source)` — null-check both parameters.
   Fields: `private final TokenCursor cursor`, `private final List<CompileError.SyntaxError> errors`
   (mutable `new ArrayList<>()`), `private final ExpressionParser exprParser`,
