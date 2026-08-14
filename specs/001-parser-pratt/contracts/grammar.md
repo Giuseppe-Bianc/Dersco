@@ -99,6 +99,14 @@ continueStmt  ::= 'continue'
 exprStmt      ::= expression
 ```
 
+> **Disambiguation of `{` (Block vs Array Literal)**: The opening brace `{` is contextual:
+>
+> - In **statement context** (at the start of a statement in `StatementParser.parseStatement()`),
+>   `{` introduces a standalone block statement `block ::= '{' statement* '}'`, producing a `Stmt.Block`.
+>   It must **not** be dispatched to `ExpressionParser`.
+> - In **expression context** (inside `ExpressionParser.parsePrimary()`), `{` introduces an array
+>   literal `{ ( expression ( ',' expression )* ','? )? }`, producing an `Expr.ArrayLiteral`.
+
 > **`varDecl` and `constDecl` forms observed in source samples**:
 >
 > Form 1 — typed, with initializer per binding:
@@ -203,6 +211,11 @@ primary       ::= NUMBER | BOOL | STRING | CHAR | 'nullptr'
 
 > **Numeric literals in `primary`**: `NUMBER` includes standard decimal integers and floating-point literals,
 > as well as prefixed radix literals: `#b` (binary), `#o` (octal), and `#x` (hexadecimal), with optional type suffixes.
+>
+> **Array literals vs Blocks (`{`)**: An opening brace `{` encountered in `ExpressionParser.parsePrimary()`
+> is parsed exclusively as an array literal (`Expr.ArrayLiteral`), accepting zero or more comma-separated
+> expressions with an optional trailing comma (e.g. `{1, 2, 3}` or `{}`). In contrast, `{` appearing at the
+> start of a statement is dispatched by `StatementParser` to `parseBlock()` as a block statement (`Stmt.Block`).
 >
 > The grammar above is written in precedence-level form for documentation clarity.
 > The implementation uses the Pratt loop with binding powers (see `data-model.md §BindingPower`),
