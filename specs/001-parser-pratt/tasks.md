@@ -473,19 +473,16 @@ into the correct `Stmt` variant with correct fields.
     `Type.Custom("")` as a placeholder type annotation for untyped shorthand `var a,b = 1,2`.
   Return `Stmt.VarDeclaration(bindings, typeAnnotation, isMutable, span)`.
 
-  `Stmt parseIf()` — consume `if`, parse condition expression as a plain `expression` via
-  `exprParser.parseExpression(0)`. The canonical Dersco style wraps the condition in parentheses
-  (`if (expr) { }`) — those parentheses are consumed by `parsePrimary()` as `Expr.Grouping`
-  and require no special handling at the statement level. Writing `if true { }` (without
-  parentheses) is also grammatically accepted by the same rule (the parser MUST NOT require or
-  strip parentheses). After parsing the condition, call `parseBlock()` for thenBranch, then:
+  `Stmt parseIf()` — consume `if`, expect `OPEN_PAREN`, parse condition expression via
+  `exprParser.parseExpression(0)`, expect `CLOSE_PAREN`, call `parseBlock()` for thenBranch, then:
     - if `check(Keyword.ELSE)`: consume `else`; if `check(Keyword.IF)`: recursively parse `parseIf()`,
       wrap in `ElseBranch.ElseIf(nestedIf)`;
       else: parse block, wrap in `ElseBranch.Block(block)`.
     - else: use `new ElseBranch.None()`.
   Return `Stmt.If(condition, thenBranch, elseBranch, span)`.
 
-  `Stmt parseWhile()` — consume `while`, parse condition expression, call `parseBlock()`,
+  `Stmt parseWhile()` — consume `while`, expect `OPEN_PAREN`, parse condition expression via
+  `exprParser.parseExpression(0)`, expect `CLOSE_PAREN`, call `parseBlock()`,
   return `Stmt.While(condition, body, span)`.
 
   `Stmt parseFor()` — consume `for`, expect `OPEN_PAREN`,

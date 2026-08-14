@@ -76,20 +76,18 @@ constDecl     ::= 'const' IDENT ( ',' IDENT )* ':' type '=' expression ( ',' exp
 
 mainBlock     ::= 'main' block
 
-ifStmt        ::= 'if' expression block elseBranch?
+ifStmt        ::= 'if' '(' expression ')' block elseBranch?
 elseBranch    ::= 'else' ( ifStmt | block )
 
-whileStmt     ::= 'while' expression block
+whileStmt     ::= 'while' '(' expression ')' block
 
-> **`if` and `while` condition syntax**: All canonical `.dr` source files write the condition
-> with surrounding parentheses: `if (expr) { }` and `while (expr) { }`. The parentheses are
-> **not** special syntax for these keywords — the parser parses a plain `expression` and the
-> `(` / `)` are consumed as `Expr.Grouping` by `parsePrimary()`. The grammar rule above
-> (`'if' expression block`) is therefore correct: the grouping is part of the expression, not
-> of the statement rule. Writing `if true { }` (without parentheses) is syntactically
-> accepted by the same rule, but is not idiomatic Dersco and does not appear in any canonical
-> sample. Implementations MUST parse the condition as a plain expression and MUST NOT require
-> or strip parentheses at the statement level.
+> **`if`, `while`, and `for` condition syntax**: Surrounding parentheses are **mandatory**
+> for `if`, `while`, and `for` statements: `if (condition) block`, `while (condition) block`,
+> and `for (init; condition; increment) block`. The parentheses `(` and `)` are part of the
+> statement syntax and are consumed as statement delimiters (`expect(OPEN_PAREN)` /
+> `expect(CLOSE_PAREN)`). The condition expression inside is parsed as a plain `expression`
+> without an outer `Expr.Grouping` wrapper. Omitting parentheses (e.g. `if x > 0 { }` or
+> `while x > 0 { }`) is a syntax error (`ErrorCode.E1004` / `ErrorCode.E1010`).
 
 forStmt       ::= 'for' '(' forInit? ';' expression? ';' expression? ')' block
 forInit       ::= varDecl | constDecl | expression
