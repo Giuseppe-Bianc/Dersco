@@ -9,7 +9,7 @@ are derived from this contract.
 
 ---
 
-## Statement Termination
+### Statement Termination
 
 Dersco does **not** use semicolons as statement terminators. Statements end at the logical
 boundary of the construct (closing brace, next keyword, end of expression). The only
@@ -18,6 +18,12 @@ semicolons in the language are the **two separators inside `for` loop headers**:
 
 The grammar below reflects this; no `;` appears after `return`, `break`, `continue`,
 `var`/`const` declarations, or expression statements.
+
+> **Statement boundaries and expression statements**: Because newlines are treated as
+> whitespace by the lexer, expressions are parsed greedily by the Pratt loop according to
+> operator binding power. Statement-opening keywords (`fun`, `var`, `const`, `if`, `while`,
+> `for`, `return`, `break`, `continue`, `main`) and block delimiters (`{`, `}`) provide
+> unambiguous synchronization and statement boundaries.
 
 > **Note on `dr_files/` samples**: A small number of files (`test_bad_index.dr`,
 > `test_const_assign.dr`, `test_good_index.dr`, `test_nonarray_index.dr`,
@@ -57,13 +63,12 @@ statement     ::= funDecl
 
 block         ::= '{' statement* '}'
 
-funDecl       ::= 'fun' IDENT '(' paramList? ')' ':' type block
+funDecl       ::= 'fun' IDENT '(' paramList? ')' ( ':' type )? block
 paramList     ::= param ( ',' param )*
 param         ::= IDENT ':' type
 
-varDecl       ::= ('var' | 'const') binding ( ',' binding )* ':' type ( '=' expression ( ',' expression )* )?
+varDecl       ::= ('var' | 'const') IDENT ( ',' IDENT )* ':' type ( '=' expression ( ',' expression )* )?
                |  ('var' | 'const') IDENT ( ',' IDENT )* '=' expression ( ',' expression )*
-binding       ::= IDENT
 
 mainBlock     ::= 'main' block
 
@@ -113,22 +118,23 @@ exprStmt      ::= expression
 
 **AST mapping**:
 
-| Grammar rule | Produced node |
-|-------------|--------------|
-| `funDecl` | `Stmt.Function` |
-| `varDecl` (`var`) | `Stmt.VarDeclaration(isMutable=true)` |
-| `varDecl` (`const`) | `Stmt.VarDeclaration(isMutable=false)` |
-| `mainBlock` | `Stmt.MainFunction` |
-| `ifStmt` (no else) | `Stmt.If(elseBranch=ElseBranch.None)` |
-| `ifStmt` (else block) | `Stmt.If(elseBranch=ElseBranch.Block)` |
-| `ifStmt` (else if) | `Stmt.If(elseBranch=ElseBranch.ElseIf)` |
-| `whileStmt` | `Stmt.While` |
-| `forStmt` | `Stmt.For` |
-| `block` (standalone) | `Stmt.Block` |
-| `returnStmt` | `Stmt.Return` |
-| `breakStmt` | `Stmt.Break` |
-| `continueStmt` | `Stmt.Continue` |
-| `exprStmt` | `Stmt.Expression` |
+| Grammar rule | Produced node | Notes |
+|-------------|---------------|-------|
+| `funDecl` (with type) | `Stmt.Function` | `returnType` matches parsed type |
+| `funDecl` (no type) | `Stmt.Function` | `returnType` is `new Type.VoidT()` |
+| `varDecl` (`var`) | `Stmt.VarDeclaration(isMutable=true)` | |
+| `varDecl` (`const`) | `Stmt.VarDeclaration(isMutable=false)` | |
+| `mainBlock` | `Stmt.MainFunction` | |
+| `ifStmt` (no else) | `Stmt.If(elseBranch=ElseBranch.None)` | |
+| `ifStmt` (else block) | `Stmt.If(elseBranch=ElseBranch.Block)` | |
+| `ifStmt` (else if) | `Stmt.If(elseBranch=ElseBranch.ElseIf)` | |
+| `whileStmt` | `Stmt.While` | |
+| `forStmt` | `Stmt.For` | |
+| `block` (standalone) | `Stmt.Block` | |
+| `returnStmt` | `Stmt.Return` | |
+| `breakStmt` | `Stmt.Break` | |
+| `continueStmt` | `Stmt.Continue` | |
+| `exprStmt` | `Stmt.Expression` | |
 
 ---
 
@@ -139,15 +145,16 @@ type          ::= 'i8' | 'i16' | 'i32' | 'i64'
                 | 'u8' | 'u16' | 'u32' | 'u64'
                 | 'f32' | 'f64'
                 | 'char' | 'string' | 'bool'
+                | 'void'                           // maps to Type.VoidT (via keyword or IDENT "void")
                 | IDENT                            // custom/user-defined
-                | type '[' expression ']'          // fixed-size array (right-recursive)
+                | type '[' expression ']'          // fixed-size array
                 | 'vec' '<' type '>'               // dynamic vector (future)
-                | 'void'
 ```
 
-> **Array types are right-recursive**: `i8[2][3]` parses as `Array(Array(i8, 2), 3)`,
-> matching the multi-dimensional matrix declarations observed in `input.dr`:
-> `var matrix: i8[2][3] = {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}`
+> **Array type nesting**: In `var matrix: i8[2][3] = {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}`,
+> the matrix consists of 2 elements (rows) of type `i8[3]` (3 columns). The AST represents
+> this outer-to-inner as `Array(elementType = Array(i8, 3), size = 2)` so that `matrix[i]`
+> has type `i8[3]` and `matrix[i][j]` has type `i8`.
 
 ---
 
@@ -234,7 +241,7 @@ From lowest (1) to highest (13):
 
 ## Error Contract
 
-When the parser encounters an unexpected token, it must produce a
+When the parser encounters an unexpected token or malformed construct, it must produce a
 `CompileError.SyntaxError` with:
 
 - `errorSpan`: the span of the unexpected token (or the span of the last consumed token
@@ -244,8 +251,12 @@ When the parser encounters an unexpected token, it must produce a
     - `"Expected ':' after variable name, found 'i32'"`
     - `"Expected ')' to close function call, found '}'"` 
     - `"Unexpected end of file after '+'"`  (EOF mid-expression)
-- `errorCode`: `Optional.of(ErrorCode.E1005)` where applicable; `Optional.empty()` for
-  parser-specific errors without a matching code.
+- `errorCode`: matching `ErrorCode` entry for the parser phase (`CompilerPhase.PARSER`,
+  codes `E1001` through `E1015` where applicable, e.g. `E1004` unexpected token, `E1005`
+  invalid binary operator, `E1006` expected expression, `E1008` expected identifier,
+  `E1009` expected type annotation, `E1010`–`E1012` unmatched delimiters, `E1014` invalid
+  function signature, `E1015` invalid parameter list); `Optional.empty()` if no specific
+  code applies.
 - `errorHelp`: `Optional.empty()` unless a corrective suggestion is obvious.
 
 After emitting the error, `synchronize()` advances past the next `}` (block boundary).
