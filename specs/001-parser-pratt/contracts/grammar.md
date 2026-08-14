@@ -51,6 +51,7 @@ A successful parse with no errors has `hasErrors() == false`.
 ```text
 statement     ::= funDecl
                 | varDecl
+                | constDecl
                 | mainBlock
                 | ifStmt
                 | whileStmt
@@ -67,8 +68,11 @@ funDecl       ::= 'fun' IDENT '(' paramList? ')' ( ':' type )? block
 paramList     ::= param ( ',' param )*
 param         ::= IDENT ':' type
 
-varDecl       ::= ('var' | 'const') IDENT ( ',' IDENT )* ':' type ( '=' expression ( ',' expression )* )?
-               |  ('var' | 'const') IDENT ( ',' IDENT )* '=' expression ( ',' expression )*
+varDecl       ::= 'var' IDENT ( ',' IDENT )* ':' type ( '=' expression ( ',' expression )* )?
+               |  'var' IDENT ( ',' IDENT )* '=' expression ( ',' expression )*
+
+constDecl     ::= 'const' IDENT ( ',' IDENT )* ':' type '=' expression ( ',' expression )*
+               |  'const' IDENT ( ',' IDENT )* '=' expression ( ',' expression )*
 
 mainBlock     ::= 'main' block
 
@@ -88,7 +92,7 @@ whileStmt     ::= 'while' expression block
 > or strip parentheses at the statement level.
 
 forStmt       ::= 'for' '(' forInit? ';' expression? ';' expression? ')' block
-forInit       ::= varDecl | expression
+forInit       ::= varDecl | constDecl | expression
 
 returnStmt    ::= 'return' expression?
 breakStmt     ::= 'break'
@@ -97,24 +101,27 @@ continueStmt  ::= 'continue'
 exprStmt      ::= expression
 ```
 
-> **`varDecl` forms observed in source samples**:
+> **`varDecl` and `constDecl` forms observed in source samples**:
 >
 > Form 1 — typed, with initializer per binding:
 > `var a: i64 = 1 + 4 - (12 + 3) / 3`
-> `var a2, b2: i64 = 12, 21`
+> `const a2, b2: i64 = 12, 21`
 > `var arr: i64[5] = {1, 2, 3, 4, 5}`
 >
-> Form 2 — typed, no initializer (implicit default):
-> `var i: i32` *(inside for-init)*
+> Form 2 — typed, no initializer (implicit default, valid only for `var`):
+> `var i: i32` *(inside for-init or block)*
+> *Note*: For `const`, the initializer is **mandatory**. Declaring a `const` without an
+> initializer is a parse syntax error (`ErrorCode.E1004` / `ErrorCode.E1006`).
 >
 > Form 3 — untyped multi-binding with initializers (shorthand):
 > `var a,b,c = 1,2,3`
+> `const MAX, MIN = 100, 0`
 >
-> The `Stmt.VarDeclaration` record accepts `List<VarBinding>` (name + optional initializer),
-> a `Type` annotation, and `isMutable`. Form 3 (no type annotation) maps to `Type.Custom("")`
-> or a dedicated `Type.Inferred` sentinel — this is a design decision for `speckit.tasks`.
-> Until resolved, the parser SHOULD accept Form 3 syntactically and defer type resolution
-> to the semantic phase.
+> Both `Stmt.VarDeclaration` nodes accept `List<VarBinding>` (name + optional initializer for `var`,
+> name + mandatory initializer for `const`), a `Type` annotation, and `isMutable` (`true` for `var`,
+> `false` for `const`). Form 3 (no type annotation) maps to `Type.Custom("")` or a dedicated
+> sentinel — this is a design decision for `speckit.tasks`. Until resolved, the parser SHOULD
+> accept Form 3 syntactically and defer type resolution to the semantic phase.
 
 **AST mapping**:
 
@@ -122,8 +129,8 @@ exprStmt      ::= expression
 |-------------|---------------|-------|
 | `funDecl` (with type) | `Stmt.Function` | `returnType` matches parsed type |
 | `funDecl` (no type) | `Stmt.Function` | `returnType` is `new Type.VoidT()` |
-| `varDecl` (`var`) | `Stmt.VarDeclaration(isMutable=true)` | |
-| `varDecl` (`const`) | `Stmt.VarDeclaration(isMutable=false)` | |
+| `varDecl` | `Stmt.VarDeclaration(isMutable=true)` | Initializer is optional |
+| `constDecl` | `Stmt.VarDeclaration(isMutable=false)` | Initializer is mandatory |
 | `mainBlock` | `Stmt.MainFunction` | |
 | `ifStmt` (no else) | `Stmt.If(elseBranch=ElseBranch.None)` | |
 | `ifStmt` (else block) | `Stmt.If(elseBranch=ElseBranch.Block)` | |
