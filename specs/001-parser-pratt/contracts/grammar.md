@@ -151,6 +151,7 @@ type          ::= 'i8' | 'i16' | 'i32' | 'i64'
                 | 'f32' | 'f64'
                 | 'char' | 'string' | 'bool'
                 | 'void'                           // maps to Type.VoidT (via keyword or IDENT "void")
+                | 'nullptr'                        // maps to Type.NullPtr (via keyword NULLPTR)
                 | IDENT                            // custom/user-defined
                 | type '[' expression ']'          // fixed-size array
                 | 'vec' '<' type '>'               // dynamic vector (future)
@@ -168,7 +169,7 @@ type          ::= 'i8' | 'i16' | 'i32' | 'i64'
 ```text
 expression    ::= assignExpr
 
-assignExpr    ::= unary assignOp assignExpr         // right-assoc
+assignExpr    ::= unaryExpr assignOp assignExpr     // right-assoc
                 | logicalOr
 assignOp      ::= '=' | '+=' | '-=' | '*=' | '/=' | '%='
                 | '&=' | '|=' | '^=' | '<<=' | '>>='
@@ -182,20 +183,27 @@ equality      ::= relational ( ( '==' | '!=' ) relational )*
 relational    ::= shift      ( ( '<' | '<=' | '>' | '>=' ) shift )*
 shift         ::= additive   ( ( '<<' | '>>' ) additive )*
 additive      ::= multiplicative ( ( '+' | '-' ) multiplicative )*
-multiplicative::= prefix     ( ( '*' | '/' | '%' ) prefix )*
-prefix        ::= ( '-' | '!' | '~' | '++' | '--' ) prefix
-                | postfix
-postfix       ::= primary ( '++' | '--' | callSuffix | indexSuffix )*
+multiplicative::= unaryExpr  ( ( '*' | '/' | '%' ) unaryExpr )*
+
+unaryExpr     ::= prefixExpr
+                | postfixExpr
+prefixExpr    ::= prefixOp unaryExpr                // right-assoc (e.g. !-x)
+prefixOp      ::= '-' | '!' | '~' | '++' | '--'
+postfixExpr   ::= primary ( postfixOp | callSuffix | indexSuffix )*
+postfixOp     ::= '++' | '--'
 callSuffix    ::= '(' argList? ')'
 indexSuffix   ::= '[' expression ']'
 argList       ::= expression ( ',' expression )*
 
-primary       ::= NUMBER | FLOAT | BOOL | STRING | CHAR | 'nullptr'
+primary       ::= NUMBER | BOOL | STRING | CHAR | 'nullptr'
                 | IDENT
                 | '(' expression ')'
                 | '{' ( expression ( ',' expression )* ','? )? '}'   // array literal
 ```
 
+> **Numeric literals in `primary`**: `NUMBER` includes standard decimal integers and floating-point literals,
+> as well as prefixed radix literals: `#b` (binary), `#o` (octal), and `#x` (hexadecimal), with optional type suffixes.
+>
 > The grammar above is written in precedence-level form for documentation clarity.
 > The implementation uses the Pratt loop with binding powers (see `data-model.md §BindingPower`),
 > not this recursive form directly.
