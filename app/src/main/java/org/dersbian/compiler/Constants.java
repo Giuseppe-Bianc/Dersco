@@ -1,17 +1,14 @@
 package org.dersbian.compiler;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-
 /**
  * Holds shared constant values used throughout the compiler, including character codes and UTF-8
  * encoding boundaries/lengths.
  *
  * <p>This class is not meant to be instantiated.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @SuppressWarnings({"PMD.LongVariable", "PMD.DataClass"})
 public final class Constants {
+
     /** Code point for the line feed character ({@code \n}). */
     public static final int LINE_FEED = '\n';
 
@@ -86,4 +83,8 @@ public final class Constants {
 
     /** Rough character-per-token estimate used to presize the token list and avoid resizing. */
     public static final int ESTIMATED_CHARS_PER_TOKEN = 5;
+
+    private Constants() {
+        // Prevent instantiation
+    }
 }

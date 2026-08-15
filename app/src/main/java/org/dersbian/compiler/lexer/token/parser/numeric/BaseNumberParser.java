@@ -1,7 +1,5 @@
 package org.dersbian.compiler.lexer.token.parser.numeric;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.number.INumber;
 
 /**
@@ -21,9 +19,9 @@ import org.dersbian.compiler.lexer.token.number.INumber;
  * cifre non ammesse per la base, overflow), in modo analogo a {@code Option::None}
  * nell'implementazione Rust originale.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @SuppressWarnings("PMD.OnlyOneReturn")
-public class BaseNumberParser {
+public final class BaseNumberParser {
+
     /** The length of a numeric base prefix (e.g., "0b", "0x", "0o"). */
     private static final int PREFIX_LENGTH = 2;
 
@@ -35,6 +33,8 @@ public class BaseNumberParser {
 
     /** The base/radix used for parsing hexadecimal numbers. */
     private static final int HEX_RADIX = 16;
+
+    private BaseNumberParser() {}
 
     /**
      * Parser generico per i literal numerici con base esplicita.

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
-import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.junit.jupiter.api.Test;
@@ -20,9 +19,9 @@ import org.junit.jupiter.api.Test;
     "PMD.ShortVariable",
     "PMD.CommentRequired",
     "PMD.TooManyMethods",
-    "PMD.UnitTestContainsTooManyAsserts"
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.AtLeastOneConstructor"
 })
-@NoArgsConstructor
 class AstTraversalTest {
 
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));

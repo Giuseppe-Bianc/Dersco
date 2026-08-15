@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -232,35 +231,6 @@ class ErrorReporterTest {
 
         assertThat(result).doesNotContain("[");
         assertThat(result).contains("boom");
-    }
-
-    // ---------------------------------------------------------------
-    // IoError
-    // ---------------------------------------------------------------
-
-    @Test
-    @DisplayName("IoError with message uses the exception message")
-    void ioErrorWithMessageUsesExceptionMessage() {
-        final ErrorReporter reporter = reporterFor(SOURCE_TEXT, SOURCE_FILE);
-        final CompileError error = CompileError.ioError(new IOException("disk full"));
-
-        final String result = stripAnsiCodes(reporter.reportErrors(List.of(error)));
-
-        assertThat(result).contains("I/O");
-        assertThat(result).contains("disk full");
-    }
-
-    @Test
-    @DisplayName("IoError without message falls back to toString()")
-    void ioErrorWithoutMessageFallsBackToToString() {
-        final ErrorReporter reporter = reporterFor(SOURCE_TEXT, SOURCE_FILE);
-        final IOException cause = new IOException();
-        final CompileError error = CompileError.ioError(cause);
-
-        final String result = stripAnsiCodes(reporter.reportErrors(List.of(error)));
-
-        assertThat(result).contains("I/O");
-        assertThat(result).contains(cause.toString());
     }
 
     // ---------------------------------------------------------------

@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import lombok.Getter;
 import org.dersbian.compiler.Constants;
 import org.dersbian.compiler.error.CompileError;
 import org.dersbian.compiler.error.ErrorCode;
@@ -23,7 +22,7 @@ import org.dersbian.compiler.location.LineTracker;
 public class Lexer {
 
     /** Tracker used to map source positions to line numbers. */
-    @Getter private final LineTracker lineTracker;
+    private final LineTracker lineTracker;
 
     /** Collected tokens produced by the lexer. */
     private final List<Token> tokens;
@@ -969,5 +968,9 @@ public class Lexer {
     /** Returns the number of source lines tracked by this lexer. */
     public int lineCount() {
         return lineTracker.lineCount();
+    }
+
+    public LineTracker getLineTracker() {
+        return lineTracker;
     }
 }

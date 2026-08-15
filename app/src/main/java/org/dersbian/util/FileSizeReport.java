@@ -1,6 +1,5 @@
 package org.dersbian.util;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -30,16 +29,16 @@ public record FileSizeReport(FileSizeInfo info, SizeSystem siSys, SizeSystem iec
     }
 
     @Override
-    @SuppressFBWarnings(
-            value = "VA_FORMAT_STRING_USES_NEWLINE",
-            justification = "Literal \\n is intentional: matches the original C++ source output.")
     public String toString() {
         final FormattedSizePair pair = makePair();
         final String separator = "-".repeat(41);
+
+        // Use %n for platform-specific line separator (fixes
+        // VA_FORMAT_STRING_USES_NEWLINE)
         final String bytesLine =
                 String.format(
-                        Locale.getDefault(), "Bytes : %s\n", Long.toUnsignedString(info.bytes()));
-        final String headerLine = String.format(Locale.getDefault(), "%-20s %-20s\n", "SI", "IEC");
+                        Locale.getDefault(), "Bytes : %s%n", Long.toUnsignedString(info.bytes()));
+        final String headerLine = String.format(Locale.getDefault(), "%-20s %-20s%n", "SI", "IEC");
 
         return bytesLine + separator + '\n' + headerLine + separator + '\n' + pair; // no trailing
         // '\n',

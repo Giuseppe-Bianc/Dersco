@@ -3,8 +3,6 @@ package org.dersbian.compiler.lexer.token.number;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,8 +41,8 @@ import org.junit.jupiter.params.provider.ValueSource;
     "PMD.ShortVariable",
     "PMD.GodClass",
     "PMD.CyclomaticComplexity",
+    "PMD.AtLeastOneConstructor"
 })
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 class INumberTest {
 
     // ──────────────────────────────────────────────────────────────────────

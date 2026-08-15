@@ -3,8 +3,6 @@ package org.dersbian.compiler.error;
 import static org.dersbian.compiler.error.CompilerErorFormater.formatWithSpan;
 import static org.dersbian.compiler.error.CompilerErorFormater.formatWithoutSpan;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import org.dersbian.compiler.lexer.token.Span;
@@ -22,8 +20,7 @@ public sealed interface CompileError
                 CompileError.SyntaxError,
                 CompileError.TypeError,
                 CompileError.IrGeneratorError,
-                CompileError.AsmGeneratorError,
-                CompileError.IoError {
+                CompileError.AsmGeneratorError {
 
     /** Reusable null-check message for the error-code field. */
     String MSG_CODE = "code must not be null";
@@ -93,11 +90,6 @@ public sealed interface CompileError
     static AsmGeneratorError asmGeneratorError(final ErrorCode code, final String message) {
         return new AsmGeneratorError(
                 Optional.ofNullable(code), Objects.requireNonNull(message, MSG_MESSAGE));
-    }
-
-    /** Creates an I/O error wrapper. */
-    static IoError ioError(final IOException cause) {
-        return new IoError(Objects.requireNonNull(cause, "cause must not be null"));
     }
 
     /** Lexical analysis error indicating invalid token sequences. */
@@ -351,59 +343,6 @@ public sealed interface CompileError
         @Override
         public String toString() {
             return formatWithoutSpan("Assembly generation error: ", errorCode, errorMessage);
-        }
-    }
-
-    /** I/O operation failure during compilation. */
-    record IoError(IOException cause) implements CompileError {
-
-        /**
-         * Creates an {@link IoError} wrapping the given {@link IOException}.
-         *
-         * @param cause the underlying I/O failure; must not be {@code null}
-         */
-        public IoError(final IOException cause) {
-            this.cause = Objects.requireNonNull(cause, "cause must not be null");
-        }
-
-        @Override
-        @SuppressFBWarnings(
-                value = "EI_EXPOSE_REP",
-                justification =
-                        "IOException is an exception wrapper; defensive copying would discard the"
-                                + " stack trace, cause chain and suppressed exceptions, which are"
-                                + " required for accurate error reporting. IoError is an internal,"
-                                + " immutable compiler-diagnostics value not exposed to untrusted"
-                                + " callers.")
-        public IOException cause() {
-            return cause;
-        }
-
-        @Override
-        public Optional<ErrorCode> code() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<String> message() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Span> span() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<String> help() {
-            return Optional.empty();
-        }
-
-        @Override
-        public String toString() {
-            final String detail =
-                    cause.getMessage() != null ? cause.getMessage() : cause.toString();
-            return "I/O error: " + detail;
         }
     }
 }

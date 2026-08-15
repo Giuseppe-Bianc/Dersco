@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
-import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.lexer.token.number.INumber;
@@ -21,9 +20,9 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings({
     "PMD.CommentRequired",
     "PMD.UnitTestContainsTooManyAsserts",
-    "PMD.TooManyMethods"
+    "PMD.TooManyMethods",
+    "PMD.AtLeastOneConstructor"
 })
-@NoArgsConstructor
 class AstPrinterTest {
 
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));
