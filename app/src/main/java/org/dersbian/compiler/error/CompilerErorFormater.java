@@ -1,13 +1,14 @@
 package org.dersbian.compiler.error;
 
 import java.util.Optional;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.Span;
 
 /** Utility class responsible for formatting compiler error messages. */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class CompilerErorFormater {
+public final class CompilerErorFormater {
+
+    private CompilerErorFormater() {
+        // Prevent instantiation
+    }
 
     /** Formats the optional error code prefix. */
     private static String codePrefix(final Optional<ErrorCode> code) {

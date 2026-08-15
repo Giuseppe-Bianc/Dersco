@@ -546,70 +546,8 @@ class CompileErrorTest {
     }
 
     // ---------------------------------------------------------------------
-    // IoError (wraps IOException; carries no code/message/span/help)
-    // ---------------------------------------------------------------------
-
-    @Test
-    void ioErrorFactoryPreservesCauseReference() {
-        final IOException cause = new IOException("disk full");
-        final CompileError.IoError error = CompileError.ioError(cause);
-
-        assertThat(error.cause()).isSameAs(cause);
-    }
-
-    @Test
-    void ioErrorInterfaceAccessorsAreAlwaysEmpty() {
-        final CompileError.IoError error = CompileError.ioError(new IOException("x"));
-
-        assertThat(error.code()).isEmpty();
-        assertThat(error.message()).isEmpty();
-        assertThat(error.span()).isEmpty();
-        assertThat(error.help()).isEmpty();
-    }
-
-    @Test
-    void ioErrorToStringUsesCauseMessageWhenPresent() {
-        final CompileError.IoError error = CompileError.ioError(new IOException("disk full"));
-
-        assertThat(error.toString()).isEqualTo("I/O error: disk full");
-    }
-
-    @Test
-    void ioErrorToStringFallsBackToCauseToStringWhenMessageIsNull() {
-        final IOException cause = new IOException();
-        final CompileError.IoError error = CompileError.ioError(cause);
-
-        assertThat(cause.getMessage()).isNull();
-        assertThat(error.toString()).isEqualTo("I/O error: " + cause.toString());
-    }
-
-    @Test
-    void ioErrorFactoryRejectsNullCause() {
-        assertThatNullPointerException()
-                .isThrownBy(() -> CompileError.ioError(null))
-                .withMessageContaining("cause");
-    }
-
-    @Test
-    void ioErrorRecordConstructorRejectsNullCause() {
-        assertThatNullPointerException()
-                .isThrownBy(() -> new CompileError.IoError(null))
-                .withMessageContaining("cause");
-    }
-
-    // ---------------------------------------------------------------------
     // CompilerException propagation
     // ---------------------------------------------------------------------
-
-    @Test
-    void compilerExceptionCarriesIoErrorMessageAndCause() {
-        final IOException cause = new IOException("disk full");
-        final CompileError.IoError error = CompileError.ioError(cause);
-        final CompilerException exception = new CompilerException(error.toString(), error.cause());
-
-        assertThat(exception.getMessage()).isEqualTo("I/O error: disk full");
-        assertThat(exception.getCause()).isSameAs(cause);
-    }
 
     @Test
     void compilerExceptionPreservesLexerErrorToString() {
@@ -620,16 +558,6 @@ class CompileErrorTest {
         assertThat(exception.getMessage())
                 .isEqualTo("[E0001] bad token at line 7:column 1-line 7:column 2\nhelp: check it");
         assertThat(exception.getCause()).isNull();
-    }
-
-    @Test
-    void compilerExceptionWithCauseOnlyWrapsTheUnderlyingIoException() {
-        final IOException cause = new IOException("disk full");
-        final CompileError.IoError error = CompileError.ioError(cause);
-        final CompilerException exception = new CompilerException(error.cause());
-
-        assertThat(exception.getCause()).isSameAs(cause);
-        assertThat(exception.getCause().getMessage()).isEqualTo("disk full");
     }
 
     // ---------------------------------------------------------------------

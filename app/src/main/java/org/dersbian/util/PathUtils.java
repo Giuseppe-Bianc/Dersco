@@ -3,12 +3,11 @@ package org.dersbian.util;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 
 /** Utility methods for working with {@link Path} instances. */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class PathUtils {
+
+    private PathUtils() {}
 
     /**
      * Truncates a path so that only the last {@code depth} name elements are preserved.

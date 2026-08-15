@@ -3,7 +3,6 @@ package org.dersbian.cli;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
-import lombok.extern.slf4j.Slf4j;
 import org.dersbian.compiler.CompilationRequest;
 import org.dersbian.compiler.CompilerException;
 import org.dersbian.compiler.DefaultCompilerService;
@@ -18,13 +17,15 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
 /** Subcommand that performs the full compilation of a Dersco source file. */
-@Slf4j
 @Command(
         name = "compile",
         mixinStandardHelpOptions = true,
         description = "Compile a Dersco source file.")
 @SuppressWarnings({"PMD.LongVariable", "PMD.GuardLogStatement", "PMD.OnlyOneReturn"})
 public final class CompileCommand implements Callable<Integer> {
+    /** Logger for this command. */
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(CompileCommand.class);
 
     /** Exit code indicating successful compilation. */
     private static final int EXIT_OK = 0;
@@ -92,7 +93,7 @@ public final class CompileCommand implements Callable<Integer> {
         loggingMixin.applyLogLevel();
         validateInputFile();
 
-        log.info("Compiling {} -> {} (optimize={})", inputFile, outputFile, optimizationLevel);
+        LOG.info("Compiling {} -> {} (optimize={})", inputFile, outputFile, optimizationLevel);
         final CompilationRequest request =
                 new CompilationRequest(
                         inputFile,
@@ -104,11 +105,11 @@ public final class CompileCommand implements Callable<Integer> {
         try {
             compilerService.compile(request);
         } catch (CompilerException e) {
-            log.error("Compilation failed: {}", e.getMessage());
+            LOG.error("Compilation failed: {}", e.getMessage());
             return EXIT_COMPILATION_ERROR;
         }
 
-        log.info("Compilation completed successfully: {}", outputFile);
+        LOG.info("Compilation completed successfully: {}", outputFile);
         return EXIT_OK;
     }
 
@@ -119,7 +120,7 @@ public final class CompileCommand implements Callable<Integer> {
      * help as standard picocli parsing errors.
      */
     private void validateInputFile() {
-        log.info("Validating input file: {}", inputFile);
+        LOG.info("Validating input file: {}", inputFile);
         final File inputFileFile = inputFile.toFile();
         if (!inputFileFile.isFile() || !inputFileFile.canRead()) {
             throw new ParameterException(

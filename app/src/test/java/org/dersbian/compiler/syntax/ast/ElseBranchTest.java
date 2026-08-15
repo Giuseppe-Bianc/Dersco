@@ -3,7 +3,6 @@ package org.dersbian.compiler.syntax.ast;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.junit.jupiter.api.Test;
@@ -15,8 +14,11 @@ import org.junit.jupiter.api.Test;
  * ElseIf(Stmt.If)}. Exhaustiveness is verified by a visitor that switches over all three variants
  * -- adding a fourth variant would fail compilation.
  */
-@SuppressWarnings({"PMD.CommentRequired", "PMD.UnitTestContainsTooManyAsserts"})
-@NoArgsConstructor
+@SuppressWarnings({
+    "PMD.CommentRequired",
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.AtLeastOneConstructor"
+})
 class ElseBranchTest {
 
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));

@@ -1,6 +1,5 @@
 package org.dersbian.cli;
 
-import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.IExecutionExceptionHandler;
@@ -12,7 +11,6 @@ import picocli.CommandLine.ParseResult;
  * handler, which prints the error plus usage help and exits with code 2: they should not be
  * duplicated here.
  */
-@Slf4j
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
     "PMD.LongVariable",
@@ -22,6 +20,9 @@ import picocli.CommandLine.ParseResult;
     "PMD.OnlyOneReturn"
 })
 public final class CliExecutionExceptionHandler implements IExecutionExceptionHandler {
+    /** Logger for this handler. */
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(CliExecutionExceptionHandler.class);
 
     /** BSD sysexits.h convention: EX_SOFTWARE. */
     private static final int EXIT_SOFTWARE_ERROR = 70;
@@ -32,7 +33,7 @@ public final class CliExecutionExceptionHandler implements IExecutionExceptionHa
         commandLine
                 .getErr()
                 .println(commandLine.getColorScheme().errorText("Error: " + ex.getMessage()));
-        log.error("Unhandled exception during command execution", ex);
+        LOG.error("Unhandled exception during command execution", ex);
 
         if (ex instanceof ExecutionException) {
             return commandLine.getCommandSpec().exitCodeOnExecutionException();

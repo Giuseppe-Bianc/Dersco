@@ -2,8 +2,6 @@ package org.dersbian.compiler.lexer.token.parser.numeric;
 
 import java.util.Locale;
 import java.util.Optional;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.number.INumber;
 
 /**
@@ -18,15 +16,16 @@ import org.dersbian.compiler.lexer.token.number.INumber;
  * #checkThreeCharSuffix}) continue to return {@code Optional<SuffixPattern>} because they do not
  * produce an {@link INumber}.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @SuppressWarnings({"PMD.ShortVariable", "PMD.OnlyOneReturn", "PMD.LongVariable"})
-public class SuffixParser {
+public final class SuffixParser {
 
     /** Minimum string length required for a two-character suffix. */
     private static final int TWO_CHAR_MIN_LENGTH = 2;
 
     /** Minimum string length required for a three-character suffix. */
     private static final int THREE_CHAR_MIN_LENGTH = 3;
+
+    private SuffixParser() {}
 
     /** Represents the possible suffix-length patterns for numeric literals. */
     public enum SuffixPattern {

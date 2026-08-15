@@ -1,8 +1,6 @@
 package org.dersbian.compiler.lexer.token.parser.numeric;
 
 import java.util.function.LongFunction;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.number.INumber;
 
 /**
@@ -13,9 +11,10 @@ import org.dersbian.compiler.lexer.token.number.INumber;
  * <p>All methods return {@code null} on parsing failure, analogously to {@code Option::None} in the
  * original Rust implementation.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @SuppressWarnings({"PMD.ShortVariable", "PMD.OnlyOneReturn"})
-public class NumericParser {
+public final class NumericParser {
+
+    private NumericParser() {}
 
     /**
      * Parses a numeric literal into a structured {@link INumber}.

@@ -3,7 +3,6 @@ package org.dersbian.cli;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
-import lombok.extern.slf4j.Slf4j;
 import org.dersbian.compiler.CompilerException;
 import org.dersbian.compiler.DefaultCompilerService;
 import org.dersbian.compiler.ICompilerService;
@@ -15,7 +14,6 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
 /** Subcommand that performs only syntax checking, without producing any output. */
-@Slf4j
 @Command(
         name = "check",
         mixinStandardHelpOptions = true,
@@ -27,6 +25,9 @@ import picocli.CommandLine.Spec;
     "PMD.OnlyOneReturn"
 })
 public final class CheckCommand implements Callable<Integer> {
+    /** Logger for this command. */
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(CheckCommand.class);
 
     /** Exit code indicating successful execution without syntax errors. */
     private static final int EXIT_OK = 0;
@@ -68,11 +69,11 @@ public final class CheckCommand implements Callable<Integer> {
         try {
             compilerService.checkSyntax(inputFile);
         } catch (CompilerException e) {
-            log.error("Syntax error: {}", e.getMessage());
+            LOG.error("Syntax error: {}", e.getMessage());
             return EXIT_SYNTAX_ERROR;
         }
 
-        log.info("No syntax errors detected in {}", inputFile);
+        LOG.info("No syntax errors detected in {}", inputFile);
         return EXIT_OK;
     }
 }

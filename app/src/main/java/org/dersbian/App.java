@@ -4,8 +4,6 @@
 
 package org.dersbian;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.dersbian.cli.CliExecutionExceptionHandler;
 import org.dersbian.cli.RootCommand;
 // import org.fusesource.jansi.AnsiConsole;
@@ -19,9 +17,11 @@ import picocli.CommandLine;
  * System#exit(int)}. No domain logic is present here, in keeping with the Single Responsibility
  * Principle.
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @SuppressWarnings("PMD.ShortClassName")
 public final class App {
+    private App() {
+        // Prevent instantiation
+    }
 
     /**
      * Application entry point.

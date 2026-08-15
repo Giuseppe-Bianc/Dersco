@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,9 +25,9 @@ import org.junit.jupiter.params.provider.ValueSource;
     "PMD.UnitTestAssertionsShouldIncludeMessage",
     "PMD.UnitTestContainsTooManyAsserts",
     "PMD.ShortVariable",
-    "PMD.GodClass"
+    "PMD.GodClass",
+    "PMD.AtLeastOneConstructor"
 })
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 class SourceCursorTest {
     /** Reusable three-character ASCII string used across multiple tests. */
     private static final String ABC = "abc";

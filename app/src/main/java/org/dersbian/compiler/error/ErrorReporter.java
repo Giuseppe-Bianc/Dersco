@@ -85,9 +85,6 @@ public final class ErrorReporter {
                                         "ASM GEN",
                                         asmGeneratorError.errorMessage(),
                                         asmGeneratorError.errorCode());
-                        case CompileError.IoError ioError ->
-                                formatSimpleError(
-                                        "I/O", ioMessage(ioError.cause()), Optional.empty());
                     };
             output.append(formatted);
         }
@@ -177,10 +174,6 @@ public final class ErrorReporter {
             builder.append(code);
         }
         return builder.append(text).append(RESET).toString();
-    }
-
-    private static String ioMessage(final Throwable throwable) {
-        return throwable.getMessage() != null ? throwable.getMessage() : throwable.toString();
     }
 
     private static int helpLength(final String help) {

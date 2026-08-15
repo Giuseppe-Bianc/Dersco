@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
-import lombok.NoArgsConstructor;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.junit.jupiter.api.Test;
@@ -15,8 +14,7 @@ import org.junit.jupiter.api.Test;
  * <p>Counts every distinct AST node reached in a depth-first traversal. Replaces the assertions
  * that previously relied on the visitor-based {@code NodeCounterVisitor}.
  */
-@SuppressWarnings({"PMD.ShortVariable", "PMD.CommentRequired"})
-@NoArgsConstructor
+@SuppressWarnings({"PMD.ShortVariable", "PMD.CommentRequired", "PMD.AtLeastOneConstructor"})
 class NodeCounterTest {
 
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));
