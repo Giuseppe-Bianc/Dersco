@@ -132,7 +132,7 @@ exprStmt      ::= expression
 **AST mapping**:
 
 | Grammar rule | Produced node | Notes |
-|-------------|---------------|-------|
+| ------------- | --------------- | ------- |
 | `funDecl` (with type) | `Stmt.Function` | `returnType` matches parsed type |
 | `funDecl` (no type) | `Stmt.Function` | `returnType` is `new Type.VoidT()` |
 | `varDecl` | `Stmt.VarDeclaration(isMutable=true)` | Initializer is optional |
@@ -161,14 +161,30 @@ type          ::= 'i8' | 'i16' | 'i32' | 'i64'
                 | 'void'                           // maps to Type.VoidT (via keyword or IDENT "void")
                 | 'nullptr'                        // maps to Type.NullPtr (via keyword NULLPTR)
                 | IDENT                            // custom/user-defined
-                | type '[' expression ']'          // fixed-size array
+                | type '[' expression ']'          // fixed-size array (construction order: see note below)
                 | 'vec' '<' type '>'               // dynamic vector (future)
 ```
 
-> **Array type nesting**: In `var matrix: i8[2][3] = {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}`,
-> the matrix consists of 2 elements (rows) of type `i8[3]` (3 columns). The AST represents
-> this outer-to-inner as `Array(elementType = Array(i8, 3), size = 2)` so that `matrix[i]`
-> has type `i8[3]` and `matrix[i][j]` has type `i8`.
+> **Array type nesting, construction order**: The production `type '[' expression ']'` is
+> left-recursive on paper for brevity, but it must not be implemented by wrapping the array
+> type immediately at each `[`. Parsed left to right, the first bracket gives the outermost
+> dimension and the last bracket gives the innermost dimension, matching the `int m[R][C]`
+> convention from C. Build the type in two steps:
+>
+> 1. Collect the bracket dimensions in source order: `[d1, d2, ..., dn]`.
+> 2. Fold from `dn` back to `d1`, wrapping the accumulator at each step. Start with
+>    `elementType := baseType`, then for `k` from `n` down to `1`:
+>    `elementType := Array(elementType = elementType, size = d_k)`.
+>
+> For `var matrix: i8[2][3] = {{1i8, 2i8, 3i8}, {4i8, 5i8, 6i8}}`, the collected dimensions are
+> `[2, 3]`. Folding `d2 = 3` first gives `Array(i8, 3)`. Folding `d1 = 2` next gives
+> `Array(elementType = Array(i8, 3), size = 2)`. The matrix has 2 elements (rows) of type
+> `i8[3]` (3 columns): `matrix[i]` has type `i8[3]` and `matrix[i][j]` has type `i8`.
+>
+> A naive implementation that wraps immediately at each bracket as it is consumed, without
+> buffering the dimension list first, produces the opposite nesting:
+> `Array(elementType = Array(i8, 2), size = 3)`, read as 3 rows of `i8[2]`. That result
+> contradicts the example above and must be rejected in code review.
 
 ---
 
@@ -224,7 +240,7 @@ primary       ::= NUMBER | BOOL | STRING | CHAR | 'nullptr'
 **AST mapping**:
 
 | Grammar construct | Produced node |
-|-------------------|--------------|
+| ------------------- | -------------- |
 | `primary` — integer/float literal | `Expr.Literal(LiteralValue.Numeric)` |
 | `primary` — bool | `Expr.Literal(LiteralValue.Bool)` |
 | `primary` — string | `Expr.Literal(LiteralValue.StringLit)` |
@@ -248,7 +264,7 @@ primary       ::= NUMBER | BOOL | STRING | CHAR | 'nullptr'
 From lowest (1) to highest (13):
 
 | Level | Operator(s) | Associativity | `left bp` / `right bp` |
-|-------|-------------|---------------|------------------------|
+| ------- | ------------- | --------------- | ------------------------ |
 | 1 | `=` `+=` `-=` `*=` `/=` `%=` `&=` `\|=` `^=` `<<=` `>>=` | Right | 10 / 9 |
 | 2 | `\|\|` | Left | 20 / 21 |
 | 3 | `&&` | Left | 30 / 31 |
@@ -275,7 +291,7 @@ When the parser encounters an unexpected token or malformed construct, it must p
 - `errorMessage`: a human-readable string that names the expected token or construct and
   the token actually found. Examples:
     - `"Expected ':' after variable name, found 'i32'"`
-    - `"Expected ')' to close function call, found '}'"` 
+    - `"Expected ')' to close function call, found '}'"`
     - `"Unexpected end of file after '+'"`  (EOF mid-expression)
 - `errorCode`: matching `ErrorCode` entry for the parser phase (`CompilerPhase.PARSER`,
   codes `E1001` through `E1015` where applicable, e.g. `E1004` unexpected token, `E1005`
