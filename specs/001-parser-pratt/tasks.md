@@ -20,14 +20,14 @@ run it and observe RED, then implement until GREEN, then refactor. Never skip th
 dependencies on other new parser code. Both can be written and tested in parallel before
 any parsing logic exists.
 
-- [ ] T001 Create package declaration file `package-info.java` for `org.dersbian.compiler.syntax`
+- [x] T001 Create package declaration file `package-info.java` for `org.dersbian.compiler.syntax`
   that documents the parser phase boundary (FR-009). The file must contain only the
   `@SuppressWarnings` annotation required by Checkstyle and a one-sentence Javadoc explaining
   that this package owns the parsing phase and must not import `compiler.semantic` or
   `compiler.codegen` packages. —
   `app/src/main/java/org/dersbian/compiler/syntax/package-info.java`
 
-- [ ] T002 [P] Create `ParseResult.java` as a `public record` in package
+- [x] T002 [P] Create `ParseResult.java` as a `public record` in package
   `org.dersbian.compiler.syntax`. Fields: `List<Stmt> statements` (unmodifiable copy via
   `List.copyOf`), `List<CompileError.SyntaxError> errors` (unmodifiable copy via `List.copyOf`).
   Compact constructor must null-check both parameters with descriptive messages matching the
@@ -36,7 +36,7 @@ any parsing logic exists.
   No `@SuppressWarnings` unless Checkstyle demands it. —
   `app/src/main/java/org/dersbian/compiler/syntax/ParseResult.java`
 
-- [ ] T003 [P] [TEST] Write `ParseResultTest` in package `org.dersbian.compiler.syntax`.
+- [x] T003 [P] [TEST] Write `ParseResultTest` in package `org.dersbian.compiler.syntax`.
   Class must be package-private (no `public` modifier). Use JUnit Jupiter `@Test` and AssertJ
   `assertThat`. Required test methods (each annotated `@Test`, named descriptively):
   (1) `emptyParseResultHasNoErrorsAndNoStatements` — constructs `new ParseResult(List.of(), List.of())`,
@@ -55,7 +55,7 @@ any parsing logic exists.
   Run RED: `.\gradlew.bat :app:test --tests "*ParseResultTest*"` must FAIL (class does not exist yet). —
   `app/src/test/java/org/dersbian/compiler/syntax/ParseResultTest.java`
 
-- [ ] T004 [P] Create `BindingPower.java` as a package-private `record BindingPower(int left, int right)`
+- [x] T004 [P] Create `BindingPower.java` as a package-private `record BindingPower(int left, int right)`
   in package `org.dersbian.compiler.syntax`. Add three `static` factory methods:
   `static Optional<BindingPower> infix(TokenKind kind)` — returns the infix (led) binding
   power for the given `TokenKind` using a `switch` expression that covers every infix operator
@@ -81,7 +81,7 @@ any parsing logic exists.
   triggers that rule. Full Javadoc on class and each method. —
   `app/src/main/java/org/dersbian/compiler/syntax/BindingPower.java`
 
-- [ ] T005 [P] [TEST] Write `BindingPowerTest` in package `org.dersbian.compiler.syntax`.
+- [x] T005 [P] [TEST] Write `BindingPowerTest` in package `org.dersbian.compiler.syntax`.
   Class must be package-private. Required test methods:
   (1) `assignmentOperatorsAreRightAssociative` — for each of `EQUAL`, `PLUS_EQUAL`, `MINUS_EQUAL`,
   `STAR_EQUAL`, `SLASH_EQUAL`, `PERCENT_EQUAL`, `AND_EQUAL`, `OR_EQUAL`, `XOR_EQUAL`,
@@ -113,7 +113,7 @@ written. Nothing in Phase 3+ can start until T006–T010 are complete.
 
 **⚠️ CRITICAL**: Phases 3–6 are blocked until this phase is complete.
 
-- [ ] T006 [TEST] Write `TokenCursorTest` in package `org.dersbian.compiler.syntax`.
+- [x] T006 [TEST] Write `TokenCursorTest` in package `org.dersbian.compiler.syntax`.
   Class must be package-private. Build helper: add a `private static List<Token> tokens(TokenKind... kinds)`
   method that creates `Token` instances using `Token.create(new SourceId.Generated("test"), kind, Span.point(SourceLocation.create(1, 1, 0L)))`.
   Required test methods:
@@ -134,7 +134,7 @@ written. Nothing in Phase 3+ can start until T006–T010 are complete.
   Run RED: `.\gradlew.bat :app:test --tests "*TokenCursorTest*"` must FAIL. —
   `app/src/test/java/org/dersbian/compiler/syntax/TokenCursorTest.java`
 
-- [ ] T007 Create `TokenCursor.java` as a package-private `final class` in package
+- [x] T007 Create `TokenCursor.java` as a package-private `final class` in package
   `org.dersbian.compiler.syntax` (FR-008 — sync-point recovery contract). Fields: `private final List<Token> tokens` (comment-filtered
   immutable copy built in constructor), `private int pos = 0`. Constructor
   `TokenCursor(List<Token> tokens)`: null-check the input list, then build `this.tokens` by
