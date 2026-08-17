@@ -1,6 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-
   "permissions": {
     "allow": [
       "Bash(./gradlew *)",
@@ -40,7 +39,6 @@
       "Edit(**/*.key)"
     ]
   },
-
   "hooks": {
     "PreToolUse": [
       {
@@ -115,5 +113,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "ponytail@ponytail": true
   }
 }

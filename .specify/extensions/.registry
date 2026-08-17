@@ -21,6 +21,13 @@
           "speckit.git.remote",
           "speckit.git.initialize",
           "speckit.git.commit"
+        ],
+        "claude": [
+          "speckit.git.feature",
+          "speckit.git.validate",
+          "speckit.git.remote",
+          "speckit.git.initialize",
+          "speckit.git.commit"
         ]
       },
       "registered_skills": [],
@@ -41,6 +48,13 @@
           "speckit.assess.decide"
         ],
         "kiro-cli": [
+          "speckit.assess.intake",
+          "speckit.assess.research",
+          "speckit.assess.define",
+          "speckit.assess.shape",
+          "speckit.assess.decide"
+        ],
+        "claude": [
           "speckit.assess.intake",
           "speckit.assess.research",
           "speckit.assess.define",

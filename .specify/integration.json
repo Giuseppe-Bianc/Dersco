@@ -3,7 +3,8 @@
   "integration_state_schema": 1,
   "installed_integrations": [
     "codex",
-    "kiro-cli"
+    "kiro-cli",
+    "claude"
   ],
   "integration_settings": {
     "codex": {
@@ -13,8 +14,12 @@
     "kiro-cli": {
       "script": "py",
       "invoke_separator": "."
+    },
+    "claude": {
+      "script": "py",
+      "invoke_separator": "-"
     }
   },
-  "integration": "kiro-cli",
-  "default_integration": "kiro-cli"
+  "integration": "claude",
+  "default_integration": "claude"
 }
