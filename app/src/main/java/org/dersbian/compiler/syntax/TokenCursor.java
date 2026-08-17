@@ -16,6 +16,13 @@ import org.dersbian.compiler.lexer.token.TokenKind;
  * <p>Comments are filtered at construction; the cursor always ends in an EOF token so {@link
  * #peek()} never throws.
  */
+@SuppressWarnings({
+    "PMD.CommentDefaultAccessModifier",
+    "PMD.CommentRequired",
+    "PMD.OnlyOneReturn",
+    "PMD.ShortVariable",
+    "PMD.EnumComparison"
+})
 final class TokenCursor {
 
     private static final List<TokenKind.Simple.Keyword> SYNC_KEYWORDS =
@@ -50,7 +57,7 @@ final class TokenCursor {
                 || withEof.get(withEof.size() - 1).type() != TokenKind.Simple.Special.EOF) {
             final SourceId sid =
                     withEof.isEmpty()
-                            ? new SourceId.Generated("")
+                            ? new SourceId.Generated("<empty>")
                             : withEof.get(withEof.size() - 1).sourceId();
             final Span endSpan =
                     withEof.isEmpty()

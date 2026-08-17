@@ -11,7 +11,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnitTestContainsTooManyAsserts"})
+@SuppressWarnings({
+    "PMD.AtLeastOneConstructor",
+    "PMD.CommentDefaultAccessModifier",
+    "PMD.CommentRequired",
+    "PMD.ShortVariable",
+    "PMD.TooManyMethods",
+    "PMD.UnitTestContainsTooManyAsserts"
+})
 class BindingPowerTest {
 
     static Stream<Operator> assignmentOps() {

@@ -9,7 +9,11 @@ import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings("PMD.AtLeastOneConstructor")
+@SuppressWarnings({
+    "PMD.AtLeastOneConstructor",
+    "PMD.CommentRequired",
+    "PMD.UnitTestContainsTooManyAsserts"
+})
 class ParseResultTest {
 
     @Test

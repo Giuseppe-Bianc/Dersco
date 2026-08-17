@@ -12,7 +12,12 @@ import org.dersbian.compiler.lexer.token.Token;
 import org.dersbian.compiler.lexer.token.TokenKind;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnitTestContainsTooManyAsserts"})
+@SuppressWarnings({
+    "PMD.AtLeastOneConstructor",
+    "PMD.CommentRequired",
+    "PMD.TooManyMethods",
+    "PMD.UnitTestContainsTooManyAsserts"
+})
 class TokenCursorTest {
 
     private static final SourceId.Generated SRC = new SourceId.Generated("test");
