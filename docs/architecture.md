@@ -159,7 +159,7 @@ The project is a Gradle multi-project build with the `app` module.
 The application build uses:
 
 - Java 25 toolchain;
-- JUnit 5 and AssertJ for tests;
+- JUnit 6 and AssertJ for tests;
 - Picocli for the CLI;
 - SLF4J and Logback for logging;
 - Jansi for terminal support;
