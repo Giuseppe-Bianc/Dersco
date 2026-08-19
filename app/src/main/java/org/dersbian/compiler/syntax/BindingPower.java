@@ -7,16 +7,20 @@ import org.dersbian.compiler.lexer.token.TokenKind;
 /**
  * Pratt parser binding powers for infix and prefix operators.
  *
- * @param left left binding power (minimum bp for caller to enter)
- * @param right right binding power (minimum bp for operand)
+ * <p>The left and right values define the binding power used when parsing the token's left and
+ * right operands.
+ *
+ * @param left left binding power used by the current parse level
+ * @param right right binding power used when parsing the operand
  */
 record BindingPower(int left, int right) {
 
     /**
-     * Infix (left-denotation) binding power for the given token kind.
+     * Returns the binding powers for a token kind handled by the infix parsing step.
      *
      * @param kind token kind
-     * @return binding power when {@code kind} is an infix/postfix/call/index operator, else empty
+     * @return binding powers when {@code kind} is an infix, postfix, call, or index token; otherwise
+     *     {@link Optional#empty()}
      */
     @SuppressWarnings({
         "PMD.CyclomaticComplexity",
@@ -60,10 +64,11 @@ record BindingPower(int left, int right) {
     }
 
     /**
-     * Prefix (null-denotation) right binding power.
+     * Returns the right binding power used for prefix operators.
      *
      * @param kind token kind
-     * @return right bp when {@code kind} is a prefix operator, else empty
+     * @return right binding power when {@code kind} is a prefix operator; otherwise {@link
+     *     OptionalInt#empty()}
      */
     @SuppressWarnings({
         "PMD.CommentDefaultAccessModifier",
