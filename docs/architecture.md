@@ -2,73 +2,87 @@
 
 ## Scope
 
-Dersco is currently a compiler front end and CLI under development. The repository contains the infrastructure needed to load source text, track source locations, tokenize input, and render diagnostics. Parsing, semantic analysis, and code generation are planned stages, but they are not connected to the default compiler service yet.
+Dersco is currently an executable Java CLI and a compiler front end under active development. The codebase contains the infrastructure for source loading, source-location tracking, lexical analysis, token modeling, structured diagnostics, and AST data structures. The parser, semantic analysis, IR generation, and code generation are not connected to the default compilation service.
 
-## High-level flow
+This distinction is important when reading the code. Some classes describe future compiler stages, but their presence in the repository does not mean those stages are currently executed by `dersco compile`.
+
+## High-level execution flow
+
+The active runtime path is:
 
 ```text
-CLI
+App
  |
- +--> check --------------------+
- |                              |
- +--> compile --> CompilationRequest
-                                |
-                                v
-                       ICompilerService
-                                |
-                                v
-                     DefaultCompilerService
-                                |
-                    +-----------+-----------+
-                    |                       |
-              read UTF-8 file          source metadata
-                    |                       |
-                    +-----------+-----------+
-                                v
-                              Lexer
-                                |
-                 +--------------+--------------+
-                 |                             |
-              Tokens                         Errors
-                 |                             |
-                 +--------------+--------------+
-                                v
-                         ErrorReporter
-                                |
-                                v
-                         CLI diagnostics
+ v
+RootCommand
+ |
+ +--------------------+
+ |                    |
+ v                    v
+check               compile
+ |                    |
+ v                    v
+ICompilerService   CompilationRequest
+ |                    |
+ +---------+----------+
+           |
+           v
+DefaultCompilerService
+           |
+           v
+Files.readString(UTF-8)
+           |
+           v
+Lexer(source, content)
+           |
+     +-----+-----+
+     |           |
+     v           v
+ tokens       lexer errors
+     |           |
+     |           v
+     |      ErrorReporter
+     |           |
+     +-----+-----+
+           |
+           v
+        CLI result
 ```
 
-The `compile` path currently reaches the same front end as `check` and then stops. The future backend is not part of the execution flow yet.
+`compile` currently calls `checkSyntax(request.source())` and then returns. The requested output path, optimization level, IR flag, and advanced diagnostics flag are not consumed by a backend.
 
-## Application entry point
+## Application bootstrap
 
-`org.dersbian.App` starts the Picocli command tree. `RootCommand` defines the `dersco` command and delegates work to `CompileCommand` and `CheckCommand`.
+`org.dersbian.App` contains only process bootstrap logic. It creates the Picocli `CommandLine` instance from `RootCommand`, installs the CLI execution exception handler, enables case-insensitive enum values, enables automatic usage width, executes the parsed command, and terminates the process with the resulting exit code.
 
-The root command also enables Picocli's standard help options and obtains the application version through `ManifestVersionProvider`.
+No compiler-domain logic belongs in `App`.
 
 ## CLI layer
 
-The CLI package is responsible for argument parsing, validation, exit codes, and logging configuration.
+The `org.dersbian.cli` package owns command-line parsing, input validation, exit-code mapping, and runtime logging configuration.
 
 ### `RootCommand`
 
-The root command provides:
+`RootCommand` defines the `dersco` command and registers:
 
-- command name `dersco`;
-- standard help and version options;
-- `compile` and `check` subcommands;
-- built-in help command.
+- `compile`;
+- `check`;
+- Picocli's built-in `help` command;
+- standard help and version options.
 
-If no subcommand is supplied, the command prints usage information.
+When no subcommand is supplied, it prints command usage information. Version information is supplied by `ManifestVersionProvider`.
 
 ### `CheckCommand`
 
-`CheckCommand` validates the input path and calls `ICompilerService.checkSyntax(...)`. A `CompilerException` is converted to exit code `1`.
+`CheckCommand` validates that the supplied path is a readable regular file and calls `ICompilerService.checkSyntax(...)`.
+
+A `CompilerException` is mapped to exit code `1`. A successful front-end pass returns exit code `0`.
+
+The name `checkSyntax` is retained in the service API, but the current implementation does not invoke a parser. It loads the source and tokenizes it, so the command currently detects lexical errors rather than providing complete language-level syntax validation.
 
 ### `CompileCommand`
 
-`CompileCommand` validates the input path and constructs a `CompilationRequest` containing:
+`CompileCommand` validates the input file and constructs a `CompilationRequest` containing:
 
 - source path;
 - requested output path;
@@ -76,15 +90,27 @@ If no subcommand is supplied, the command prints usage information.
 - IR emission flag;
 - advanced diagnostics flag.
 
-It then calls `ICompilerService.compile(...)`.
+It then calls `ICompilerService.compile(...)`. `CompilerException` is mapped to exit code `1`.
 
-The request model is already designed for a future backend, but the current `DefaultCompilerService` does not consume the backend-related options after the front-end check.
+The command logs a successful compilation using the requested output path even though no output file is currently created. This is a consequence of the CLI being ahead of the backend implementation and should not be interpreted as proof that the output exists.
+
+### `CompilationRequest`
+
+`CompilationRequest` is an immutable record and the data boundary between the CLI and compiler service. Its fields are:
+
+| Field | Meaning | Currently consumed by backend |
+| --- | --- | --- |
+| `source` | Input Dersco source path | Yes |
+| `output` | Requested output path | No |
+| `optimizationLevel` | Requested optimization level | No |
+| `emitIntermediateCode` | Request IR emission | No |
+| `diagnostics` | Request advanced diagnostics | No |
 
 ### `LoggingMixin`
 
-Logging is configured through Logback at runtime:
+`LoggingMixin` is included independently by the `check` and `compile` commands. It changes the Logback root logger at command execution time.
 
-| Flags | Level |
+| Flags | Root log level |
 | --- | --- |
 | none | `WARN` |
 | `-v` | `INFO` |
@@ -92,104 +118,166 @@ Logging is configured through Logback at runtime:
 | `-vvv` or more | `TRACE` |
 | `-q` | `ERROR` |
 
-Quiet mode takes precedence over verbosity flags.
+Quiet mode takes precedence over verbosity because `resolveLevel()` checks it first. The mixin accepts repeated `-v` occurrences and therefore supports forms such as `-vv`.
 
 ## Compiler service layer
 
-`ICompilerService` separates CLI code from compiler implementation. `DefaultCompilerService` is the current implementation.
+`ICompilerService` isolates the CLI from the compiler implementation. `DefaultCompilerService` is the current production implementation.
 
-### Syntax checking
+### `checkSyntax(Path)` current behavior
 
-The current `checkSyntax(...)` implementation:
+The method performs these operations:
 
-1. reads the source file as UTF-8;
-2. creates a `Lexer` with the source path and source content;
-3. obtains the source line count;
-4. tokenizes the source;
-5. passes lexer errors to `ErrorReporter`;
-6. prints a rendered diagnostic report when errors are present;
-7. logs tokens at debug level when no lexer errors are reported.
+1. logs the requested source path;
+2. records and logs the source file size using `FileSizeInfo`, `FileSizeReport`, and the SI/IEC size systems;
+3. reads the entire file as UTF-8 using `Files.readString`;
+4. creates a `Lexer` with the source path and source content;
+5. obtains the lexer line count for diagnostics/logging;
+6. tokenizes the source;
+7. creates an `ErrorReporter` from the lexer's line tracker;
+8. renders all lexer errors;
+9. prints the rendered diagnostic report when errors exist and throws `CompilerException`;
+10. logs each token at debug level when no lexer errors exist;
+11. stops at the parser placeholder.
 
-The implementation currently contains an explicit placeholder for the real parser.
+A source-read `IOException` is wrapped in `CompilerException`. Lexer errors are also converted into `CompilerException` after their diagnostics are printed.
 
-### Compilation
+### `compile(CompilationRequest)` current behavior
 
-`compile(...)` currently performs:
+The method currently performs only:
 
 ```text
 CompilationRequest
        |
        v
-checkSyntax(source)
+checkSyntax(request.source())
        |
        v
 return
 ```
 
-Semantic analysis and code generation are not connected. Consequently, the output path, optimization level, IR flag, and diagnostics flag are currently request-level API surface rather than active backend functionality.
+The method contains an explicit placeholder for semantic analysis and code generation. No output path is created, no IR is emitted, and no optimization is performed.
 
-## Lexer
+## Lexical analysis
 
-The lexer package contains the source scanning infrastructure. Its main components include:
+The `org.dersbian.compiler.lexer` package provides the active front-end tokenizer.
 
-- `Lexer`, the main tokenizer;
-- `SourceCursor`, which manages traversal of source text;
-- `LexerResult`, which groups tokens and lexical errors;
-- `CodePoints`, which centralizes character classification and related code-point operations;
-- source location and token packages for precise diagnostics.
+### `Lexer`
 
-The lexer tracks source positions so diagnostics can point back to the original file and line.
+`Lexer` scans the complete source string and produces a `LexerResult` containing tokens and lexical errors. It owns the lexical state and connects source traversal, token construction, and line tracking.
 
-## Token model
+### `SourceCursor`
 
-Tokens are modeled as typed values and carry source span information. The token package contains the token kinds and payload-bearing representations used by the lexer.
+`SourceCursor` encapsulates traversal of the source text. It provides the cursor abstraction used by the lexer instead of making tokenization logic manage raw string indexes directly.
 
-This model is intended to provide a stable boundary between lexical analysis and the parser that will be added later.
+### `CodePoints`
 
-## Diagnostics
+`CodePoints` centralizes character and Unicode code-point related classification and operations used by lexical scanning.
 
-The compiler error package provides structured compiler errors and an `ErrorReporter`. Diagnostics are rendered with source context so users can identify the affected location directly from CLI output.
+### `LexerResult`
 
-The location package provides source-position primitives and line tracking used by the lexer and diagnostic renderer.
+`LexerResult` is the lexer boundary object. It carries both the successfully recognized token sequence and the collected lexical errors so the compiler service can render diagnostics without coupling `ErrorReporter` to the scanner's internal state.
 
-## Build and quality architecture
+### Source locations and tokens
 
-The project is a Gradle multi-project build with the `app` module.
+The token model includes `Token`, `TokenKind`, `Span`, `SourceId`, and `SourceLocation`. Tokens carry source span information, while the location types provide the data required to map diagnostics back to the original source.
 
-The application build uses:
+Numeric token parsing is further separated into `INumber`, `BaseNumberParser`, `NumericParser`, and `SuffixParser`.
 
-- Java 25 toolchain;
-- JUnit 6 and AssertJ for tests;
-- Picocli for the CLI;
-- SLF4J and Logback for logging;
-- Jansi for terminal support;
-- Checkstyle;
-- PMD;
-- SpotBugs at maximum effort and low confidence threshold;
-- Error Prone with compiler warnings treated as errors;
-- Spotless with Google Java Format in AOSP mode;
-- JaCoCo for test coverage;
-- Shadow for the packaged application JAR.
+## Source locations and diagnostics
 
-The `check` task explicitly depends on the main static-analysis tasks, formatting verification, and the JaCoCo test report.
+The location infrastructure contains `LineTracker`, which maps source positions to line information used by diagnostics.
+
+The `compiler.error` package provides:
+
+- `CompileError`, the structured compiler error representation;
+- `CompilerPhase`, which classifies the compiler stage associated with an error;
+- `ErrorCode`, the repository's error-code catalog;
+- `Severity`, the diagnostic severity model;
+- `ErrorReporter`, which converts structured errors into user-facing text;
+- `CompilerErorFormater`, the formatting helper used by the diagnostic system.
+
+The active CLI path uses the lexer line tracker and `ErrorReporter` to render lexical errors with source context.
+
+## Syntax and AST model
+
+The `org.dersbian.compiler.syntax.ast` package contains AST model types such as `Expr`, `Stmt`, `Type`, `BinaryOp`, `UnaryOp`, `LiteralValue`, `Parameter`, and `ElseBranch`, plus traversal and inspection helpers such as `AstPrinter` and `NodeCounter`.
+
+These classes form a model boundary for later parsing and semantic work. The current `DefaultCompilerService` does not instantiate an AST from source because a parser is not connected to the compilation flow.
+
+## Utility layer
+
+The `org.dersbian.util` package provides reusable support code. In the current compiler service, the relevant classes are:
+
+- `FileSizeInfo`, which represents the source file size;
+- `FileSizeReport`, which formats size information for logging;
+- `SizeSystem` and `SizeSystems`, which define size-system behavior, including SI and IEC systems;
+- `FormattedSize` and `FormattedSizePair`, which represent formatted size values;
+- `PathUtils`, which contains shared path handling utilities.
+
+The compiler service uses the file-size utilities only for debug logging. They are not part of the compilation semantics.
+
+## Build architecture
+
+The repository is a Gradle multi-project build containing the `app` module.
+
+The application module selects Java 25 and uses the Gradle wrapper pinned to 9.7.0. The root settings apply the Foojay toolchain resolver convention plugin and include only the `app` project.
+
+The application dependencies are managed through `gradle/libs.versions.toml`. The runtime and test stack includes Picocli, SLF4J, Logback, Jansi, Guava, JUnit Jupiter, and AssertJ. Build-time quality tooling includes Checkstyle, PMD, SpotBugs, Error Prone, Spotless, JaCoCo, and Shadow.
+
+`app/build.gradle.kts` configures Java compilation as UTF-8, enables compiler lint diagnostics, treats compiler warnings as errors, runs Error Prone, and configures the static-analysis and formatting tasks. The `check` task explicitly depends on Checkstyle, PMD, SpotBugs, Spotless verification, and `jacocoTestReport`.
+
+The shaded JAR is produced by Shadow and declares `org.dersbian.App` as its main class.
+
+## Test architecture
+
+Unit tests are under `app/src/test/java` and use JUnit Jupiter and AssertJ. Compiler services and CLI commands expose constructor injection points so tests can substitute `ICompilerService` implementations without requiring the real compiler service.
+
+The repository also contains `.dr` fixtures under `dr_files`, which cover valid programs and front-end error cases such as type mismatches, invalid indexes, loop control, returns, arrays, SSA-related examples, and numeric behavior.
 
 ## CI/CD architecture
 
-The GitHub Actions workflow provisions JDK 25, configures Gradle, runs verification, builds the shaded JAR, uploads the artifact, regenerates the JaCoCo XML report, and uploads coverage to Codecov.
+`.github/workflows/ci.yml` defines two jobs.
 
-Release publication is separated into a second job that runs for tags matching `v*` and depends on the successful build job.
+### Build and verify
 
-## Design boundaries
+The `build-and-check` job:
 
-The current code has useful boundaries for future expansion:
+1. checks out full repository history;
+2. installs Temurin JDK 25;
+3. configures Gradle;
+4. runs `./gradlew check`;
+5. builds the shaded JAR;
+6. uploads JAR artifacts;
+7. generates the JaCoCo XML report;
+8. uploads the report to Codecov.
+
+The Codecov action currently uses `fail_ci_if_error: true`, so a Codecov upload failure fails the workflow.
+
+### Release
+
+The `release` job depends on `build-and-check` and runs only when the triggering ref is a tag beginning with `v`. It installs JDK 25, builds the shaded JAR, and attaches the resulting JAR to a GitHub Release.
+
+## Design boundaries and future stages
+
+The intended expansion boundary is:
 
 ```text
-CLI -> ICompilerService -> front-end components
-                         |
-                         +-> future parser
-                         +-> future semantic analysis
-                         +-> future IR
-                         +-> future code generator
+CLI
+ |
+ v
+ICompilerService
+ |
+ v
+DefaultCompilerService
+ |
+ +--> source loading
+ +--> lexical analysis
+ +--> diagnostics
+ +--> parser                 future connection
+ +--> semantic analysis      future connection
+ +--> IR generation          future connection
+ +--> code generation       future connection
 ```
 
-The main architectural constraint is that the backend must be wired into `DefaultCompilerService` before `compile` can be documented as a real compiler command. Until then, documentation should describe it as a compilation entry point that currently performs front-end validation.
+The existing AST and compilation-request types make some future boundaries explicit, but they are not evidence of an active end-to-end compiler pipeline. Any documentation claiming that Dersco currently parses, performs semantic analysis, optimizes, emits IR, or generates an executable would be inconsistent with the implementation.
