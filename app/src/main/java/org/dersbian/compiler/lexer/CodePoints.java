@@ -61,8 +61,8 @@ public final class CodePoints {
 
     /**
      * Computes how many bytes the given Unicode code point would occupy when encoded as UTF-8. This
-     * lets the cursor's UTF-8 offset track the real byte offset in the original source file, even
-     * though the in-memory representation is a Java {@code String} (UTF-16).
+     * lets the cursor's UTF-8 offset track the byte length of the supplied text, even though the
+     * in-memory representation is a Java {@code String} (UTF-16).
      */
     public static int utf8ByteLength(final int codePoint) {
         if (!Character.isValidCodePoint(codePoint)) {
@@ -91,8 +91,7 @@ public final class CodePoints {
     /**
      * Returns {@code true} if the given code point is considered whitespace and should be skipped
      * between tokens. Combines {@link Character#isWhitespace(int)} with {@link
-     * Character#isSpaceChar(int)} so that any whitespace-looking byte sequence from a UTF-8 source
-     * file is skipped regardless of which category it falls under.
+     * Character#isSpaceChar(int)} to cover both Java whitespace and Unicode space characters.
      */
     public static boolean isWhitespaceCodePoint(final int codePoint) {
         return codePoint != -1
