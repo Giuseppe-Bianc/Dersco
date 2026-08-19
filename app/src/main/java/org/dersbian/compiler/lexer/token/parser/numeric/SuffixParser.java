@@ -10,11 +10,10 @@ import org.dersbian.compiler.lexer.token.number.INumber;
  * <p>Provides functionality for splitting numeric literals into their numeric component and
  * optional type suffix, then dispatching to the appropriate specific parser.
  *
- * <p>{@link #handleSuffix} returns {@code null} on parsing failure or an unknown suffix,
- * analogously to {@code Option::None} in the original Rust implementation. The suffix-pattern
- * detection methods ({@link #checkSingleCharSuffix}, {@link #checkTwoCharSuffix}, {@link
- * #checkThreeCharSuffix}) continue to return {@code Optional<SuffixPattern>} because they do not
- * produce an {@link INumber}.
+ * <p>{@link #handleSuffix} returns {@code null} on parsing failure or an unknown suffix. The
+ * suffix-pattern detection methods ({@link #checkSingleCharSuffix}, {@link #checkTwoCharSuffix},
+ * {@link #checkThreeCharSuffix}) return {@code Optional<SuffixPattern>} because they only detect a
+ * suffix shape and do not produce an {@link INumber}.
  */
 @SuppressWarnings({"PMD.ShortVariable", "PMD.OnlyOneReturn", "PMD.LongVariable"})
 public final class SuffixParser {
@@ -107,16 +106,14 @@ public final class SuffixParser {
 
     /**
      * Detects the suffix pattern present at the end of {@code s}, checking single-character
-     * patterns first (the most common), then three-character patterns, and finally two-character
-     * patterns.
+     * patterns first, then three-character patterns, and finally two-character patterns.
      */
-    private static Optional<SuffixPattern> detectSuffixPattern(
-            final String sufx) { // fix #1: added final
-        final Optional<SuffixPattern> single = checkSingleCharSuffix(sufx); // fix #2: added final
+    private static Optional<SuffixPattern> detectSuffixPattern(final String sufx) {
+        final Optional<SuffixPattern> single = checkSingleCharSuffix(sufx);
         if (single.isPresent()) {
             return single;
         }
-        final Optional<SuffixPattern> three = checkThreeCharSuffix(sufx); // fix #3: added final
+        final Optional<SuffixPattern> three = checkThreeCharSuffix(sufx);
         if (three.isPresent()) {
             return three;
         }
@@ -141,9 +138,7 @@ public final class SuffixParser {
                     detectSuffixPattern(slice)
                             .map(
                                     pattern -> {
-                                        final int splitPos =
-                                                slice.length()
-                                                        - pattern.length(); // fix #4: added final
+                                        final int splitPos = slice.length() - pattern.length();
                                         return new SplitResult(
                                                 slice.substring(0, splitPos),
                                                 slice.substring(splitPos));

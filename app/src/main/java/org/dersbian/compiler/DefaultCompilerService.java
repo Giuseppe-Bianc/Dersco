@@ -12,14 +12,14 @@ import org.dersbian.util.FileSizeInfo;
 import org.dersbian.util.FileSizeReport;
 import org.dersbian.util.SizeSystems;
 
-/** Default implementation. */
+/** Default implementation of the compiler service. */
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
     "PMD.MethodArgumentCouldBeFinal",
     "PMD.AvoidUncheckedExceptionsInSignatures"
 })
 public final class DefaultCompilerService implements ICompilerService {
-    /** Logger for this serive. */
+    /** Logger for this service. */
     private static final org.slf4j.Logger LOG =
             org.slf4j.LoggerFactory.getLogger(DefaultCompilerService.class);
 
