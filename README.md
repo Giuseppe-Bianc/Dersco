@@ -6,47 +6,55 @@
 [![Gradle](https://img.shields.io/badge/Gradle-9.7-blue.svg)](https://gradle.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
-Dersco is a Java-based compiler project for the Dersco programming language. The repository currently focuses on the command-line interface, source locations, lexical analysis, token modeling, and compiler diagnostics. The parser, semantic analysis, and code-generation stages are not wired into the compilation service yet.
+Dersco is a Java 25 compiler project for the Dersco programming language. The current implementation provides a Picocli command-line interface, UTF-8 source loading, lexical analysis, source location tracking, structured tokens, and diagnostic rendering. The compiler service currently stops after lexing. Parsing, semantic analysis, intermediate representation, and code generation are represented by project structure and request models but are not connected to the compilation flow.
 
-## Project status
+## Current status
 
-The project is under active development. The implemented pipeline currently looks like this:
+The implemented execution path is:
 
 ```text
-source file
+CLI command
     |
     v
-UTF-8 source loading
+input validation
     |
     v
-Lexer + source locations
+DefaultCompilerService
+    |
+    +--> UTF-8 source loading
+    |
+    +--> Lexer
+    |      |
+    |      +--> tokens
+    |      +--> lexical errors
+    |
+    +--> ErrorReporter for lexical errors
+    |
+    +--> debug logging of tokens when lexing succeeds
     |
     v
-Token stream + lexer errors
-    |
-    v
-Diagnostic rendering
+return to CLI
 ```
 
-`dersco check` runs this pipeline and reports lexical or syntax-related errors detected by the current front end.
+`dersco check` executes the syntax-check entry point. Despite the command name and its current user-facing description, the service currently performs lexical analysis and does not invoke a parser. A successful run therefore means that no lexer errors were reported.
 
-`dersco compile` currently validates the source through the same front end and then stops. Its CLI accepts output, optimization, IR, and diagnostic options, but the backend that would consume those options is not implemented yet. In particular, the current implementation does not create the requested executable or output file.
-
-See [CLI reference](docs/cli.md) for the exact command-line contract and [architecture notes](docs/architecture.md) for the current compiler structure.
+`dersco compile` builds a `CompilationRequest` and passes it to `DefaultCompilerService.compile(...)`. The service currently calls `checkSyntax(...)` and then returns. The requested output path, optimization level, IR flag, and advanced diagnostics flag are stored in the request but are not consumed by a backend. A successful `compile` invocation therefore does not create the requested output file or emit IR.
 
 ## Implemented capabilities
 
 - Java 25 toolchain with Gradle 9.7.
-- Picocli CLI with `compile`, `check`, and built-in help/version support.
+- Picocli CLI with `compile`, `check`, help, and version support.
 - Repeatable logging controls: `-v`, `-vv`, `-vvv`, and `-q`.
-- UTF-8 source loading.
-- Lexer infrastructure with a dedicated source cursor and line tracking.
-- Strongly typed tokens with source spans and payload-bearing token records.
-- Diagnostic rendering with source context and underlining.
-- Compiler service abstraction suitable for unit testing.
-- Unit tests with JUnit 5 and AssertJ.
-- Quality gates with Checkstyle, PMD, SpotBugs, Error Prone, Spotless, and JaCoCo.
-- GitHub Actions CI for verification, packaging, coverage reporting, and tagged releases.
+- UTF-8 source loading with `StandardCharsets.UTF_8`.
+- Lexer infrastructure based on `Lexer` and `SourceCursor`.
+- Source line tracking and source spans used by diagnostics.
+- Typed tokens, token kinds, and payload-bearing token representations.
+- Numeric token parsing infrastructure under `lexer/token/number`.
+- Structured compiler errors with phases, severities, error codes, and source-aware reporting.
+- `ICompilerService` abstraction with a default implementation that can be replaced in CLI tests.
+- JUnit 6 and AssertJ tests.
+- Quality gates using Checkstyle, PMD, SpotBugs, Error Prone, Spotless, and JaCoCo.
+- GitHub Actions CI and tagged-release configuration.
 
 ## Repository layout
 
@@ -54,28 +62,32 @@ See [CLI reference](docs/cli.md) for the exact command-line contract and [archit
 Dersco/
 ├── app/
 │   ├── config/
-│   │   ├── checkstyle/             # Checkstyle configuration
-│   │   └── pmd/                    # PMD ruleset
+│   │   ├── checkstyle/                 # Checkstyle configuration
+│   │   └── pmd/                        # PMD ruleset
 │   ├── src/
 │   │   ├── main/java/org/dersbian/
-│   │   │   ├── App.java            # Application entry point
-│   │   │   ├── cli/                # Picocli commands and logging options
-│   │   │   ├── compiler/           # Compiler service, lexer, diagnostics
-│   │   │   └── util/               # Shared utilities
-│   │   └── test/java/              # Unit tests
-│   └── build.gradle.kts             # Application build and quality configuration
+│   │   │   ├── App.java                # Application entry point
+│   │   │   ├── cli/                    # Picocli commands and logging configuration
+│   │   │   ├── compiler/
+│   │   │   │   ├── error/              # Compiler error model and diagnostic reporting
+│   │   │   │   ├── lexer/              # Lexer, source cursor, code-point helpers, tokens
+│   │   │   │   ├── location/            # Source line/location tracking support
+│   │   │   │   └── syntax/              # Reserved structure for syntax/AST work
+│   │   │   └── util/                   # Shared file and size utilities
+│   │   └── test/java/                  # Unit tests
+│   └── build.gradle.kts                # Application, dependency, quality, and packaging configuration
 ├── docs/
-│   ├── architecture.md             # Compiler architecture and execution flow
-│   └── cli.md                      # Command-line reference
+│   ├── architecture.md                # Current compiler architecture and execution flow
+│   └── cli.md                         # Command-line contract and current limitations
 ├── gradle/
-│   └── libs.versions.toml          # Dependency version catalog
+│   └── libs.versions.toml             # Dependency version catalog
 ├── .github/
-│   ├── dependabot.yml              # Dependency update configuration
+│   ├── dependabot.yml                 # Dependency update configuration
 │   └── workflows/
-│       └── ci.yml                  # CI and release workflow
-├── codecov.yml                     # Coverage configuration
-├── build.gradle.kts                # Root Gradle configuration
-├── settings.gradle.kts             # Project settings and toolchain resolver
+│       └── ci.yml                     # CI and release workflow
+├── codecov.yml                         # Coverage configuration
+├── build.gradle.kts                    # Root Gradle configuration
+├── settings.gradle.kts                 # Project/module configuration and Foojay resolver
 └── LICENSE
 ```
 
@@ -85,11 +97,11 @@ Dersco/
 - Git.
 - No system Gradle installation is required because the repository includes the Gradle wrapper.
 
-The build also uses Gradle's Foojay toolchain resolver, so a JDK can be provisioned automatically when the local environment permits it.
+The build uses the Foojay Gradle toolchain resolver. When supported by the local environment, Gradle can provision the configured JDK automatically.
 
 ## Getting started
 
-Clone the repository and use the Gradle wrapper:
+Clone the repository and run the verification task:
 
 ```bash
 git clone https://github.com/Giuseppe-Bianc/Dersco.git
@@ -108,13 +120,13 @@ Run the application through Gradle during development:
 ./gradlew run --args="compile path/to/source.der"
 ```
 
-Build the distributable JAR:
+Build the shaded application JAR:
 
 ```bash
 ./gradlew shadowJar
 ```
 
-The generated artifact is written under `app/build/libs/`.
+The artifact is written under `app/build/libs/`. The configured project version is `0.1.0`, so the normal shaded artifact name is `Dersco-0.1.0.jar`.
 
 Run the packaged application:
 
@@ -123,7 +135,7 @@ java -jar app/build/libs/Dersco-0.1.0.jar --help
 java -jar app/build/libs/Dersco-0.1.0.jar check path/to/source.der
 ```
 
-For supported flags and exit codes, see [docs/cli.md](docs/cli.md).
+See [docs/cli.md](docs/cli.md) for command syntax, options, exit codes, and current behavior.
 
 ## Development workflow
 
@@ -139,13 +151,13 @@ Run a specific test class:
 ./gradlew test --tests "*NumericParsersTest*"
 ```
 
-### Run the full verification gate
+### Run the verification gate
 
 ```bash
 ./gradlew check
 ```
 
-The `check` task includes the configured static analysis, formatting verification, tests, and JaCoCo report generation.
+The configured `check` task depends on Checkstyle, PMD, SpotBugs, Spotless verification, and the JaCoCo test report. Tests are executed as part of the JaCoCo report task dependency.
 
 ### Apply formatting
 
@@ -153,25 +165,33 @@ The `check` task includes the configured static analysis, formatting verificatio
 ./gradlew spotlessApply
 ```
 
-Spotless uses Google Java Format in AOSP mode with four-space indentation.
+Spotless uses Google Java Format 1.35.0 in AOSP mode with four-space indentation, plus unused-import removal and annotation formatting.
 
-### Build the executable JAR
+### Build the shaded JAR
 
 ```bash
 ./gradlew shadowJar
 ```
 
-This creates the shaded JAR and sets its manifest main class to `org.dersbian.App`.
+The application main class is `org.dersbian.App`. The JAR manifest also contains the implementation version and native-access metadata.
+
+## Dependencies and build tooling
+
+Runtime and compile-time dependencies are managed through `gradle/libs.versions.toml`. The application currently uses:
+
+- Picocli 4.7.7 for the command-line interface and code generation annotations.
+- SLF4J 2.0.18 and Logback 1.6.3 for logging.
+- Jansi 2.4.3 as a runtime terminal dependency.
+- Guava 33.6.0-jre.
+- Error Prone 2.50.0 for compiler-time static analysis.
+
+Test dependencies are JUnit Jupiter 6.1.3 and AssertJ 3.27.7. The Gradle build configures the JUnit Platform and enables parallel test forks according to available processors.
+
+Quality tooling includes Checkstyle 13.7.0, PMD 7.26.0, SpotBugs 4.10.2, Spotless with Google Java Format 1.35.0, and JaCoCo 0.8.14. Shadow 9.6.1 produces the shaded application JAR.
 
 ## CI/CD
 
-The GitHub Actions workflow performs verification and packaging on pushes and pull requests. The main build job provisions JDK 25, runs `./gradlew check`, builds the shaded JAR, uploads the artifact, and generates the JaCoCo XML report for Codecov.
-
-Tagged releases matching `v*` trigger the release job after the build job succeeds. The release job publishes the shaded JAR to a GitHub Release.
-
-Dependabot checks Gradle dependencies and GitHub Actions workflow dependencies according to `.github/dependabot.yml`.
-
-For local reproduction of the CI verification stages:
+The repository contains a GitHub Actions workflow for verification, packaging, coverage reporting, and tagged releases. The documented local equivalents are:
 
 ```bash
 ./gradlew check
@@ -179,23 +199,17 @@ For local reproduction of the CI verification stages:
 ./gradlew jacocoTestReport
 ```
 
-## Code coverage
+JaCoCo writes the XML report to `app/build/reports/jacoco/test/jacocoTestReport.xml`. Codecov is configured through `codecov.yml`, and the CI upload is configured not to fail the workflow when Codecov itself reports an upload error.
 
-JaCoCo writes the XML report to:
+Tagged releases matching `v*` use the release job after the build job succeeds. Dependabot is configured for Gradle dependencies and GitHub Actions dependencies.
 
-```text
-app/build/reports/jacoco/test/jacocoTestReport.xml
-```
+## Architecture boundaries
 
-`codecov.yml` configures project and patch coverage reporting. Codecov failures do not fail the GitHub Actions job because the workflow is configured with `fail_ci_if_error: false`.
+The code is deliberately separated into CLI, compiler service, lexical analysis, source-location, token, diagnostic, and utility layers. `ICompilerService` is the boundary between the CLI and the compiler implementation. `DefaultCompilerService` currently coordinates file loading, lexing, and diagnostic reporting.
 
-## Architecture and implementation notes
+The repository also contains `compiler/syntax/ast` and token parsing infrastructure for future language-processing stages. These structures should not be described as an active parser or semantic pipeline until `DefaultCompilerService` invokes them.
 
-The compiler is intentionally split into small services and models. CLI code depends on `ICompilerService`, while the default implementation coordinates file loading, lexing, source tracking, and diagnostics.
-
-The current implementation has explicit placeholders for future parsing, semantic analysis, and code generation. Do not document `compile` as producing native code until those stages are connected to `DefaultCompilerService`.
-
-Detailed design notes are in [docs/architecture.md](docs/architecture.md).
+For the detailed component responsibilities and current data flow, see [docs/architecture.md](docs/architecture.md). For the externally visible command contract, see [docs/cli.md](docs/cli.md).
 
 ## License
 
