@@ -47,6 +47,7 @@ public sealed interface Expr
      * Unary operation expression.
      *
      * @param op unary operator
+     * @param side whether the operator is applied in prefix or postfix position
      * @param expr operand expression
      * @param span source extent
      */
@@ -128,7 +129,7 @@ public sealed interface Expr
     /**
      * Function or method call expression.
      *
-     * @param callee expression representing function being called
+     * @param callee expression producing the callable value
      * @param arguments argument expressions passed to the call
      * @param span source extent
      */
@@ -144,8 +145,8 @@ public sealed interface Expr
     /**
      * Array indexing expression.
      *
-     * @param array expression representing array container
-     * @param index expression representing element index
+     * @param array expression producing the indexed array
+     * @param index expression producing the element index
      * @param span source extent
      */
     record ArrayAccess(Expr array, Expr index, Span span) implements Expr {
