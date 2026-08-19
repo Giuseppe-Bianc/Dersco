@@ -89,8 +89,8 @@ public final class SuffixParser {
     }
 
     /**
-     * Returns whether the last two characters form a valid two-character suffix ({@code i8},
-     * {@code u8}, case-insensitive).
+     * Returns whether the last two characters form a valid two-character suffix ({@code i8}, {@code
+     * u8}, case-insensitive).
      */
     public static Optional<SuffixPattern> checkTwoCharSuffix(final String s) {
         if (s.length() < TWO_CHAR_MIN_LENGTH) {
@@ -123,9 +123,8 @@ public final class SuffixParser {
     /**
      * Splits a numeric literal into its numeric part and optional type suffix.
      *
-     * <p>Supported suffixes: {@code u}, {@code f}, {@code d} (one character); {@code i8},
-     * {@code u8} (two characters); {@code i16}, {@code i32}, {@code u16}, {@code u32} (three
-     * characters).
+     * <p>Supported suffixes: {@code u}, {@code f}, {@code d} (one character); {@code i8}, {@code
+     * u8} (two characters); {@code i16}, {@code i32}, {@code u16}, {@code u32} (three characters).
      *
      * @param slice full string of the numeric literal, including any suffix
      * @return the numeric portion and the optional suffix (original casing preserved)

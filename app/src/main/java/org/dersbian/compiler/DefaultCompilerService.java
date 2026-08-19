@@ -54,13 +54,13 @@ public final class DefaultCompilerService implements ICompilerService {
         for (final Token token : result.tokens()) {
             LOG.debug("Token: {}", token);
         }
-        // Parser integration is not implemented yet.
+        // TODO: wire up the real parser.
     }
 
     @Override
     public void compile(CompilationRequest request) throws CompilerException {
         LOG.trace("Starting compilation with parameters: {}", request);
         checkSyntax(request.source());
-        // Semantic analysis and code generation are not implemented yet.
+        // TODO: wire up real semantic analysis and code generation.
     }
 }

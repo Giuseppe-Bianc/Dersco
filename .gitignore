@@ -54,3 +54,5 @@ build
 .kotlin
 
 .idea/
+
+*.pyc
