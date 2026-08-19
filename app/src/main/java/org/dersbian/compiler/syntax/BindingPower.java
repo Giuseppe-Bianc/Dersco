@@ -19,8 +19,8 @@ record BindingPower(int left, int right) {
      * Returns the binding powers for a token kind handled by the infix parsing step.
      *
      * @param kind token kind
-     * @return binding powers when {@code kind} is an infix, postfix, call, or index token; otherwise
-     *     {@link Optional#empty()}
+     * @return binding powers when {@code kind} is an infix, postfix, call, or index token;
+     *     otherwise {@link Optional#empty()}
      */
     @SuppressWarnings({
         "PMD.CyclomaticComplexity",

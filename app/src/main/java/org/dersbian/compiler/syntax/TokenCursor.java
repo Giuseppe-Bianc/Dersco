@@ -45,8 +45,8 @@ final class TokenCursor {
     /**
      * Creates a cursor from the supplied token stream.
      *
-     * <p>Comment and multiline-comment tokens are removed. If the resulting stream is empty, an
-     * EOF token is created with a generated source id and a point span at line 1, column 1. If the
+     * <p>Comment and multiline-comment tokens are removed. If the resulting stream is empty, an EOF
+     * token is created with a generated source id and a point span at line 1, column 1. If the
      * stream does not end in EOF, an EOF token is appended at the end position of the last token.
      *
      * @param tokens tokens to traverse
@@ -153,8 +153,8 @@ final class TokenCursor {
     /**
      * Advances until a closing brace, a synchronization keyword, or EOF is reached.
      *
-     * <p>A closing brace is consumed when it is the synchronization point. Synchronization
-     * keywords remain current so the parser can handle the corresponding statement normally.
+     * <p>A closing brace is consumed when it is the synchronization point. Synchronization keywords
+     * remain current so the parser can handle the corresponding statement normally.
      *
      * @param errors mutable collection reserved for parser errors; not modified by this method
      */
