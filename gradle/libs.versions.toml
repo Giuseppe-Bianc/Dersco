@@ -1,7 +1,7 @@
 [versions]
 guava = "33.6.0-jre"
 slf4j = "2.0.18"
-logback = "1.6.2"
+logback = "1.6.3"
 jansi = "2.4.3"
 errorprone-core = "2.50.0"
 junit-jupiter = "6.1.3"
