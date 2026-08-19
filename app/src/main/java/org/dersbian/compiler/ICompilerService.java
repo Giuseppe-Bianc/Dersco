@@ -6,8 +6,8 @@ import java.nio.file.Path;
  * Defines the compiler operations exposed to the CLI layer.
  *
  * <p>The service separates source checking from the compilation entry point. Implementations are
- * responsible for coordinating the compiler phases and reporting failures through
- * {@link CompilerException}.
+ * responsible for coordinating the compiler phases and reporting failures through {@link
+ * CompilerException}.
  */
 @SuppressWarnings({
     "PMD.AvoidUncheckedExceptionsInSignatures",
