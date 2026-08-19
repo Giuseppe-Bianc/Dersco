@@ -12,14 +12,14 @@ import org.dersbian.util.FileSizeInfo;
 import org.dersbian.util.FileSizeReport;
 import org.dersbian.util.SizeSystems;
 
-/** Default implementation. */
+/** Default implementation of the compiler service. */
 @SuppressWarnings({
     "PMD.AtLeastOneConstructor",
     "PMD.MethodArgumentCouldBeFinal",
     "PMD.AvoidUncheckedExceptionsInSignatures"
 })
 public final class DefaultCompilerService implements ICompilerService {
-    /** Logger for this serive. */
+    /** Logger for this service. */
     private static final org.slf4j.Logger LOG =
             org.slf4j.LoggerFactory.getLogger(DefaultCompilerService.class);
 
@@ -54,13 +54,13 @@ public final class DefaultCompilerService implements ICompilerService {
         for (final Token token : result.tokens()) {
             LOG.debug("Token: {}", token);
         }
-        // TODO: wire up the real parser.
+        // Parser integration is not implemented yet.
     }
 
     @Override
     public void compile(CompilationRequest request) throws CompilerException {
         LOG.trace("Starting compilation with parameters: {}", request);
         checkSyntax(request.source());
-        // TODO: wire up real semantic analysis and code generation.
+        // Semantic analysis and code generation are not implemented yet.
     }
 }
