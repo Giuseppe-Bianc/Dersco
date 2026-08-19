@@ -13,8 +13,9 @@ import org.dersbian.compiler.lexer.token.TokenKind;
 /**
  * Single forward-only cursor over a filtered token stream.
  *
- * <p>Comments are filtered at construction; the cursor always ends in an EOF token so {@link
- * #peek()} never throws.
+ * <p>Comments are filtered at construction and an EOF token is appended when the supplied stream
+ * does not already end with one. The cursor remains positioned at EOF after the end of the stream,
+ * so {@link #peek()} and {@link #advance()} continue to return the EOF token instead of throwing.
  */
 @SuppressWarnings({
     "PMD.CommentDefaultAccessModifier",
@@ -41,6 +42,16 @@ final class TokenCursor {
     private final List<Token> tokens;
     private int pos;
 
+    /**
+     * Creates a cursor from the supplied token stream.
+     *
+     * <p>Comment and multiline-comment tokens are removed. If the resulting stream is empty, an
+     * EOF token is created with a generated source id and a point span at line 1, column 1. If the
+     * stream does not end in EOF, an EOF token is appended at the end position of the last token.
+     *
+     * @param tokens tokens to traverse
+     * @throws NullPointerException if {@code tokens} is {@code null}
+     */
     TokenCursor(final List<Token> tokens) {
         Objects.requireNonNull(tokens, "tokens must not be null");
         final List<Token> filtered =
@@ -70,10 +81,20 @@ final class TokenCursor {
         this.tokens = List.copyOf(withEof);
     }
 
+    /**
+     * Returns the token at the current cursor position without advancing it.
+     *
+     * @return current token, including EOF when the cursor is at the end
+     */
     Token peek() {
         return tokens.get(pos);
     }
 
+    /**
+     * Returns the current token and advances the cursor when it has not reached EOF.
+     *
+     * @return token at the current cursor position
+     */
     Token advance() {
         final Token t = tokens.get(pos);
         if (pos < tokens.size() - 1) {
@@ -82,10 +103,22 @@ final class TokenCursor {
         return t;
     }
 
+    /**
+     * Checks whether the current token has the expected kind.
+     *
+     * @param expected expected token kind
+     * @return {@code true} when the current token matches {@code expected}
+     */
     boolean check(final TokenKind expected) {
         return peek().type().equals(expected);
     }
 
+    /**
+     * Checks whether the current token matches at least one of the supplied kinds.
+     *
+     * @param expected token kinds to compare with the current token
+     * @return {@code true} when the current token matches one of {@code expected}
+     */
     boolean checkAny(final TokenKind... expected) {
         final TokenKind actual = peek().type();
         for (final TokenKind k : expected) {
@@ -96,6 +129,14 @@ final class TokenCursor {
         return false;
     }
 
+    /**
+     * Consumes the current token when it has the expected kind, otherwise records a syntax error
+     * and leaves the cursor unchanged.
+     *
+     * @param expected expected token kind
+     * @param errors mutable collection receiving a syntax error on mismatch
+     * @return consumed token on match, otherwise the current token
+     */
     Token expect(final TokenKind expected, final List<CompileError.SyntaxError> errors) {
         if (check(expected)) {
             return advance();
@@ -109,6 +150,14 @@ final class TokenCursor {
         return peek();
     }
 
+    /**
+     * Advances until a closing brace, a synchronization keyword, or EOF is reached.
+     *
+     * <p>A closing brace is consumed when it is the synchronization point. Synchronization
+     * keywords remain current so the parser can handle the corresponding statement normally.
+     *
+     * @param errors mutable collection reserved for parser errors; not modified by this method
+     */
     void synchronize(final List<CompileError.SyntaxError> errors) {
         while (!isAtEnd()
                 && !check(TokenKind.Simple.Delimiter.CLOSE_BRACE)
@@ -120,10 +169,20 @@ final class TokenCursor {
         }
     }
 
+    /**
+     * Returns whether the current token is EOF.
+     *
+     * @return {@code true} when the cursor is positioned at EOF
+     */
     boolean isAtEnd() {
         return peek().type().equals(TokenKind.Simple.Special.EOF);
     }
 
+    /**
+     * Returns the source span of the current token.
+     *
+     * @return current token span
+     */
     Span currentSpan() {
         return peek().span();
     }
