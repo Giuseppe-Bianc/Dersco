@@ -1,8 +1,13 @@
 package org.dersbian.compiler.error;
 
-/** Severity levels for compiler diagnostics. */
+/**
+ * Severity levels assigned to compiler diagnostics.
+ *
+ * <p>The enum values are rendered by {@link #toString()} using the lowercase labels used in
+ * diagnostics.
+ */
 public enum Severity {
-    /** Informational note, does not affect compilation. */
+    /** Informational note that does not affect compilation. */
     NOTE,
     /** Warning that might indicate a problem. */
     WARNING,
@@ -11,6 +16,11 @@ public enum Severity {
     /** Fatal error that stops compilation immediately. */
     FATAL;
 
+    /**
+     * Returns the lowercase diagnostic label corresponding to this severity.
+     *
+     * @return the diagnostic label for this severity
+     */
     @Override
     public String toString() {
         return switch (this) {
