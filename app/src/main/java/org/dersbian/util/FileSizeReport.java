@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * A report combining snapshot with the SI and IEC sizes used to format it.
+ * Combines a byte-count snapshot with the SI and IEC size systems used to format it.
  *
  * @param info the size snapshot to report
  * @param siSys the SI (decimal) size system
@@ -12,7 +12,11 @@ import java.util.Objects;
  */
 public record FileSizeReport(FileSizeInfo info, SizeSystem siSys, SizeSystem iecSys) {
 
-    /** Compact constructor: enforces non-null record components. */
+    /**
+     * Compact constructor: enforces non-null record components.
+     *
+     * @throws NullPointerException if any record component is {@code null}
+     */
     public FileSizeReport {
         Objects.requireNonNull(info, "info must not be null");
         Objects.requireNonNull(siSys, "siSys must not be null");
@@ -22,7 +26,8 @@ public record FileSizeReport(FileSizeInfo info, SizeSystem siSys, SizeSystem iec
     /**
      * Builds the SI/IEC formatted pair for {@link #info}.
      *
-     * @return the pair of formatted values
+     * @return the pair containing the values formatted with {@link #siSys} and {@link #iecSys}, in
+     *     that order
      */
     public FormattedSizePair makePair() {
         return new FormattedSizePair(info.format(siSys), info.format(iecSys));
