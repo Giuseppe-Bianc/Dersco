@@ -194,7 +194,7 @@ every precedence level and every associativity direction without requiring state
 
 ### TDD Cycle — ExpressionParser (US2 first, US1 integration after)
 
-- [ ] T011 [TEST] [US2] Write `ExpressionParserTest` in package `org.dersbian.compiler.syntax`.
+- [x] T011 [TEST] [US2] Write `ExpressionParserTest` in package `org.dersbian.compiler.syntax`.
   Class must be package-private. Add a private helper method:
   `private ExpressionParser parserFor(String source)` that: (a) uses the real `Lexer` to
   tokenize `source` appended with a newline, (b) wraps the resulting `List<Token>` in a
@@ -286,7 +286,7 @@ every precedence level and every associativity direction without requiring state
   Run RED: `.\gradlew.bat :app:test --tests "*ExpressionParserTest*"` must FAIL. —
   `app/src/test/java/org/dersbian/compiler/syntax/ExpressionParserTest.java`
 
-- [ ] T012 [US2] Create `ExpressionParser.java` as a package-private `final class` in package
+- [x] T012 [US2] Create `ExpressionParser.java` as a package-private `final class` in package
   `org.dersbian.compiler.syntax`. Constructor:
   `ExpressionParser(TokenCursor cursor, List<CompileError.SyntaxError> errors)` — store both
   as `private final` fields; null-check both.
@@ -320,12 +320,12 @@ every precedence level and every associativity direction without requiring state
   Add `@SuppressWarnings` as required by PMD/Checkstyle for cyclomatic complexity and method length. Full Javadoc. —
   `app/src/main/java/org/dersbian/compiler/syntax/ExpressionParser.java`
 
-- [ ] T013 [US2] Run GREEN for T011:
+- [x] T013 [US2] Run GREEN for T011:
   `.\gradlew.bat :app:test --tests "*ExpressionParserTest*"` — all 46 tests must pass.
   Fix failures in `ExpressionParser.java`. Then run `.\gradlew.bat :app:spotlessApply`.
   Do NOT proceed to T014 until fully GREEN.
 
-- [ ] T014 [P] [TEST] [US1] Write `ParserTest` in package `org.dersbian.compiler.syntax`.
+- [x] T014 [P] [TEST] [US1] Write `ParserTest` in package `org.dersbian.compiler.syntax`.
   Class package-private. Add helper:
   `private ParseResult parseFile(Path drFile)` that reads the file, runs `Lexer`, then
   `new Parser(tokens, drFile).parse()`.
@@ -356,7 +356,7 @@ into the correct `Stmt` variant with correct fields.
 
 ### TDD Cycle — StatementParser (US3)
 
-- [ ] T015 [TEST] [US3] Write `StatementParserTest` in package `org.dersbian.compiler.syntax`.
+- [x] T015 [TEST] [US3] Write `StatementParserTest` in package `org.dersbian.compiler.syntax`.
   Class package-private. Helper: `private Stmt parseStatement(String source)` — tokenize `source`,
   build full `Parser`, call `parse()`, return `statements().get(0)` (assert list non-empty first).
   Also `private ParseResult parseAll(String source)` for multi-statement cases.
@@ -436,7 +436,7 @@ into the correct `Stmt` variant with correct fields.
   Run RED: `.\gradlew.bat :app:test --tests "*StatementParserTest*"` must FAIL. —
   `app/src/test/java/org/dersbian/compiler/syntax/StatementParserTest.java`
 
-- [ ] T016 [US3] Create `StatementParser.java` as a package-private `final class` in package
+- [x] T016 [US3] Create `StatementParser.java` as a package-private `final class` in package
   `org.dersbian.compiler.syntax`. Constructor:
   `StatementParser(TokenCursor cursor, ExpressionParser exprParser, List<CompileError.SyntaxError> errors)` —
   store all three as `private final` fields.
@@ -522,7 +522,7 @@ into the correct `Stmt` variant with correct fields.
   Add `@SuppressWarnings` as required. Full Javadoc on class and every method. —
   `app/src/main/java/org/dersbian/compiler/syntax/StatementParser.java`
 
-- [ ] T017 [US3] Run GREEN for T015:
+- [x] T017 [US3] Run GREEN for T015:
   `.\gradlew.bat :app:test --tests "*StatementParserTest*"` — all tests must pass.
   Fix failures in `StatementParser.java`. Run `.\gradlew.bat :app:spotlessApply`.
 
@@ -541,7 +541,7 @@ every error-recovery path and error message contract independently.
 
 ### TDD Cycle — Parser + Error Recovery (US4)
 
-- [ ] T018 [TEST] [US4] Write `ParserErrorRecoveryTest` in package `org.dersbian.compiler.syntax`.
+- [x] T018 [TEST] [US4] Write `ParserErrorRecoveryTest` in package `org.dersbian.compiler.syntax`.
   Class package-private. Helper: `private ParseResult parseSource(String source)` — tokenize with
   real `Lexer`, construct `new Parser(tokens, Path.of("<test>")).parse()`.
   Required test methods:
@@ -584,7 +584,7 @@ every error-recovery path and error message contract independently.
   (`Parser` class does not exist yet). —
   `app/src/test/java/org/dersbian/compiler/syntax/ParserErrorRecoveryTest.java`
 
-- [ ] T019 [US4] Create `Parser.java` as a `public final class` in package
+- [x] T019 [US4] Create `Parser.java` as a `public final class` in package
   `org.dersbian.compiler.syntax` (FR-008 — error recovery loop, no early abort). Constructor:
   `public Parser(List<Token> tokens, Path source)` — null-check both parameters.
   Fields: `private final TokenCursor cursor`, `private final List<CompileError.SyntaxError> errors`

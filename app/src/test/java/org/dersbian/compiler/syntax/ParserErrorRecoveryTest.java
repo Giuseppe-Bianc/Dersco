@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 import java.nio.file.Path;
+import java.util.Locale;
 import org.dersbian.compiler.lexer.Lexer;
 import org.dersbian.compiler.lexer.LexerResult;
 import org.dersbian.compiler.syntax.ast.Stmt;

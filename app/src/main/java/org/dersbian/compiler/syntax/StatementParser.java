@@ -134,8 +134,13 @@ final class StatementParser {
         cursor.expect(TokenKind.Simple.Delimiter.OPEN_PAREN, errors);
         final List<Parameter> params = parseParamList();
         cursor.expect(TokenKind.Simple.Delimiter.CLOSE_PAREN, errors);
-        cursor.expect(TokenKind.Simple.Operator.COLON, errors);
-        final Type returnType = parseType();
+        Type returnType;
+        if (cursor.check(TokenKind.Simple.Operator.COLON)) {
+            cursor.advance();
+            returnType = parseType();
+        } else {
+            returnType = new Type.VoidT();
+        }
         final Stmt.Block body = parseBlock();
         return new Stmt.Function(
                 name, params, returnType, body, funToken.span().merge(body.span()));
@@ -188,6 +193,14 @@ final class StatementParser {
         Type typeAnnotation;
         if (cursor.check(TokenKind.Simple.Operator.COLON)) {
             cursor.advance();
+            typeAnnotation = parseType();
+        } else if (cursor.peek().type() instanceof TokenKind.Simple.TypeKeyword) {
+            errors.add(
+                    CompileError.syntaxError(
+                            ErrorCode.E1002,
+                            "Expected ':' before type annotation, found " + cursor.peek().type(),
+                            cursor.peek().span(),
+                            "Insert ':' after the binding name(s)"));
             typeAnnotation = parseType();
         } else {
             typeAnnotation = new Type.Custom("");
@@ -353,7 +366,11 @@ final class StatementParser {
                         case BOOL -> new Type.Bool();
                     };
         } else if (kind instanceof TokenKind.IdentifierAscii id) {
-            base = new Type.Custom(id.value());
+            if ("void".equals(id.value())) {
+                base = new Type.VoidT();
+            } else {
+                base = new Type.Custom(id.value());
+            }
             cursor.advance();
         } else if (kind instanceof TokenKind.IdentifierUnicode id) {
             base = new Type.Custom(id.value());

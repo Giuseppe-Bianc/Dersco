@@ -25,11 +25,24 @@ class ParserTest {
         return new Parser(result.tokens(), Path.of("test.dr")).parse();
     }
 
+    private static Path resolveDrFile(final String relative) {
+        final Path fromCwd = Path.of(relative);
+        if (Files.exists(fromCwd)) {
+            return fromCwd.toAbsolutePath();
+        }
+        final Path fromApp = Path.of("..", relative);
+        if (Files.exists(fromApp)) {
+            return fromApp.toAbsolutePath();
+        }
+        return fromCwd;
+    }
+
     private ParseResult parseFile(final Path drFile) throws IOException {
-        final String source = Files.readString(drFile);
-        final Lexer lexer = new Lexer(drFile, source);
+        final Path resolved = resolveDrFile(drFile.toString());
+        final String source = Files.readString(resolved);
+        final Lexer lexer = new Lexer(resolved, source);
         final LexerResult result = lexer.tokenize();
-        return new Parser(result.tokens(), drFile).parse();
+        return new Parser(result.tokens(), resolved).parse();
     }
 
     @Test
