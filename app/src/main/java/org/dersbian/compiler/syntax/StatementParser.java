@@ -139,6 +139,12 @@ final class StatementParser {
             cursor.advance();
             returnType = parseType();
         } else {
+            errors.add(
+                    CompileError.syntaxError(
+                            ErrorCode.E1004,
+                            "Expected ':' before return type, found " + cursor.peek().type(),
+                            cursor.peek().span(),
+                            "Insert ': <type>' before the function body"));
             returnType = new Type.VoidT();
         }
         final Stmt.Block body = parseBlock();
