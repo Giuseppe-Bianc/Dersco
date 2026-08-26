@@ -150,6 +150,7 @@ public final class ErrorReporter {
                     .append(' ')
                     .append(style(help, GREEN));
         }
+        output.append('\n');
 
         return output.toString();
     }
