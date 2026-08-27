@@ -633,6 +633,17 @@ public final class Parser {
     }
 
     private Expr nud() {
+        final Token next = peek();
+        if (next == null || next.type() == TokenKind.Simple.Special.EOF) {
+            if (next != null) {
+                syntaxError(
+                        "Expected an operand",
+                        next,
+                        "Provide an expression after the unary operator",
+                        ErrorCode.E1006);
+            }
+            return null;
+        }
         final Token token = advance();
         if (token == null) {
             return null;
@@ -641,6 +652,12 @@ public final class Parser {
         return switch (token.type()) {
             case TokenKind.Numeric numeric ->
                     Expr.newNumberLiteral(numeric.value(), token.span()).orElseThrow();
+            case TokenKind.Binary binary ->
+                    Expr.newNumberLiteral(binary.value(), token.span()).orElseThrow();
+            case TokenKind.Octal octal ->
+                    Expr.newNumberLiteral(octal.value(), token.span()).orElseThrow();
+            case TokenKind.Hexadecimal hexadecimal ->
+                    Expr.newNumberLiteral(hexadecimal.value(), token.span()).orElseThrow();
             case TokenKind.KeywordBool bool ->
                     Expr.newBoolLiteral(bool.value(), token.span()).orElseThrow();
             case TokenKind.Simple.Keyword.NULLPTR ->
@@ -736,8 +753,10 @@ public final class Parser {
     private Expr parseUnary(final UnaryOp op, final Token token) {
         final int rbp = Precendence.unaryBindingPower(token).right();
         final Expr expr = parseExpr(rbp);
-        final Expr safeExpr = expr == null ? Expr.nullExpr(token.span()) : expr;
-        return new Expr.Unary(op, UnaryOpSide.PREFIX, safeExpr, token.span());
+        if (expr == null) {
+            return null;
+        }
+        return new Expr.Unary(op, UnaryOpSide.PREFIX, expr, token.span().merge(expr.span()));
     }
 
     private Expr parseArrayLiteral(final Token startToken) {
@@ -901,9 +920,10 @@ public final class Parser {
     }
 
     private Token advance() {
-        if (!isAtEnd()) {
-            current += 1;
+        if (isAtEnd()) {
+            return null;
         }
+        current += 1;
         return previous();
     }
 
