@@ -59,7 +59,7 @@ public final class NodeCounter {
                 }
                 yield sum;
             }
-            case Expr.Variable ignored -> 0;
+            case Expr.Variable _ -> 0;
             case Expr.Assign a -> count(a.target()) + count(a.value());
             case Expr.Call c -> {
                 int sum = count(c.callee());
@@ -98,7 +98,7 @@ public final class NodeCounter {
             case Stmt.If i -> {
                 int sum = count(i.condition()) + count(i.thenBranch());
                 switch (i.elseBranch()) {
-                    case ElseBranch.None ignored -> {
+                    case ElseBranch.None _ -> {
                         // no else
                     }
                     case ElseBranch.Block b -> sum += count(b.block());
@@ -128,8 +128,8 @@ public final class NodeCounter {
                 yield sum;
             }
             case Stmt.Return r -> r.value().map(NodeCounter::count).orElse(0);
-            case Stmt.Break ignored -> 0;
-            case Stmt.Continue ignored -> 0;
+            case Stmt.Break _ -> 0;
+            case Stmt.Continue _ -> 0;
             case Stmt.MainFunction m -> count(m.body());
         };
     }
@@ -140,22 +140,22 @@ public final class NodeCounter {
 
     private static int countType(final Type type) {
         return switch (type) {
-            case Type.I8 ignored -> 0;
-            case Type.I16 ignored -> 0;
-            case Type.I32 ignored -> 0;
-            case Type.I64 ignored -> 0;
-            case Type.U8 ignored -> 0;
-            case Type.U16 ignored -> 0;
-            case Type.U32 ignored -> 0;
-            case Type.U64 ignored -> 0;
-            case Type.F32 ignored -> 0;
-            case Type.F64 ignored -> 0;
-            case Type.Char ignored -> 0;
-            case Type.StringT ignored -> 0;
-            case Type.Bool ignored -> 0;
-            case Type.VoidT ignored -> 0;
-            case Type.NullPtr ignored -> 0;
-            case Type.Custom ignored -> 0;
+            case Type.I8 _ -> 0;
+            case Type.I16 _ -> 0;
+            case Type.I32 _ -> 0;
+            case Type.I64 _ -> 0;
+            case Type.U8 _ -> 0;
+            case Type.U16 _ -> 0;
+            case Type.U32 _ -> 0;
+            case Type.U64 _ -> 0;
+            case Type.F32 _ -> 0;
+            case Type.F64 _ -> 0;
+            case Type.Char _ -> 0;
+            case Type.StringT _ -> 0;
+            case Type.Bool _ -> 0;
+            case Type.VoidT _ -> 0;
+            case Type.NullPtr _ -> 0;
+            case Type.Custom _ -> 0;
             case Type.Array a -> count(a.elementType()) + count(a.size());
             case Type.Vector v -> count(v.elementType());
         };
