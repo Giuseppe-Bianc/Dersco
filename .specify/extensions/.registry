@@ -8,14 +8,7 @@
       "enabled": true,
       "priority": 10,
       "registered_commands": {
-        "codex": [
-          "speckit.git.feature",
-          "speckit.git.validate",
-          "speckit.git.remote",
-          "speckit.git.initialize",
-          "speckit.git.commit"
-        ],
-        "kiro-cli": [
+        "claude": [
           "speckit.git.feature",
           "speckit.git.validate",
           "speckit.git.remote",
@@ -23,8 +16,14 @@
           "speckit.git.commit"
         ]
       },
-      "registered_skills": [],
-      "installed_at": "2026-08-11T19:33:11.742059+00:00"
+      "registered_skills": [
+        "speckit-git-feature",
+        "speckit-git-validate",
+        "speckit-git-remote",
+        "speckit-git-initialize",
+        "speckit-git-commit"
+      ],
+      "installed_at": "2026-08-21T19:23:26.683025+00:00"
     },
     "assess": {
       "version": "1.0.0",
@@ -33,14 +32,7 @@
       "enabled": true,
       "priority": 10,
       "registered_commands": {
-        "codex": [
-          "speckit.assess.intake",
-          "speckit.assess.research",
-          "speckit.assess.define",
-          "speckit.assess.shape",
-          "speckit.assess.decide"
-        ],
-        "kiro-cli": [
+        "claude": [
           "speckit.assess.intake",
           "speckit.assess.research",
           "speckit.assess.define",
@@ -48,8 +40,14 @@
           "speckit.assess.decide"
         ]
       },
-      "registered_skills": [],
-      "installed_at": "2026-08-11T19:41:01.094316+00:00"
+      "registered_skills": [
+        "speckit-assess-intake",
+        "speckit-assess-research",
+        "speckit-assess-define",
+        "speckit-assess-shape",
+        "speckit-assess-decide"
+      ],
+      "installed_at": "2026-08-21T19:25:59.292985+00:00"
     }
   }
 }
