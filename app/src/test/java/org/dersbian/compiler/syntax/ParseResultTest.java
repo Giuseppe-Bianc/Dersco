@@ -11,6 +11,12 @@ import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Stmt;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings({
+    "PMD.AtLeastOneConstructor",
+    "PMD.CommentRequired",
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.UnitTestAssertionsShouldIncludeMessage"
+})
 class ParseResultTest {
 
     @Test
