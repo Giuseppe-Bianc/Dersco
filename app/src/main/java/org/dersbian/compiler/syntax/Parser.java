@@ -16,6 +16,7 @@ import org.dersbian.compiler.syntax.ast.Parameter;
 import org.dersbian.compiler.syntax.ast.Stmt;
 import org.dersbian.compiler.syntax.ast.Type;
 import org.dersbian.compiler.syntax.ast.UnaryOp;
+import org.dersbian.compiler.syntax.ast.UnaryOpSide;
 
 /**
  * Recursive-descent / Pratt parser that turns a stream of {@link Token}s produced by the lexer into
@@ -650,6 +651,9 @@ public final class Parser {
                     Expr.newCharLiteral(charLiteral.value(), token.span()).orElseThrow();
             case TokenKind.Simple.Operator.MINUS -> parseUnary(UnaryOp.NEGATE, token);
             case TokenKind.Simple.Operator.NOT -> parseUnary(UnaryOp.NOT, token);
+            case TokenKind.Simple.Operator.BITWISE_NOT -> parseUnary(UnaryOp.BITWISE_NOT, token);
+            case TokenKind.Simple.Operator.PLUS_PLUS -> parseUnary(UnaryOp.INCREMENT, token);
+            case TokenKind.Simple.Operator.MINUS_MINUS -> parseUnary(UnaryOp.DECREMENT, token);
             case TokenKind.Simple.Delimiter.OPEN_BRACE -> parseArrayLiteral(token);
             case TokenKind.Simple.Delimiter.OPEN_PAREN -> parseGrouping(token);
             case TokenKind.IdentifierAscii identifier ->
@@ -691,11 +695,33 @@ public final class Parser {
                     TokenKind.Simple.Operator.OR,
                     TokenKind.Simple.Operator.XOR,
                     TokenKind.Simple.Operator.SHIFT_LEFT,
-                    TokenKind.Simple.Operator.SHIFT_RIGHT ->
+                    TokenKind.Simple.Operator.SHIFT_RIGHT,
+                    TokenKind.Simple.Operator.PLUS_EQUAL,
+                    TokenKind.Simple.Operator.MINUS_EQUAL,
+                    TokenKind.Simple.Operator.AND_EQUAL,
+                    TokenKind.Simple.Operator.OR_EQUAL,
+                    TokenKind.Simple.Operator.PERCENT_EQUAL,
+                    TokenKind.Simple.Operator.XOR_EQUAL,
+                    TokenKind.Simple.Operator.STAR_EQUAL,
+                    TokenKind.Simple.Operator.SLASH_EQUAL,
+                    TokenKind.Simple.Operator.SHIFT_LEFT_EQUAL,
+                    TokenKind.Simple.Operator.SHIFT_RIGHT_EQUAL ->
                     parseBinary(left, token);
             case TokenKind.Simple.Operator.EQUAL -> parseAssignment(left, token);
             case TokenKind.Simple.Delimiter.OPEN_PAREN -> parseCall(left, token);
             case TokenKind.Simple.Delimiter.OPEN_BRACKET -> parseArrayAccess(left, token);
+            case TokenKind.Simple.Operator.PLUS_PLUS ->
+                    new Expr.Unary(
+                            UnaryOp.INCREMENT,
+                            UnaryOpSide.POSTFIX,
+                            left,
+                            left.span().merge(token.span()));
+            case TokenKind.Simple.Operator.MINUS_MINUS ->
+                    new Expr.Unary(
+                            UnaryOp.DECREMENT,
+                            UnaryOpSide.POSTFIX,
+                            left,
+                            left.span().merge(token.span()));
             default -> {
                 syntaxError(
                         "Unexpected operator",
@@ -711,8 +737,7 @@ public final class Parser {
         final int rbp = Precendence.unaryBindingPower(token).right();
         final Expr expr = parseExpr(rbp);
         final Expr safeExpr = expr == null ? Expr.nullExpr(token.span()) : expr;
-        return new Expr.Unary(
-                op, org.dersbian.compiler.syntax.ast.UnaryOpSide.PREFIX, safeExpr, token.span());
+        return new Expr.Unary(op, UnaryOpSide.PREFIX, safeExpr, token.span());
     }
 
     private Expr parseArrayLiteral(final Token startToken) {

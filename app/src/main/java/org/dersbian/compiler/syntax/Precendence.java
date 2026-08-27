@@ -22,8 +22,14 @@ public record Precendence(int left, int right) {
             case TokenKind.Simple.Operator.EQUAL,
                     TokenKind.Simple.Operator.PLUS_EQUAL,
                     TokenKind.Simple.Operator.MINUS_EQUAL,
+                    TokenKind.Simple.Operator.AND_EQUAL,
+                    TokenKind.Simple.Operator.OR_EQUAL,
                     TokenKind.Simple.Operator.PERCENT_EQUAL,
-                    TokenKind.Simple.Operator.XOR_EQUAL ->
+                    TokenKind.Simple.Operator.XOR_EQUAL,
+                    TokenKind.Simple.Operator.STAR_EQUAL,
+                    TokenKind.Simple.Operator.SLASH_EQUAL,
+                    TokenKind.Simple.Operator.SHIFT_LEFT_EQUAL,
+                    TokenKind.Simple.Operator.SHIFT_RIGHT_EQUAL ->
                     new Precendence(2, 1);
             case TokenKind.Simple.Operator.OR_OR -> new Precendence(4, 3);
             case TokenKind.Simple.Operator.AND_AND -> new Precendence(6, 5);
@@ -47,7 +53,9 @@ public record Precendence(int left, int right) {
                     new Precendence(22, 21);
             case TokenKind.Simple.Delimiter.OPEN_PAREN,
                     TokenKind.Simple.Delimiter.OPEN_BRACKET,
-                    TokenKind.Simple.Operator.DOT ->
+                    TokenKind.Simple.Operator.DOT,
+                    TokenKind.Simple.Operator.PLUS_PLUS,
+                    TokenKind.Simple.Operator.MINUS_MINUS ->
                     new Precendence(27, 26);
             default -> new Precendence(0, 0);
         };
@@ -62,7 +70,11 @@ public record Precendence(int left, int right) {
      */
     public static Precendence unaryBindingPower(final Token token) {
         return switch (token.type()) {
-            case TokenKind.Simple.Operator.NOT, TokenKind.Simple.Operator.MINUS ->
+            case TokenKind.Simple.Operator.NOT,
+                    TokenKind.Simple.Operator.MINUS,
+                    TokenKind.Simple.Operator.BITWISE_NOT,
+                    TokenKind.Simple.Operator.PLUS_PLUS,
+                    TokenKind.Simple.Operator.MINUS_MINUS ->
                     new Precendence(24, 23);
             default -> new Precendence(0, 0);
         };
