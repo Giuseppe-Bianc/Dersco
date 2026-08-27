@@ -9,7 +9,6 @@
     <property name="LOG_PATTERN"
               value="%gray(%d{HH:mm:ss.SSS}) [%thread] %highlight(%-5level) %cyan(%logger{36}) %msg%n%throwable"/>
     <appender name="CONSOLE" class="ConsoleAppender">
-        <withJansi>true</withJansi>
         <immediateFlush>true</immediateFlush>
         <encoder>
             <pattern>${LOG_PATTERN}</pattern>
