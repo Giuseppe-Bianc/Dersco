@@ -61,6 +61,48 @@ class ParserOperatorTest {
                 .isEqualTo(UnaryOpSide.POSTFIX);
     }
 
+    @Test
+    void prefixUnarySpanIncludesOperand() {
+        final Expr.Unary unary = expression("-x", Expr.Unary.class);
+
+        assertThat(unary.span().start()).isNotEqualTo(unary.expr().span().start());
+        assertThat(unary.span().end()).isEqualTo(unary.expr().span().end());
+    }
+
+    @Test
+    void chainedUnaryOperatorsRespectPrefixAndPostfixPrecedence() {
+        final Expr.Unary unary = expression("-x++", Expr.Unary.class);
+
+        assertThat(unary.op()).isEqualTo(UnaryOp.NEGATE);
+        assertThat(unary.side()).isEqualTo(UnaryOpSide.PREFIX);
+        assertThat(unary.expr()).isInstanceOf(Expr.Unary.class);
+        final Expr.Unary postfix = (Expr.Unary) unary.expr();
+        assertThat(postfix.op()).isEqualTo(UnaryOp.INCREMENT);
+        assertThat(postfix.side()).isEqualTo(UnaryOpSide.POSTFIX);
+    }
+
+    @Test
+    void missingPrefixOperandProducesSyntaxError() {
+        final ParseResult result = parse("-");
+
+        assertThat(result.errors()).isNotEmpty();
+        assertThat(result.statements()).isEmpty();
+    }
+
+    @Test
+    void parsesRadixLiteralAsUnaryOperand() {
+        final Expr.Unary unary = expression("-#x2a", Expr.Unary.class);
+
+        assertThat(unary.expr()).isInstanceOf(Expr.Literal.class);
+    }
+
+    private <T extends Expr> T expression(final String source, final Class<T> type) {
+        final ParseResult result = parse(source);
+        assertThat(result.errors()).isEmpty();
+        assertThat(result.statements()).hasSize(1);
+        return type.cast(((Stmt.Expression) result.statements().get(0)).expr());
+    }
+
     private ParseResult parse(final String source) {
         final LexerResult lexed = new Lexer(Path.of("operator-test.dr"), source).tokenize();
         assertThat(lexed.errors()).isEmpty();
