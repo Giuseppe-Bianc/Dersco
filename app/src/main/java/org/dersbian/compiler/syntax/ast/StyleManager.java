@@ -1,8 +1,8 @@
 package org.dersbian.compiler.syntax.ast;
 
 /**
- * Console styling configuration for different element types. Mutable fields mirror the Rust {@code
- * pub}-field struct; getters expose the styles.
+ * Console styling configuration for different element types. The immutable fields mirror the Rust
+ * {@code pub}-field struct; getters expose the styles. Instances are thread-safe.
  */
 public final class StyleManager {
 

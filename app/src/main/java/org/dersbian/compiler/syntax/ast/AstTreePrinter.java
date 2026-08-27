@@ -211,14 +211,24 @@ public final class AstTreePrinter {
                 BranchPrinter.appendLine(
                         output, indent, branchType, styles.punctuation(), "Array Literal");
                 final String newIndent = BranchPrinter.getIndent(indent, branchType);
-                BranchPrinter.appendLine(
-                        output, newIndent, BranchType.LAST, styles.structure(), "Elements:");
-                BranchPrinter.printChildren(
-                        al.elements(),
-                        BranchPrinter.getIndent(newIndent, BranchType.LAST),
-                        output,
-                        styles,
-                        AstTreePrinter::printExpr);
+                final List<Expr> elements = al.elements();
+                if (elements.isEmpty()) {
+                    BranchPrinter.appendLine(
+                            output,
+                            newIndent,
+                            BranchType.LAST,
+                            styles.structure(),
+                            "Elements: (empty)");
+                } else {
+                    BranchPrinter.appendLine(
+                            output, newIndent, BranchType.LAST, styles.structure(), "Elements:");
+                    BranchPrinter.printChildren(
+                            elements,
+                            BranchPrinter.getIndent(newIndent, BranchType.LAST),
+                            output,
+                            styles,
+                            AstTreePrinter::printExpr);
+                }
             }
         }
     }
@@ -230,7 +240,7 @@ public final class AstTreePrinter {
             case LiteralValue.StringLit s -> "\"" + s.value() + "\"";
             case LiteralValue.CharLit c -> "'" + c.value() + "'";
             case LiteralValue.Bool b -> String.valueOf(b.value());
-            case LiteralValue.NullPtr ignored -> "nullptr";
+            case LiteralValue.NullPtr _ -> "nullptr";
         };
     }
 
@@ -321,9 +331,9 @@ public final class AstTreePrinter {
                         AstTreePrinter::printStmt);
             }
             case Stmt.For fr -> printFor(fr, indent, branchType, output, styles);
-            case Stmt.Break ignored ->
+            case Stmt.Break _ ->
                     BranchPrinter.appendLine(output, indent, branchType, styles.keyword(), "Break");
-            case Stmt.Continue ignored ->
+            case Stmt.Continue _ ->
                     BranchPrinter.appendLine(
                             output, indent, branchType, styles.keyword(), "Continue");
         }
@@ -476,7 +486,7 @@ public final class AstTreePrinter {
         // Else branch: adapt sealed ElseBranch to the Rust Option<Vec<Stmt>> shape.
         final List<Stmt> elseStmts =
                 switch (i.elseBranch()) {
-                    case ElseBranch.None ignored -> null;
+                    case ElseBranch.None _ -> null;
                     case ElseBranch.Block eb -> eb.block().statements();
                     case ElseBranch.ElseIf ei -> List.of(ei.ifStmt());
                 };
