@@ -156,10 +156,10 @@ public final class Parser {
     }
 
     private Stmt parseBlockStmt() {
-        final Token startToken = advance();
-        if (startToken == null) {
+        if (!matchToken(TokenKind.Simple.Delimiter.OPEN_BRACE)) {
             return null;
         }
+        final Token startToken = previous();
 
         final List<Stmt> statements = new ArrayList<>();
         while (!check(TokenKind.Simple.Delimiter.CLOSE_BRACE) && !isAtEnd()) {
