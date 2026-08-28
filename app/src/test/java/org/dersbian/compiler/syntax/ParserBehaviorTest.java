@@ -184,7 +184,11 @@ class ParserBehaviorTest {
         Assertions.assertTrue(
                 result.errors().isEmpty(), () -> "Unexpected parser errors: " + result.errors());
         Assertions.assertEquals(1, result.statements().size());
-        Assertions.assertInstanceOf(Stmt.For.class, result.statements().get(0));
+        final Stmt.For forStatement =
+                Assertions.assertInstanceOf(Stmt.For.class, result.statements().get(0));
+        Assertions.assertTrue(forStatement.initializer().isPresent());
+        Assertions.assertTrue(forStatement.condition().isPresent());
+        Assertions.assertTrue(forStatement.increment().isPresent());
     }
 
     private <T extends Expr> T expression(final String source, final Class<T> expectedType) {
