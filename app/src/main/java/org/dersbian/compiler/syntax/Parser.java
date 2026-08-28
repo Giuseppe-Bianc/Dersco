@@ -66,11 +66,14 @@ public final class Parser {
     public ParseResult parse() {
         final List<Stmt> statements = new ArrayList<>(tokens.size() / 4);
         while (!isAtEnd()) {
+            final int start = current;
             final Stmt stmt = parseStmt();
+
             if (stmt != null) {
                 statements.add(stmt);
-            } else {
-                // Error recovery: skip the problematic token.
+            } else if (current == start) {
+                // Error recovery: skip the problematic token only if
+                // parsing did not already consume it.
                 advance();
             }
         }
@@ -164,10 +167,12 @@ public final class Parser {
 
         final List<Stmt> statements = new ArrayList<>();
         while (!check(TokenKind.Simple.Delimiter.CLOSE_BRACE) && !isAtEnd()) {
+            final int start = current;
             final Stmt stmt = parseStmt();
+
             if (stmt != null) {
                 statements.add(stmt);
-            } else {
+            } else if (current == start) {
                 advance();
             }
         }
@@ -193,10 +198,7 @@ public final class Parser {
             return false;
         }
         return switch (token.type()) {
-            case TokenKind.Simple.Delimiter.CLOSE_BRACE,
-                    TokenKind.Simple.Special.EOF,
-                    TokenKind.Simple.Special.SEMICOLON ->
-                    true;
+            case TokenKind.Simple.Delimiter.CLOSE_BRACE, TokenKind.Simple.Special.EOF -> true;
             default -> false;
         };
     }

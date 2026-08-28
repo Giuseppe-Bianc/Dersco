@@ -168,6 +168,25 @@ class ParserBehaviorTest {
                 result.errors().stream().anyMatch(error -> hasCode(error, ErrorCode.E1003)));
     }
 
+    @Test
+    void semicolonIsRejectedOutsideFor() {
+        final ParseResult result = parse("return;");
+
+        Assertions.assertTrue(result.hasErrors());
+        Assertions.assertTrue(
+                result.errors().stream().anyMatch(error -> hasCode(error, ErrorCode.E1004)));
+    }
+
+    @Test
+    void semicolonsRemainValidInsideFor() {
+        final ParseResult result = parse("for (i = 0; i < 10; i++) {}");
+
+        Assertions.assertTrue(
+                result.errors().isEmpty(), () -> "Unexpected parser errors: " + result.errors());
+        Assertions.assertEquals(1, result.statements().size());
+        Assertions.assertInstanceOf(Stmt.For.class, result.statements().get(0));
+    }
+
     private <T extends Expr> T expression(final String source, final Class<T> expectedType) {
         final ParseResult result = parse(source);
         Assertions.assertTrue(
