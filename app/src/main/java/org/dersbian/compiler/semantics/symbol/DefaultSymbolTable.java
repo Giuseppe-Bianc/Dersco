@@ -1,7 +1,6 @@
 package org.dersbian.compiler.semantics.symbol;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -81,9 +80,8 @@ public final class DefaultSymbolTable implements SymbolTable {
         Objects.requireNonNull(returnType, "returnType must not be null");
         Objects.requireNonNull(parameters, "parameters must not be null");
         validateName(name);
-        if (MAIN_NAME.equals(name) && currentScope().equals(globalScope)
-                && scopes.get(globalScope).contains(name)) {
-            return new DeclarationResult.AlreadyDeclared(name, currentScope());
+        if (MAIN_NAME.equals(name) && !currentScope().equals(globalScope)) {
+            throw new IllegalArgumentException("main must be declared in the global scope");
         }
         final List<ParameterDescriptor> copy = List.copyOf(parameters);
         validateParameters(copy);
