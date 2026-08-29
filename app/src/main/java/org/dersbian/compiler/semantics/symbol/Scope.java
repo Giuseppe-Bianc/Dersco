@@ -20,7 +20,8 @@ public record Scope(
         }
         if (kind == ScopeKind.GLOBAL) {
             if (parentId.isPresent() || ownerSymbolId.isPresent() || depth != 0) {
-                throw new IllegalArgumentException("global scope must be root-owned and depth zero");
+                throw new IllegalArgumentException(
+                        "global scope must be root-owned and depth zero");
             }
         } else if (parentId.isEmpty()) {
             throw new IllegalArgumentException("non-global scope must have a parent");

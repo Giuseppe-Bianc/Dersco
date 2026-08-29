@@ -3,7 +3,8 @@ package org.dersbian.compiler.semantics.symbol;
 import java.util.Objects;
 
 /** Result of attempting to declare a symbol in the current scope. */
-public sealed interface DeclarationResult permits DeclarationResult.Declared, DeclarationResult.AlreadyDeclared {
+public sealed interface DeclarationResult
+        permits DeclarationResult.Declared, DeclarationResult.AlreadyDeclared {
     /** Successful declaration. */
     record Declared(Symbol symbol) implements DeclarationResult {
         public Declared {

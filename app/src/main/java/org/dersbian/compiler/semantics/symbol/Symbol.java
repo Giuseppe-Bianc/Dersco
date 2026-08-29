@@ -7,12 +7,18 @@ import org.dersbian.compiler.syntax.ast.Type;
 
 /** Immutable semantic binding. */
 public sealed interface Symbol
-        permits Symbol.VariableSymbol, Symbol.ParameterSymbol, Symbol.FunctionSymbol,
+        permits Symbol.VariableSymbol,
+                Symbol.ParameterSymbol,
+                Symbol.FunctionSymbol,
                 Symbol.MainFunctionSymbol {
     SymbolId id();
+
     String name();
+
     SymbolKind kind();
+
     ScopeId scopeId();
+
     Span declarationSpan();
 
     /** Immutable variable binding. */
@@ -22,7 +28,8 @@ public sealed interface Symbol
             Type type,
             Mutability mutability,
             ScopeId scopeId,
-            Span declarationSpan) implements Symbol {
+            Span declarationSpan)
+            implements Symbol {
         public VariableSymbol {
             validateCommon(id, name, scopeId, declarationSpan);
             Objects.requireNonNull(type, "type must not be null");
@@ -43,7 +50,8 @@ public sealed interface Symbol
             Mutability mutability,
             int ordinal,
             ScopeId scopeId,
-            Span declarationSpan) implements Symbol {
+            Span declarationSpan)
+            implements Symbol {
         public ParameterSymbol {
             validateCommon(id, name, scopeId, declarationSpan);
             Objects.requireNonNull(type, "type must not be null");
@@ -66,11 +74,13 @@ public sealed interface Symbol
             Type returnType,
             List<ParameterDescriptor> parameters,
             ScopeId scopeId,
-            Span declarationSpan) implements Symbol {
+            Span declarationSpan)
+            implements Symbol {
         public FunctionSymbol {
             validateCommon(id, name, scopeId, declarationSpan);
             Objects.requireNonNull(returnType, "returnType must not be null");
-            parameters = List.copyOf(Objects.requireNonNull(parameters, "parameters must not be null"));
+            parameters =
+                    List.copyOf(Objects.requireNonNull(parameters, "parameters must not be null"));
             validateParameters(parameters);
         }
 
@@ -82,11 +92,8 @@ public sealed interface Symbol
 
     /** The unique global main function binding. */
     record MainFunctionSymbol(
-            SymbolId id,
-            String name,
-            Type returnType,
-            ScopeId scopeId,
-            Span declarationSpan) implements Symbol {
+            SymbolId id, String name, Type returnType, ScopeId scopeId, Span declarationSpan)
+            implements Symbol {
         public MainFunctionSymbol {
             validateCommon(id, name, scopeId, declarationSpan);
             Objects.requireNonNull(returnType, "returnType must not be null");
@@ -102,7 +109,10 @@ public sealed interface Symbol
     }
 
     private static void validateCommon(
-            final SymbolId id, final String name, final ScopeId scopeId, final Span declarationSpan) {
+            final SymbolId id,
+            final String name,
+            final ScopeId scopeId,
+            final Span declarationSpan) {
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(name, "name must not be null");
         Objects.requireNonNull(scopeId, "scopeId must not be null");
@@ -116,7 +126,8 @@ public sealed interface Symbol
         for (int index = 0; index < parameters.size(); index++) {
             for (int previous = 0; previous < index; previous++) {
                 if (parameters.get(previous).name().equals(parameters.get(index).name())) {
-                    throw new IllegalArgumentException("duplicate parameter name: " + parameters.get(index).name());
+                    throw new IllegalArgumentException(
+                            "duplicate parameter name: " + parameters.get(index).name());
                 }
             }
         }

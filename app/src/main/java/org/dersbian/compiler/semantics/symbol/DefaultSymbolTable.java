@@ -1,7 +1,6 @@
 package org.dersbian.compiler.semantics.symbol;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,8 +24,10 @@ public final class DefaultSymbolTable implements SymbolTable {
     /** Creates a table containing exactly one permanent global scope. */
     public DefaultSymbolTable() {
         globalScope = allocateScopeId();
-        scopes.put(globalScope, new ScopeState(
-                globalScope, ScopeKind.GLOBAL, Optional.empty(), 0, Optional.empty()));
+        scopes.put(
+                globalScope,
+                new ScopeState(
+                        globalScope, ScopeKind.GLOBAL, Optional.empty(), 0, Optional.empty()));
         scopeStack.push(globalScope);
     }
 
@@ -53,11 +54,13 @@ public final class DefaultSymbolTable implements SymbolTable {
     public Scope enterFunctionScope(final SymbolId ownerSymbolId) {
         Objects.requireNonNull(ownerSymbolId, "ownerSymbolId must not be null");
         final Symbol owner = symbols.get(ownerSymbolId);
-        if (!(owner instanceof Symbol.FunctionSymbol) && !(owner instanceof Symbol.MainFunctionSymbol)) {
+        if (!(owner instanceof Symbol.FunctionSymbol)
+                && !(owner instanceof Symbol.MainFunctionSymbol)) {
             throw new IllegalArgumentException("function scope owner must be a function symbol");
         }
         if (!owner.scopeId().equals(scopeStack.peek())) {
-            throw new IllegalArgumentException("function scope owner must be declared in the parent scope");
+            throw new IllegalArgumentException(
+                    "function scope owner must be declared in the parent scope");
         }
         return createScope(ScopeKind.FUNCTION, Optional.of(ownerSymbolId));
     }
@@ -79,10 +82,14 @@ public final class DefaultSymbolTable implements SymbolTable {
 
     @Override
     public DeclarationResult declareVariable(
-            final String name, final Type type, final Mutability mutability, final Span declarationSpan) {
+            final String name,
+            final Type type,
+            final Mutability mutability,
+            final Span declarationSpan) {
         validateDeclarationArguments(name, type, mutability, declarationSpan);
-        return declare(new Symbol.VariableSymbol(
-                nextSymbol(), name, type, mutability, currentScopeId(), declarationSpan));
+        return declare(
+                new Symbol.VariableSymbol(
+                        nextSymbol(), name, type, mutability, currentScopeId(), declarationSpan));
     }
 
     @Override
@@ -103,8 +110,9 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (lookupLocal(name).isPresent()) {
             return new DeclarationResult.AlreadyDeclared(name, currentScopeId());
         }
-        return insert(new Symbol.FunctionSymbol(
-                nextSymbol(), name, returnType, copy, currentScopeId(), declarationSpan));
+        return insert(
+                new Symbol.FunctionSymbol(
+                        nextSymbol(), name, returnType, copy, currentScopeId(), declarationSpan));
     }
 
     @Override
@@ -116,8 +124,9 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (lookupLocal(MAIN_NAME).isPresent()) {
             return new DeclarationResult.AlreadyDeclared(MAIN_NAME, globalScope);
         }
-        return insert(new Symbol.MainFunctionSymbol(
-                nextSymbol(), MAIN_NAME, new Type.VoidT(), globalScope, declarationSpan));
+        return insert(
+                new Symbol.MainFunctionSymbol(
+                        nextSymbol(), MAIN_NAME, new Type.VoidT(), globalScope, declarationSpan));
     }
 
     @Override
@@ -142,8 +151,9 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (ordinal != expected) {
             throw new IllegalArgumentException("parameter ordinal must be " + expected);
         }
-        final Symbol.ParameterSymbol symbol = new Symbol.ParameterSymbol(
-                nextSymbol(), name, type, mutability, ordinal, state.id, declarationSpan);
+        final Symbol.ParameterSymbol symbol =
+                new Symbol.ParameterSymbol(
+                        nextSymbol(), name, type, mutability, ordinal, state.id, declarationSpan);
         state.nextParameterOrdinal++;
         return insert(symbol);
     }
@@ -203,8 +213,8 @@ public final class DefaultSymbolTable implements SymbolTable {
         final ScopeId parent = currentScopeId();
         final ScopeState parentState = currentState();
         final ScopeId id = allocateScopeId();
-        final ScopeState state = new ScopeState(
-                id, kind, Optional.of(parent), parentState.depth + 1, owner);
+        final ScopeState state =
+                new ScopeState(id, kind, Optional.of(parent), parentState.depth + 1, owner);
         scopes.put(id, state);
         scopeStack.push(id);
         return state.snapshot();
@@ -260,7 +270,10 @@ public final class DefaultSymbolTable implements SymbolTable {
     }
 
     private static void validateDeclarationArguments(
-            final String name, final Type type, final Mutability mutability, final Span declarationSpan) {
+            final String name,
+            final Type type,
+            final Mutability mutability,
+            final Span declarationSpan) {
         validateName(name);
         Objects.requireNonNull(type, "type must not be null");
         Objects.requireNonNull(mutability, "mutability must not be null");

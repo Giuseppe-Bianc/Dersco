@@ -31,7 +31,10 @@ public interface SymbolTable {
 
     /** Declares a function in the current scope. */
     DeclarationResult declareFunction(
-            String name, Type returnType, List<ParameterDescriptor> parameters, Span declarationSpan);
+            String name,
+            Type returnType,
+            List<ParameterDescriptor> parameters,
+            Span declarationSpan);
 
     /** Declares the unique main function in the global scope. */
     DeclarationResult declareMainFunction(Span declarationSpan);
