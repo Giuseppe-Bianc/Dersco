@@ -11,12 +11,14 @@ Sync Impact Report
 ## Core Principles
 
 ### I. Java 25 and Gradle 9.7.1 Baseline
+
 Production code MUST target Java 25 and the project MUST be built through the Gradle 9.7.1 wrapper.
 Build and dependency changes MUST preserve this supported baseline. Preview Java features are forbidden
 unless the build and this constitution are explicitly amended to support them. This keeps compiler
 semantics, developer environments, and automated builds reproducible.
 
 ### II. Explicit Compiler Boundaries
+
 Each compiler capability MUST have a defined phase boundary and an observable contract. The CLI,
 compiler service, lexer, diagnostic model, and general utilities MUST retain their distinct
 responsibilities; compiler-domain behavior MUST NOT be placed in generic utilities. Source handling
@@ -24,6 +26,7 @@ and diagnostic output MUST remain UTF-8 safe. These boundaries make language beh
 allow phases to evolve without hiding coupling or duplicating error reporting.
 
 ### III. JUnit Conformance and Test Design (NON-NEGOTIABLE)
+
 All test creation, implementation, and maintenance MUST use JUnit Jupiter 6.1.3 or a later compatible
 version. Official documentation for the adopted JUnit version is the primary authority for APIs,
 annotations, execution, and conventions; documented, established JUnit community practices MAY
@@ -33,6 +36,7 @@ identifiable purpose, assert observable behavior, and remain readable, isolated,
 reproducible, and maintainable. This prevents passing tests from concealing unreliable verification.
 
 ### IV. Complete Behavioral Coverage
+
 For every changed behavior, the relevant suite MUST cover representative ordinary use, applicable
 corner cases, and applicable edge cases, including inclusive and exclusive boundaries and values
 immediately around them. When the specification permits, tests MUST also cover invalid input,
@@ -43,6 +47,7 @@ them. Coverage is adequate only when it demonstrates the specified behavior and 
 limits, not merely when it reaches a numerical target.
 
 ### V. Red, Green, Refactor (NON-NEGOTIABLE)
+
 Every new feature, behavior change, and technically reproducible defect fix MUST follow TDD. First,
 write a test that specifies the required behavior and observe it fail (Red); then add only the code
 needed to make it pass (Green); finally improve structure without changing verified behavior
