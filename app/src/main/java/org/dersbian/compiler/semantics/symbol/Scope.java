@@ -1,27 +1,35 @@
 package org.dersbian.compiler.semantics.symbol;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-/** Immutable public view of a lexical scope. */
-public record Scope(ScopeId id, ScopeId parentId, ScopeKind kind, Map<String, Symbol> symbols) {
+/** Immutable public snapshot describing a lexical scope. */
+public record Scope(
+        ScopeId id,
+        ScopeKind kind,
+        Optional<ScopeId> parentId,
+        int depth,
+        Optional<SymbolId> ownerSymbolId) {
     public Scope {
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(kind, "kind must not be null");
-        Objects.requireNonNull(symbols, "symbols must not be null");
-        if (kind == ScopeKind.GLOBAL && parentId != null) {
-            throw new IllegalArgumentException("global scope cannot have a parent");
+        Objects.requireNonNull(parentId, "parentId must not be null");
+        Objects.requireNonNull(ownerSymbolId, "ownerSymbolId must not be null");
+        if (depth < 0) {
+            throw new IllegalArgumentException("depth must be non-negative");
         }
-        if (kind != ScopeKind.GLOBAL && parentId == null) {
+        if (kind == ScopeKind.GLOBAL) {
+            if (parentId.isPresent() || ownerSymbolId.isPresent() || depth != 0) {
+                throw new IllegalArgumentException("global scope must be root-owned and depth zero");
+            }
+        } else if (parentId.isEmpty()) {
             throw new IllegalArgumentException("non-global scope must have a parent");
         }
-        symbols = Map.copyOf(symbols);
-    }
-
-    /** Looks up a binding declared directly in this scope. */
-    public Optional<Symbol> lookupLocal(final String name) {
-        Objects.requireNonNull(name, "name must not be null");
-        return Optional.ofNullable(symbols.get(name));
+        if (kind == ScopeKind.FUNCTION && ownerSymbolId.isEmpty()) {
+            throw new IllegalArgumentException("function scope must have an owner symbol");
+        }
+        if (kind != ScopeKind.FUNCTION && ownerSymbolId.isPresent()) {
+            throw new IllegalArgumentException("only function scopes may have an owner symbol");
+        }
     }
 }
