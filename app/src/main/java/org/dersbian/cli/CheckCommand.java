@@ -13,7 +13,7 @@ import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
-/** Subcommand that performs only syntax checking, without producing any output. */
+/** Subcommand that performs lexical and syntax checking and prints the resulting AST. */
 @Command(
         name = "check",
         mixinStandardHelpOptions = true,

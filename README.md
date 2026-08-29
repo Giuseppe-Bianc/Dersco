@@ -3,10 +3,10 @@
 [![CI / CD Workflow](https://github.com/Giuseppe-Bianc/Dersco/actions/workflows/ci.yml/badge.svg)](https://github.com/Giuseppe-Bianc/Dersco/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Giuseppe-Bianc/Dersco/graph/badge.svg)](https://codecov.io/gh/Giuseppe-Bianc/Dersco)
 [![Java 25](https://img.shields.io/badge/Java-25-orange.svg)](https://jdk.java.net/25/)
-[![Gradle](https://img.shields.io/badge/Gradle-9.7-blue.svg)](https://gradle.org)
+[![Gradle](https://img.shields.io/badge/Gradle-9.7.1-blue.svg)](https://gradle.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
-Dersco is a Java-based compiler project for the Dersco programming language. The repository currently focuses on the command-line interface, source locations, lexical analysis, token modeling, and compiler diagnostics. The parser, semantic analysis, and code-generation stages are not wired into the compilation service yet.
+Dersco is a Java-based compiler project for the Dersco programming language. The current implementation provides a command-line interface, UTF-8 source loading, lexical analysis, recursive-descent/Pratt parsing, typed token and AST models, source locations, and compiler diagnostics. Semantic analysis, IR generation, optimization, and native code generation are not wired into the compilation service yet.
 
 ## Project status
 
@@ -25,10 +25,13 @@ Lexer + source locations
 Token stream + lexer errors
     |
     v
-Diagnostic rendering
+Parser + AST
+    |
+    v
+Diagnostic rendering / AST output
 ```
 
-`dersco check` runs this pipeline and reports lexical or syntax-related errors detected by the current front end.
+`dersco check` runs this pipeline, reports lexical or syntax errors with source context, and prints the parsed AST when the input is valid.
 
 `dersco compile` currently validates the source through the same front end and then stops. Its CLI accepts output, optimization, IR, and diagnostic options, but the backend that would consume those options is not implemented yet. In particular, the current implementation does not create the requested executable or output file.
 
@@ -36,7 +39,7 @@ See [CLI reference](docs/cli.md) for the exact command-line contract and [archit
 
 ## Implemented capabilities
 
-- Java 25 toolchain with Gradle 9.7.
+- Java 25 toolchain with Gradle 9.7.1.
 - Picocli CLI with `compile`, `check`, and built-in help/version support.
 - Repeatable logging controls: `-v`, `-vv`, `-vvv`, and `-q`.
 - UTF-8 source loading.
@@ -44,7 +47,7 @@ See [CLI reference](docs/cli.md) for the exact command-line contract and [archit
 - Strongly typed tokens with source spans and payload-bearing token records.
 - Diagnostic rendering with source context and underlining.
 - Compiler service abstraction suitable for unit testing.
-- Unit tests with JUnit 5 and AssertJ.
+- Unit tests with JUnit Jupiter 6.1.3 and AssertJ 3.27.7.
 - Quality gates with Checkstyle, PMD, SpotBugs, Error Prone, Spotless, and JaCoCo.
 - GitHub Actions CI for verification, packaging, coverage reporting, and tagged releases.
 
@@ -74,6 +77,8 @@ Dersco/
 │   └── workflows/
 │       └── ci.yml                  # CI and release workflow
 ├── codecov.yml                     # Coverage configuration
+├── gradlew                         # Gradle wrapper (Unix)
+├── gradlew.bat                     # Gradle wrapper (Windows)
 ├── build.gradle.kts                # Root Gradle configuration
 ├── settings.gradle.kts             # Project settings and toolchain resolver
 └── LICENSE
@@ -104,8 +109,8 @@ On Windows, use `gradlew.bat` instead of `./gradlew`.
 Run the application through Gradle during development:
 
 ```bash
-./gradlew run --args="check path/to/source.der"
-./gradlew run --args="compile path/to/source.der"
+./gradlew run --args="check path/to/source.dr"
+./gradlew run --args="compile path/to/source.dr"
 ```
 
 Build the distributable JAR:
@@ -119,8 +124,8 @@ The generated artifact is written under `app/build/libs/`.
 Run the packaged application:
 
 ```bash
-java -jar app/build/libs/Dersco-0.1.0.jar --help
-java -jar app/build/libs/Dersco-0.1.0.jar check path/to/source.der
+java -jar app/build/libs/Dersco-0.1.0-all.jar --help
+java -jar app/build/libs/Dersco-0.1.0-all.jar check path/to/source.dr
 ```
 
 For supported flags and exit codes, see [docs/cli.md](docs/cli.md).
@@ -187,13 +192,13 @@ JaCoCo writes the XML report to:
 app/build/reports/jacoco/test/jacocoTestReport.xml
 ```
 
-`codecov.yml` configures project and patch coverage reporting. Codecov failures do not fail the GitHub Actions job because the workflow is configured with `fail_ci_if_error: false`.
+`codecov.yml` configures project and patch coverage reporting. The CI workflow uses `fail_ci_if_error: true`, so a Codecov upload failure fails the build job.
 
 ## Architecture and implementation notes
 
 The compiler is intentionally split into small services and models. CLI code depends on `ICompilerService`, while the default implementation coordinates file loading, lexing, source tracking, and diagnostics.
 
-The current implementation has explicit placeholders for future parsing, semantic analysis, and code generation. Do not document `compile` as producing native code until those stages are connected to `DefaultCompilerService`.
+The parser is currently connected to `DefaultCompilerService` and its AST is printed by both successful `check` and `compile` executions. Semantic analysis, IR generation, optimization, and code generation remain future stages. Do not document `compile` as producing native code until those stages are connected to `DefaultCompilerService`.
 
 Detailed design notes are in [docs/architecture.md](docs/architecture.md).
 

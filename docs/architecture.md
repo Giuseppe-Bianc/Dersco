@@ -2,7 +2,7 @@
 
 ## Scope
 
-Dersco is currently a compiler front end and CLI under development. The repository contains the infrastructure needed to load source text, track source locations, tokenize input, and render diagnostics. Parsing, semantic analysis, and code generation are planned stages, but they are not connected to the default compiler service yet.
+Dersco is currently a compiler front end and CLI under development. The repository loads UTF-8 source text, tracks source locations, tokenizes input, parses tokens into an AST, and renders diagnostics. Semantic analysis, IR generation, optimization, and code generation are planned stages and are not connected to the default compiler service yet.
 
 ## High-level flow
 
@@ -32,14 +32,21 @@ CLI
               Tokens                         Errors
                  |                             |
                  +--------------+--------------+
-                                v
-                         ErrorReporter
                                 |
                                 v
-                         CLI diagnostics
+                                                                                                         Parser
+                                                                                                                |
+                                                                                                                v
+                                                                                                         AST
+                                                                                                                |
+                                                                                                                v
+                                                                                     ErrorReporter / AST output
+                                                                                                                |
+                                                                                                                v
+                                                                                     CLI diagnostics
 ```
 
-The `compile` path currently reaches the same front end as `check` and then stops. The future backend is not part of the execution flow yet.
+The `compile` path currently reaches the same lexer and parser front end as `check`, prints the AST for valid input, and then stops. The future backend is not part of the execution flow yet.
 
 ## Application entry point
 
@@ -108,9 +115,11 @@ The current `checkSyntax(...)` implementation:
 4. tokenizes the source;
 5. passes lexer errors to `ErrorReporter`;
 6. prints a rendered diagnostic report when errors are present;
-7. logs tokens at debug level when no lexer errors are reported.
+7. removes comment tokens and passes the remaining tokens to `Parser`;
+8. passes parser errors to `ErrorReporter`;
+9. prints a rendered AST for each parsed statement when no errors are reported.
 
-The implementation currently contains an explicit placeholder for the real parser.
+The parser is implemented as a recursive-descent parser with Pratt-style expression parsing and error recovery. Its `ParseResult` contains immutable statement and error lists.
 
 ### Compilation
 
@@ -123,7 +132,7 @@ CompilationRequest
 checkSyntax(source)
        |
        v
-return
+print AST, then return
 ```
 
 Semantic analysis and code generation are not connected. Consequently, the output path, optimization level, IR flag, and diagnostics flag are currently request-level API surface rather than active backend functionality.
@@ -144,7 +153,7 @@ The lexer tracks source positions so diagnostics can point back to the original 
 
 Tokens are modeled as typed values and carry source span information. The token package contains the token kinds and payload-bearing representations used by the lexer.
 
-This model is intended to provide a stable boundary between lexical analysis and the parser that will be added later.
+This model provides the boundary between lexical analysis and the parser. Tokens carry typed payloads where needed, and both tokens and AST nodes retain source spans for diagnostics.
 
 ## Diagnostics
 
@@ -159,7 +168,7 @@ The project is a Gradle multi-project build with the `app` module.
 The application build uses:
 
 - Java 25 toolchain;
-- JUnit 6 and AssertJ for tests;
+- JUnit Jupiter 6.1.3 and AssertJ 3.27.7 for tests;
 - Picocli for the CLI;
 - SLF4J and Logback for logging;
 - Jansi for terminal support;
@@ -186,7 +195,6 @@ The current code has useful boundaries for future expansion:
 ```text
 CLI -> ICompilerService -> front-end components
                          |
-                         +-> future parser
                          +-> future semantic analysis
                          +-> future IR
                          +-> future code generator

@@ -9,8 +9,7 @@ import picocli.CommandLine.Option;
 /**
  * Reusable mixin that adds verbosity options to every command/subcommand in which it is included
  * via {@code @Mixin}. As a mixin (rather than a global option on the root command only) it can be
- * placed by the user anywhere on the command line, e.g. {@code dersco compile -v file.der} or
- * {@code dersco -v compile file.der}.
+ * placed by the user after the subcommand, e.g. {@code dersco compile -v file.dr}.
  *
  * <p>Direct manipulation of {@link LoggerContext} is the pattern documented by picocli for
  * programmatic logging configuration from the command line (see picocli wiki: "Configuring logging

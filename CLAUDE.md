@@ -10,7 +10,7 @@ The build, test, and static-analysis commands are documented in [AGENTS.md](AGEN
 - Tests only: `./gradlew test` (or `./gradlew :app:test`).
 - Single test class: `./gradlew test --tests "*NumericParsersTest*"` or `./gradlew test --tests "*BaseParsersTest*"`. Wildcard around the simple class name is required.
 - Format only: `./gradlew spotlessApply`. Never hand-format; Spotless with Google Java Format AOSP (4 spaces) is the source of truth.
-- Run the compiler CLI: `./gradlew :app:run --args="check dr_files/simple_test.dr"` or build the fat jar with `./gradlew shadowJar` then `java -jar app/build/libs/Dersco-0.1.0-all.jar check path/to/source.dr`.
+- Run the compiler CLI with `./gradlew :app:run --args="check ..\\dr_files\\simple_test.dr"` from the repository root, or use an absolute source path. Build the fat jar with `./gradlew shadowJar`, then run `java -jar app/build/libs/Dersco-0.1.0-all.jar check path/to/source.dr`.
 - The build is intentionally strict: Checkstyle `maxWarnings=0`, Error Prone `-Werror`, SpotBugs `MAX` effort / `LOW` confidence, PMD ruleset. The build fails on any violation, so a passing build already implies style + lint + tests are green.
 
 ## Red-Green-Refactor cycle (TDD)
@@ -151,7 +151,7 @@ Dersco is a Java 25 compiler for the Dersco language. Top-level layout under `ap
 
 - `App.java` -- picocli bootstrap only. Builds the `CommandLine`, configures `CliExecutionExceptionHandler`, enables case-insensitive enum parsing and auto-width usage help, then maps the result to `System.exit`.
 
-- `cli/` -- picocli subcommands and CLI helpers: `RootCommand` (git-style root command registering `CompileCommand`, `CheckCommand`, `HelpCommand`), `CompileCommand` (options `-o`/`--output`, `-O`/`--optimize`, `--emit-ir`, `--diagnostics`), `CheckCommand` (syntax checking only), `LoggingMixin`, `ManifestVersionProvider`, `CliExecutionExceptionHandler`. Subcommands instantiate `DefaultCompilerService` by default; package-private constructors accept an `ICompilerService` for testing.
+- `cli/` -- picocli subcommands and CLI helpers: `RootCommand` (git-style root command registering `CompileCommand`, `CheckCommand`, `HelpCommand`), `CompileCommand` (options `-o`/`--output`, `-O`/`--optimize`, `--emit-ir`, `--diagnostics`), `CheckCommand` (syntax checking only), `LoggingMixin`, `ManifestVersionProvider`, `CliExecutionExceptionHandler`. Subcommands instantiate `DefaultCompilerService` by default; test constructors accept an `ICompilerService`.
 - `compiler/` -- compiler service surface and orchestration: `ICompilerService` defines `checkSyntax(Path)` and `compile(CompilationRequest)`, `CompilationRequest`, `OptimizationLevel`, `CompilerException`, `Constants`, and `DefaultCompilerService`.
 - `compiler/lexer/` -- lexical analysis:
     - `Lexer.java` -- full tokenizer reading source code, handling comments (single/multi-line), radix numbers, numeric literals with suffixes, string/char literals with escape sequences, operators, delimiters, and Unicode identifiers, returning `LexerResult(tokens, errors)`.
@@ -179,7 +179,7 @@ Dersco is a Java 25 compiler for the Dersco language. Top-level layout under `ap
     - `Type` -- sealed interface: `I8`, `I16`, `I32`, `I64`, `U8`, `U16`, `U32`, `U64`, `F32`, `F64`, `Char`, `StringT`, `Bool`, `VoidT`, `NullPtr`, `Custom`, `Array`, `Vector`.
     - `LiteralValue` -- sealed interface: `Numeric(INumber)`, `StringLit(String)`, `CharLit(String)`, `Bool(boolean)`, `NullPtr()`.
     - `BinaryOp`, `UnaryOp`, `UnaryOpSide`, `Parameter`, `ElseBranch`.
-    - `AstPrinter` -- pattern-matching pretty printer using switch expressions for AST visualization.
+    - `AstPrinter` and `AstTreePrinter` -- pretty printers for AST visualization.
     - `NodeCounter` -- recursive AST node counter utility.
 - `compiler/error/` -- diagnostic model:
     - `CompileError` -- sealed hierarchy for compiler diagnostics: `LexerError`, `SyntaxError`, `TypeError`, `IrGeneratorError`, `AsmGeneratorError`. Records carry `(errorCode, errorMessage, errorSpan, errorHelp)` except `AsmGeneratorError` (no span/help).
@@ -227,4 +227,4 @@ java -jar app/build/libs/Dersco-0.1.0-all.jar check dr_files/simple_test.dr
 java -jar app/build/libs/Dersco-0.1.0-all.jar compile dr_files/simple_test.dr
 ```
 
-`check` runs syntax check (currently UTF-8 source reading, lexing, and error reporting); `compile` runs the compiler service. Exit codes are 0 on success, 1 on a `CompilerException`. The AST and error models are defined, while parser wiring and code generation into the CLI execution remain in development.
+`check` runs UTF-8 source reading, lexing, parsing, syntax diagnostics, and AST printing; `compile` runs the same front end and then returns without generating output. Exit codes are 0 on success, 1 on a `CompilerException`. Semantic analysis, IR generation, optimization, and code generation remain in development.

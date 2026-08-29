@@ -10,8 +10,8 @@ Sync Impact Report
 
 ## Core Principles
 
-### I. Java 25 and Gradle 9.7.0 Baseline
-Production code MUST target Java 25 and the project MUST be built through the Gradle 9.7.0 wrapper.
+### I. Java 25 and Gradle 9.7.1 Baseline
+Production code MUST target Java 25 and the project MUST be built through the Gradle 9.7.1 wrapper.
 Build and dependency changes MUST preserve this supported baseline. Preview Java features are forbidden
 unless the build and this constitution are explicitly amended to support them. This keeps compiler
 semantics, developer environments, and automated builds reproducible.
@@ -24,7 +24,7 @@ and diagnostic output MUST remain UTF-8 safe. These boundaries make language beh
 allow phases to evolve without hiding coupling or duplicating error reporting.
 
 ### III. JUnit Conformance and Test Design (NON-NEGOTIABLE)
-All test creation, implementation, and maintenance MUST use JUnit 9.1.3 or a later compatible
+All test creation, implementation, and maintenance MUST use JUnit Jupiter 6.1.3 or a later compatible
 version. Official documentation for the adopted JUnit version is the primary authority for APIs,
 annotations, execution, and conventions; documented, established JUnit community practices MAY
 supplement it. Tests MUST use only supported, documented JUnit facilities and MUST NOT introduce
@@ -53,7 +53,7 @@ specification rather than an after-the-fact check.
 
 ## Technical Constraints
 
-- The build MUST use Gradle 9.7.0 and Java 25, with UTF-8 preserved for source files and
+- The build MUST use Gradle 9.7.1 and Java 25, with UTF-8 preserved for source files and
   diagnostics.
 - Java changes MUST satisfy configured Checkstyle, PMD, SpotBugs, Error Prone with `-Werror`,
   Spotless, and JaCoCo gates. Formatting MUST be applied by the configured Google Java Format AOSP

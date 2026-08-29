@@ -16,7 +16,7 @@ import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
-/** Subcommand that performs the full compilation of a Dersco source file. */
+/** Subcommand that runs the current Dersco front end for a source file. */
 @Command(
         name = "compile",
         mixinStandardHelpOptions = true,

@@ -19,7 +19,7 @@ dersco --version
 
 ## Logging options
 
-Both `check` and `compile` expose the logging mixin.
+Both `check` and `compile` expose the logging mixin. Place these options after the subcommand, for example `dersco check -v source.dr`.
 
 | Option | Effect |
 | --- | --- |
@@ -33,10 +33,10 @@ Without a verbosity flag, the root logger uses `WARN`.
 Examples:
 
 ```bash
-dersco check source.der
-dersco check -v source.der
-dersco compile -vv source.der
-dersco compile -q source.der
+dersco check source.dr
+dersco check -v source.dr
+dersco compile -vv source.dr
+dersco compile -q source.dr
 ```
 
 ## `check`
@@ -50,17 +50,17 @@ dersco check [OPTIONS] FILE
 Example:
 
 ```bash
-./gradlew run --args="check examples/hello.der"
+./gradlew run --args="check path/to/source.dr"
 ```
 
-The command validates that `FILE` exists and is readable, then runs the compiler service's syntax-check path. The current implementation loads the source as UTF-8, tokenizes it, and renders lexer errors with source context.
+The command validates that `FILE` exists and is readable, then runs the compiler service's syntax-check path. The current implementation loads the source as UTF-8, tokenizes it, parses the token stream into an AST, renders lexer and parser errors with source context, and prints the AST when no errors are found.
 
 ### Exit codes
 
 | Code | Meaning |
 | ---: | --- |
-| `0` | The check completed without detected syntax errors. |
-| `1` | A syntax or compiler error was detected. |
+| `0` | The check completed without detected lexical or syntax errors. |
+| `1` | A lexical, syntax, or compiler error was detected. |
 
 An unreadable or missing input file is reported as a Picocli parameter error.
 
@@ -84,12 +84,12 @@ dersco compile [OPTIONS] FILE
 Example:
 
 ```bash
-./gradlew run --args="compile examples/hello.der --output build/hello.exe --optimize BASIC"
+./gradlew run --args="compile path/to/source.dr --output build/hello.exe --optimize BASIC"
 ```
 
 ### Current limitation
 
-The CLI already models output, optimization, IR, and advanced diagnostics, but the backend is not connected yet. `DefaultCompilerService.compile(...)` currently delegates to `checkSyntax(...)` and then returns. Therefore the current command does **not** create the requested `--output` file and does not emit IR.
+The CLI already models output, optimization, IR, and advanced diagnostics, but the backend is not connected yet. `DefaultCompilerService.compile(...)` currently delegates to `checkSyntax(...)` and then returns. Therefore the current command parses and prints the AST but does **not** create the requested `--output` file, emit IR, apply optimization, or run semantic analysis.
 
 Documenting those flags as implemented backend features would be incorrect until code generation is added.
 
@@ -106,15 +106,15 @@ During development, invoke the application through Gradle:
 
 ```bash
 ./gradlew run --args="--help"
-./gradlew run --args="check path/to/source.der"
-./gradlew run --args="compile path/to/source.der"
+./gradlew run --args="check path/to/source.dr"
+./gradlew run --args="compile path/to/source.dr"
 ```
 
 After creating the shaded JAR:
 
 ```bash
 ./gradlew shadowJar
-java -jar app/build/libs/Dersco-0.1.0.jar --help
+java -jar app/build/libs/Dersco-0.1.0-all.jar --help
 ```
 
 ## Source file encoding
