@@ -21,17 +21,33 @@ import org.dersbian.compiler.syntax.ast.Type;
     "PMD.TooManyMethods",
     "PMD.CouplingBetweenObjects",
     "PMD.AvoidFieldNameMatchingMethodName",
-    "PMD.LocalVariableCouldBeFinal"
+    "PMD.LocalVariableCouldBeFinal",
+    "PMD.CyclomaticComplexity",
+    "PMD.CognitiveComplexity"
 })
 public final class DefaultSymbolTable implements SymbolTable {
+    /** Canonical name of the main function entry point. */
     private static final String MAIN_NAME = "main";
+
+    /** Stack depth that indicates only the global scope is present. */
     private static final int GLOBAL_SCOPE_ONLY = 1;
 
+    /** Retained mutable state for every scope ever created, keyed by scope identifier. */
     private final Map<ScopeId, ScopeState> scopes = new LinkedHashMap<>();
+
+    /** Global index of every symbol ever declared, keyed by symbol identifier. */
     private final Map<SymbolId, Symbol> symbols = new LinkedHashMap<>();
+
+    /** LIFO stack of active scope identifiers; the top is the current scope. */
     private final Deque<ScopeId> scopeStack = new ArrayDeque<>();
+
+    /** Monotonically increasing counter for scope identifier allocation. */
     private long nextScopeId = 1L;
+
+    /** Monotonically increasing counter for symbol identifier allocation. */
     private long nextSymbolId = 1L;
+
+    /** Identifier of the permanent root scope created at construction time. */
     private final ScopeId globalScope;
 
     /** Creates a table containing exactly one permanent global scope. */
@@ -257,13 +273,16 @@ public final class DefaultSymbolTable implements SymbolTable {
         return state == null ? List.of() : List.copyOf(state.symbols.values());
     }
 
-    /** Performs a full internal consistency check. */
-    private void assertInvariants() {
+    /** Performs a full internal consistency check; package-private for invariant tests. */
+    public void assertInvariants() {
         if (scopes.isEmpty() || !scopes.containsKey(globalScope)) {
             throw new IllegalStateException("global scope registry is invalid");
         }
         if (scopeStack.isEmpty() || !scopeStack.contains(globalScope)) {
             throw new IllegalStateException("scope stack does not contain global scope");
+        }
+        if (!scopeStack.peek().equals(currentScopeId())) {
+            throw new IllegalStateException("scope stack top is not the current scope");
         }
         for (ScopeState state : scopes.values()) {
             validateScopeState(state);
@@ -330,13 +349,16 @@ public final class DefaultSymbolTable implements SymbolTable {
     }
 
     private void validateFunctionScope(final ScopeState state) {
+        if (state.ownerSymbolId.isEmpty()) {
+            throw new IllegalStateException("function scope has no owner");
+        }
         final Symbol owner = symbols.get(state.ownerSymbolId.orElseThrow());
         if (owner == null) {
             throw new IllegalStateException("function scope owner is missing from symbol index");
         }
         if (!owner.scopeId().equals(state.parentId.orElseThrow())) {
             throw new IllegalStateException(
-                    "function scope owner is not declared in the parent scope");
+                    "function scope owner is not declared in its parent scope");
         }
         if (owner instanceof Symbol.FunctionSymbol function) {
             validateFunctionParameters(function.parameters(), state.symbols, state.id);
@@ -459,18 +481,38 @@ public final class DefaultSymbolTable implements SymbolTable {
         }
     }
 
+    /** Factory callback that lazily constructs a {@link Symbol} during declaration. */
     @FunctionalInterface
     private interface SymbolFactory {
+        /**
+         * Creates and returns a new symbol instance.
+         *
+         * @return newly created symbol
+         */
         Symbol create();
     }
 
+    /** Mutable internal bookkeeping for one scope. */
     private static final class ScopeState {
+        /** Unique identifier for this scope. */
         private final ScopeId id;
+
+        /** Lexical kind of this scope (global, function, block, etc.). */
         private final ScopeKind kind;
+
+        /** Identifier of the enclosing parent scope, empty for the global scope. */
         private final Optional<ScopeId> parentId;
+
+        /** Zero-based nesting depth from the global scope. */
         private final int depth;
+
+        /** Symbol that owns this scope, present only for function scopes. */
         private final Optional<SymbolId> ownerSymbolId;
+
+        /** Symbols declared directly in this scope, keyed by name for fast local lookup. */
         private final Map<String, Symbol> symbols = new LinkedHashMap<>();
+
+        /** Ordinal counter for the next parameter to be declared in this scope. */
         private int nextParameterOrdinal;
 
         private ScopeState(

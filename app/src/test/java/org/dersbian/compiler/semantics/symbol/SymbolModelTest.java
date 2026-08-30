@@ -11,6 +11,7 @@ import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
 
 /** Tests immutable symbol and scope model invariants. */
+@SuppressWarnings({"PMD.UnitTestContainsTooManyAsserts", "PMD.AtLeastOneConstructor"})
 class SymbolModelTest {
     private static final Span SPAN =
             Span.create(SourceLocation.create(1, 1, 0), SourceLocation.create(1, 2, 1));

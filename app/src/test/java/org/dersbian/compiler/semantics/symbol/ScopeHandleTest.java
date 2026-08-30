@@ -6,6 +6,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 
 /** Tests structured scope lifecycle and strict LIFO handling. */
+@SuppressWarnings({
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.AtLeastOneConstructor",
+    "PMD.TooManyMethods",
+    "PMD.UseExplicitTypes"
+})
 class ScopeHandleTest {
     @Test
     void closesTheScopeItOpenedAndRestoresParent() {
@@ -51,7 +57,7 @@ class ScopeHandleTest {
 
         assertThatThrownBy(
                         () -> {
-                            try (ScopeHandle ignored = table.openScope(ScopeKind.LOOP)) {
+                            try (var _ = table.openScope(ScopeKind.LOOP)) {
                                 throw new IllegalStateException("synthetic failure");
                             }
                         })

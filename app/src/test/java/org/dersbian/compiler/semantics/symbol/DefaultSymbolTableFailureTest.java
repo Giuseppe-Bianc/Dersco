@@ -19,18 +19,21 @@ class DefaultSymbolTableFailureTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Symbol first =
                 ((DeclarationResult.Declared)
-                                table.declareVariable("x", new Type.I32(), Mutability.MUTABLE, SPAN))
+                                table.declareVariable(
+                                        "x", new Type.I32(), Mutability.MUTABLE, SPAN))
                         .symbol();
 
         final DeclarationResult duplicate =
                 table.declareVariable("x", new Type.I64(), Mutability.IMMUTABLE, SPAN);
 
         assertThat(duplicate).isInstanceOf(DeclarationResult.AlreadyDeclared.class);
-        assertThat(((DeclarationResult.AlreadyDeclared) duplicate).existingSymbol()).isSameAs(first);
+        assertThat(((DeclarationResult.AlreadyDeclared) duplicate).existingSymbol())
+                .isSameAs(first);
 
         final Symbol next =
                 ((DeclarationResult.Declared)
-                                table.declareVariable("y", new Type.I32(), Mutability.MUTABLE, SPAN))
+                                table.declareVariable(
+                                        "y", new Type.I32(), Mutability.MUTABLE, SPAN))
                         .symbol();
         assertThat(next.id().value()).isEqualTo(first.id().value() + 1L);
         table.assertInvariants();
@@ -41,8 +44,7 @@ class DefaultSymbolTableFailureTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Symbol function =
                 ((DeclarationResult.Declared)
-                                table.declareFunction(
-                                        "f", new Type.VoidT(), List.of(), SPAN))
+                                table.declareFunction("f", new Type.VoidT(), List.of(), SPAN))
                         .symbol();
         table.enterFunctionScope(function.id());
 
