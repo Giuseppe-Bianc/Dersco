@@ -1,11 +1,13 @@
 package org.dersbian.compiler.semantics.symbol;
 
 import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 
@@ -241,11 +243,9 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (scopeStack.isEmpty()) {
             throw new AssertionError("scope stack must not be empty");
         }
-        if (scopes.size() != scopeStack.stream().distinct().count()) {
-            for (ScopeId id : scopeStack) {
-                if (!scopes.containsKey(id)) {
-                    throw new AssertionError("scope stack contains an unknown scope");
-                }
+        for (ScopeId id : scopeStack) {
+            if (!scopes.containsKey(id)) {
+                throw new AssertionError("scope stack contains an unknown scope");
             }
         }
         if (scopes.values().stream().filter(state -> state.scope.kind() == ScopeKind.GLOBAL).count() != 1) {
@@ -263,10 +263,18 @@ public final class DefaultSymbolTable implements SymbolTable {
                 if (parent == null || scope.depth() != parent.scope.depth() + 1) {
                     throw new AssertionError("invalid scope parent/depth");
                 }
-                if (scope.kind() == ScopeKind.FUNCTION && scope.ownerSymbolId().isEmpty()) {
-                    throw new AssertionError("function scope must have an owner");
+                if (scope.kind() == ScopeKind.FUNCTION) {
+                    final SymbolId ownerId = scope.ownerSymbolId().orElseThrow();
+                    final Symbol owner = symbols.get(ownerId);
+                    if (owner == null || (owner.kind() != SymbolKind.FUNCTION && owner.kind() != SymbolKind.MAIN_FUNCTION)
+                            || !owner.scopeId().equals(parentId)) {
+                        throw new AssertionError("invalid function scope owner");
+                    }
+                } else if (scope.ownerSymbolId().isPresent()) {
+                    throw new AssertionError("non-function scope cannot have an owner");
                 }
             }
+            assertAcyclic(scope);
             for (Symbol symbol : state.symbolsByName.values()) {
                 if (!symbol.scopeId().equals(scope.id()) || symbols.get(symbol.id()) != symbol) {
                     throw new AssertionError("symbol cross-reference invariant violated");
@@ -283,6 +291,22 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (!currentId.equals(currentScope().id())) {
             throw new AssertionError("scope stack/current scope mismatch");
         }
+    }
+
+    private void assertAcyclic(final Scope start) {
+        final Set<ScopeId> visited = new HashSet<>();
+        ScopeState state = scopes.get(start.id());
+        while (state != null) {
+            if (!visited.add(state.scope.id())) {
+                throw new AssertionError("scope tree contains a cycle");
+            }
+            final Optional<ScopeId> parentId = state.scope.parentId();
+            if (parentId.isEmpty()) {
+                return;
+            }
+            state = scopes.get(parentId.orElseThrow());
+        }
+        throw new AssertionError("scope tree contains an orphaned parent");
     }
 
     private Scope createScope(final ScopeKind kind, final Optional<SymbolId> ownerSymbolId) {
