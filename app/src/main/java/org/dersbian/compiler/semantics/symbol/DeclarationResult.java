@@ -17,6 +17,9 @@ public sealed interface DeclarationResult
         public AlreadyDeclared {
             Objects.requireNonNull(name, "name must not be null");
             Objects.requireNonNull(scopeId, "scopeId must not be null");
+            if (name.isBlank()) {
+                throw new IllegalArgumentException("name must not be blank");
+            }
         }
     }
 }
