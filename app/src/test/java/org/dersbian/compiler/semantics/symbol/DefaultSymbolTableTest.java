@@ -10,20 +10,14 @@ import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DefaultSymbolTable}. */
-@SuppressWarnings({
-    "PMD.UnitTestContainsTooManyAsserts",
-    "PMD.AtLeastOneConstructor",
-    "PMD.UseExplicitTypes"
-})
+@SuppressWarnings({"PMD.UnitTestContainsTooManyAsserts", "PMD.AtLeastOneConstructor"})
 class DefaultSymbolTableTest {
-    /** Reusable single-character span for declarations under test. */
     private static final Span SPAN =
             Span.create(SourceLocation.create(1, 1, 0), SourceLocation.create(1, 2, 1));
 
     @Test
     void startsWithOnePermanentGlobalScopeAndPositiveIds() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-
         assertThat(table.currentScope()).isEqualTo(table.globalScope());
         assertThat(table.globalScope().id().value()).isEqualTo(1L);
         assertThat(table.globalScope().parentId()).isEmpty();
@@ -32,19 +26,17 @@ class DefaultSymbolTableTest {
     }
 
     @Test
-    void rejectsDuplicateDeclarationWithoutReplacingBindingOrConsumingAnId() {
+    void rejectsDuplicateWithoutReplacingBindingOrConsumingId() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final var first = table.declareVariable("x", new Type.I32(), Mutability.MUTABLE, SPAN);
         final var duplicate =
                 table.declareVariable("x", new Type.I64(), Mutability.IMMUTABLE, SPAN);
         final var next = table.declareVariable("y", new Type.I64(), Mutability.IMMUTABLE, SPAN);
 
-        assertThat(first).isInstanceOf(DeclarationResult.Declared.class);
         assertThat(duplicate)
-                .isEqualTo(new DeclarationResult.AlreadyDeclared("x", table.globalScope().id()));
+                .isEqualTo(new DeclarationResult.AlreadyDeclared("x", ((DeclarationResult.Declared) first).symbol()));
         assertThat(((DeclarationResult.Declared) next).symbol().id().value()).isEqualTo(2L);
-        assertThat(table.lookup("x").orElseThrow())
-                .isEqualTo(((DeclarationResult.Declared) first).symbol());
+        assertThat(table.lookup("x").orElseThrow()).isEqualTo(((DeclarationResult.Declared) first).symbol());
     }
 
     @Test
@@ -56,11 +48,9 @@ class DefaultSymbolTableTest {
 
         assertThat(child.parentId()).contains(table.globalScope().id());
         assertThat(child.depth()).isEqualTo(1);
-        assertThat(table.lookup("x").orElseThrow())
-                .isEqualTo(((DeclarationResult.Declared) local).symbol());
+        assertThat(table.lookup("x").orElseThrow()).isEqualTo(((DeclarationResult.Declared) local).symbol());
         assertThat(table.exitScope()).isEqualTo(child);
-        assertThat(table.lookup("x").orElseThrow())
-                .isEqualTo(((DeclarationResult.Declared) global).symbol());
+        assertThat(table.lookup("x").orElseThrow()).isEqualTo(((DeclarationResult.Declared) global).symbol());
     }
 
     @Test
@@ -72,15 +62,12 @@ class DefaultSymbolTableTest {
         table.exitScope();
 
         assertThat(table.findScope(child.id())).contains(child);
-        assertThat(table.symbolsInScope(child.id()))
-                .extracting(Symbol::name)
-                .containsExactly("a", "b");
+        assertThat(table.symbolsInScope(child.id())).extracting(Symbol::name).containsExactly("a", "b");
     }
 
     @Test
     void cannotExitGlobalScope() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-
         assertThatThrownBy(table::exitScope).isInstanceOf(IllegalStateException.class);
     }
 
@@ -89,38 +76,24 @@ class DefaultSymbolTableTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final var function =
                 table.declareFunction(
-                        "f",
-                        new Type.VoidT(),
-                        List.of(new ParameterDescriptor("a", new Type.I32(), Mutability.IMMUTABLE)),
-                        SPAN);
-        final Symbol.FunctionSymbol functionSymbol =
-                (Symbol.FunctionSymbol) ((DeclarationResult.Declared) function).symbol();
-
-        final Scope functionScope = table.enterFunctionScope(functionSymbol.id());
+                        "f", new Type.VoidT(), List.of(new ParameterDescriptor("a", new Type.I32(), Mutability.IMMUTABLE)), SPAN);
+        final Symbol.FunctionSymbol owner = (Symbol.FunctionSymbol) ((DeclarationResult.Declared) function).symbol();
+        final Scope functionScope = table.enterFunctionScope(owner.id());
         table.declareParameter("a", new Type.I32(), Mutability.IMMUTABLE, 0, SPAN);
 
-        assertThat(functionScope.ownerSymbolId()).contains(functionSymbol.id());
-        assertThat(table.currentSymbols())
-                .singleElement()
-                .satisfies(
-                        symbol -> {
-                            assertThat(symbol).isInstanceOf(Symbol.ParameterSymbol.class);
-                            assertThat(((Symbol.ParameterSymbol) symbol).ordinal()).isZero();
-                        });
+        assertThat(functionScope.ownerSymbolId()).contains(owner.id());
+        assertThat(table.currentSymbols()).singleElement().isInstanceOf(Symbol.ParameterSymbol.class);
+        assertThat(((Symbol.ParameterSymbol) table.currentSymbols().getFirst()).ordinal()).isZero();
     }
 
     @Test
     void rejectsOutOfOrderParameters() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final var function = table.declareFunction("f", new Type.VoidT(), List.of(), SPAN);
-        final Symbol.FunctionSymbol owner =
-                (Symbol.FunctionSymbol) ((DeclarationResult.Declared) function).symbol();
+        final Symbol.FunctionSymbol owner = (Symbol.FunctionSymbol) ((DeclarationResult.Declared) function).symbol();
         table.enterFunctionScope(owner.id());
 
-        assertThatThrownBy(
-                        () ->
-                                table.declareParameter(
-                                        "a", new Type.I32(), Mutability.IMMUTABLE, 1, SPAN))
+        assertThatThrownBy(() -> table.declareParameter("a", new Type.I32(), Mutability.IMMUTABLE, 1, SPAN))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -130,17 +103,14 @@ class DefaultSymbolTableTest {
         final var first = table.declareMainFunction(SPAN);
         final var duplicate = table.declareMainFunction(SPAN);
 
-        assertThat(first).isInstanceOf(DeclarationResult.Declared.class);
-        assertThat(((DeclarationResult.Declared) first).symbol().kind())
-                .isEqualTo(SymbolKind.MAIN_FUNCTION);
+        assertThat(((DeclarationResult.Declared) first).symbol().kind()).isEqualTo(SymbolKind.MAIN_FUNCTION);
         assertThat(duplicate)
-                .isEqualTo(new DeclarationResult.AlreadyDeclared("main", table.globalScope().id()));
+                .isEqualTo(new DeclarationResult.AlreadyDeclared("main", ((DeclarationResult.Declared) first).symbol()));
     }
 
     @Test
     void mainCannotBeDeclaredAsNormalFunction() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-
         assertThatThrownBy(() -> table.declareFunction("main", new Type.VoidT(), List.of(), SPAN))
                 .isInstanceOf(IllegalArgumentException.class);
     }
@@ -153,8 +123,25 @@ class DefaultSymbolTableTest {
         table.declareVariable("y", new Type.I64(), Mutability.IMMUTABLE, SPAN);
         table.exitScope();
 
-        assertThat(table.lookupFrom(child.id(), "x"))
-                .contains(((DeclarationResult.Declared) global).symbol());
+        assertThat(table.lookupFrom(child.id(), "x")).contains(((DeclarationResult.Declared) global).symbol());
         assertThat(table.lookupFrom(child.id(), "y")).isPresent();
+    }
+
+    @Test
+    void findsSymbolsByStableIdentity() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Symbol symbol = ((DeclarationResult.Declared)
+                table.declareVariable("x", new Type.I32(), Mutability.IMMUTABLE, SPAN)).symbol();
+        assertThat(table.find(symbol.id())).contains(symbol);
+        assertThat(table.find(new SymbolId(symbol.id().value() + 1))).isEmpty();
+    }
+
+    @Test
+    void loopScopeIsAvailableAndHasNoFunctionOwner() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Scope loop = table.enterScope(ScopeKind.LOOP);
+        assertThat(loop.kind()).isEqualTo(ScopeKind.LOOP);
+        assertThat(loop.ownerSymbolId()).isEmpty();
+        assertThat(loop.depth()).isEqualTo(1);
     }
 }
