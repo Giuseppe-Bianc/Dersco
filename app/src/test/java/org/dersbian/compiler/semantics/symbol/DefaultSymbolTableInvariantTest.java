@@ -10,7 +10,14 @@ import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
 
 /** Tests structural invariants and the structured scope API. */
+@SuppressWarnings({
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.AtLeastOneConstructor",
+    "PMD.ShortVariable",
+    "PMD.CloseResource"
+})
 class DefaultSymbolTableInvariantTest {
+    /** Synthetic span used across symbol test declarations. */
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));
 
     @Test

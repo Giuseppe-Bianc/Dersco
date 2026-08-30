@@ -10,7 +10,9 @@ import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
 
 /** Contract tests for the default version-one symbol table implementation. */
+@SuppressWarnings({"PMD.UnitTestContainsTooManyAsserts", "PMD.AtLeastOneConstructor"})
 class DefaultSymbolTableTest {
+    /** Synthetic span used across symbol test declarations. */
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));
 
     @Test
@@ -69,7 +71,7 @@ class DefaultSymbolTableTest {
                         .symbol();
 
         assertThat(table.lookup("x")).contains(local);
-        assertThat(table.lookupLocal(block.id())).contains(local);
+        assertThat(table.lookupLocal(block.id(), "x")).contains(local);
         assertThat(table.lookupFrom(table.globalScope().id(), "x")).contains(global);
         table.exitScope();
         assertThat(table.lookup("x")).contains(global);
@@ -149,7 +151,7 @@ class DefaultSymbolTableTest {
 
     @Test
     void functionSignatureIsImmutableAndParametersAreCopied() {
-        final var parameters =
+        final List<ParameterDescriptor> parameters =
                 new java.util.ArrayList<>(
                         List.of(
                                 new ParameterDescriptor("a", new Type.I32(), Mutability.IMMUTABLE),

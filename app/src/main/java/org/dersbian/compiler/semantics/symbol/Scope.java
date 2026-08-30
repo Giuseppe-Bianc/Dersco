@@ -1,8 +1,10 @@
 package org.dersbian.compiler.semantics.symbol;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /** Immutable structural description of a lexical scope. */
+@SuppressWarnings("PMD.ShortVariable")
 public record Scope(
         ScopeId id,
         ScopeKind kind,
@@ -11,18 +13,10 @@ public record Scope(
         Optional<SymbolId> ownerSymbolId) {
     /** Validates the immutable scope snapshot. */
     public Scope {
-        if (id == null) {
-            throw new NullPointerException("id must not be null");
-        }
-        if (kind == null) {
-            throw new NullPointerException("kind must not be null");
-        }
-        if (parentId == null) {
-            throw new NullPointerException("parentId must not be null");
-        }
-        if (ownerSymbolId == null) {
-            throw new NullPointerException("ownerSymbolId must not be null");
-        }
+        Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(kind, "kind must not be null");
+        Objects.requireNonNull(parentId, "parentId must not be null");
+        Objects.requireNonNull(ownerSymbolId, "ownerSymbolId must not be null");
         if (depth < 0) {
             throw new IllegalArgumentException("depth must not be negative");
         }

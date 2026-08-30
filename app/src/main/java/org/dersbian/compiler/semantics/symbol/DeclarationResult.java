@@ -1,5 +1,7 @@
 package org.dersbian.compiler.semantics.symbol;
 
+import java.util.Objects;
+
 /** Result of a declaration attempt, including the existing binding on conflict. */
 public sealed interface DeclarationResult
         permits DeclarationResult.Declared, DeclarationResult.AlreadyDeclared {
@@ -7,9 +9,7 @@ public sealed interface DeclarationResult
     record Declared(Symbol symbol) implements DeclarationResult {
         /** Validates the accepted symbol. */
         public Declared {
-            if (symbol == null) {
-                throw new NullPointerException("symbol must not be null");
-            }
+            Objects.requireNonNull(symbol, "symbol must not be null");
         }
     }
 
@@ -17,12 +17,8 @@ public sealed interface DeclarationResult
     record AlreadyDeclared(String name, Symbol existingSymbol) implements DeclarationResult {
         /** Validates the duplicate declaration result. */
         public AlreadyDeclared {
-            if (name == null) {
-                throw new NullPointerException("name must not be null");
-            }
-            if (existingSymbol == null) {
-                throw new NullPointerException("existingSymbol must not be null");
-            }
+            Objects.requireNonNull(name, "name must not be null");
+            Objects.requireNonNull(existingSymbol, "existingSymbol must not be null");
         }
     }
 }

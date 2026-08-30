@@ -6,13 +6,18 @@ import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 
 /** Contract for lexical symbol binding and scope management. */
+@SuppressWarnings("PMD.TooManyMethods")
 public interface SymbolTable {
     /**
+     * Returns the unique permanent global scope.
+     *
      * @return the unique permanent global scope
      */
     Scope globalScope();
 
     /**
+     * Returns the currently active innermost scope.
+     *
      * @return the currently active innermost scope
      */
     Scope currentScope();
@@ -108,65 +113,95 @@ public interface SymbolTable {
     DeclarationResult declareMainFunction(Span declarationSpan);
 
     /**
-     * @param name name to resolve @return nearest lexical symbol, or empty
+     * Looks up a symbol by name starting from the current scope.
+     *
+     * @param name name to resolve
+     * @return nearest lexical symbol, or empty
      */
     Optional<Symbol> lookup(String name);
 
     /**
-     * @param startScope starting scope @param name name to resolve @return nearest symbol, or empty
+     * Looks up a symbol by name starting from a specific scope.
+     *
+     * @param startScope starting scope
+     * @param name name to resolve
+     * @return nearest symbol, or empty
      */
     Optional<Symbol> lookupFrom(ScopeId startScope, String name);
 
     /**
-     * @param name name to resolve @return local symbol, or empty
+     * Looks up a symbol by name strictly in the current scope.
+     *
+     * @param name name to resolve
+     * @return local symbol, or empty
      */
     Optional<Symbol> lookupLocal(String name);
 
     /**
-     * @param scopeId scope to inspect @param name name to resolve @return local symbol, or empty
+     * Looks up a symbol by name strictly in the specified scope.
+     *
+     * @param scopeId scope to inspect
+     * @param name name to resolve
+     * @return local symbol, or empty
      */
     Optional<Symbol> lookupLocal(ScopeId scopeId, String name);
 
     /**
-     * @param symbolId symbol identifier @return symbol, or empty when unknown
+     * Finds a symbol by its unique identifier.
+     *
+     * @param symbolId symbol identifier
+     * @return symbol, or empty when unknown
      */
     Optional<Symbol> find(SymbolId symbolId);
 
     /**
-     * @param scopeId scope identifier @return scope, or empty when unknown
+     * Finds a scope by its unique identifier.
+     *
+     * @param scopeId scope identifier
+     * @return scope, or empty when unknown
      */
     Optional<Scope> findScope(ScopeId scopeId);
 
     /**
+     * Returns an immutable declaration-order snapshot of current-scope symbols.
+     *
      * @return immutable declaration-order snapshot of current-scope symbols
      */
     List<Symbol> currentSymbols();
 
     /**
-     * @param scopeId scope to inspect @return immutable declaration-order snapshot
+     * Returns an immutable declaration-order snapshot of symbols in the specified scope.
+     *
+     * @param scopeId scope to inspect
+     * @return immutable declaration-order snapshot
      */
     List<Symbol> symbolsInScope(ScopeId scopeId);
 
     /** Structured scope-handle implementation. */
     final class DefaultScopeHandle implements ScopeHandle {
+        /** Enclosing symbol table. */
         private final SymbolTable table;
-        private final Scope scope;
+
+        /** Scope managed by this handle. */
+        private final Scope scopei;
+
+        /** Flag indicating whether this handle has already closed the scope. */
         private boolean closed;
 
         private DefaultScopeHandle(final SymbolTable table, final Scope scope) {
             this.table = table;
-            this.scope = scope;
+            this.scopei = scope;
         }
 
         @Override
         public Scope scope() {
-            return scope;
+            return scopei;
         }
 
         @Override
         public void close() {
             if (!closed) {
-                if (!table.currentScope().id().equals(scope.id())) {
+                if (!table.currentScope().id().equals(scopei.id())) {
                     throw new IllegalStateException(
                             "scope handle must be closed while its scope is current");
                 }
