@@ -1,12 +1,15 @@
 package org.dersbian.compiler.semantics.symbol;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** Tests the immutable result model used by AST binding consumers. */
+@SuppressWarnings({"PMD.UnitTestContainsTooManyAsserts", "PMD.AtLeastOneConstructor"})
 class SymbolBindingResultTest {
     @Test
     void declarationResultsAreDefensivelyCopied() {
@@ -22,8 +25,8 @@ class SymbolBindingResultTest {
 
     @Test
     void nullDeclarationResultIsRejected() {
-        assertThatThrownBy(() -> new SymbolBindingResult(List.of((DeclarationResult) null)))
-                .isInstanceOf(NullPointerException.class)
+        assertThatThrownBy(() -> new SymbolBindingResult(Collections.singletonList(null)))
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("declarations must not contain null");
     }
 }

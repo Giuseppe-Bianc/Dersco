@@ -9,7 +9,7 @@ public record SymbolBindingResult(List<DeclarationResult> declarations) {
     public SymbolBindingResult {
         Objects.requireNonNull(declarations, "declarations must not be null");
         if (declarations.stream().anyMatch(Objects::isNull)) {
-            throw new NullPointerException("declarations must not contain null");
+            throw new IllegalArgumentException("declarations must not contain null");
         }
         declarations = List.copyOf(declarations);
     }
