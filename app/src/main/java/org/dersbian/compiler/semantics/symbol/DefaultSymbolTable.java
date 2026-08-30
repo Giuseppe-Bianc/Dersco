@@ -45,10 +45,10 @@ public final class DefaultSymbolTable implements SymbolTable {
     private final Deque<ScopeId> scopeStack = new ArrayDeque<>();
 
     /** Monotonic sequence counter for scope identifiers. */
-    private long scopeIdSequence = 1L;
+    private final MonotonicIdSequence scopeIdSequence = new MonotonicIdSequence();
 
     /** Monotonic sequence counter for symbol identifiers. */
-    private long symbolIdSequence = 1L;
+    private final MonotonicIdSequence symbolIdSequence = new MonotonicIdSequence();
 
     /** Creates a symbol table containing one empty global scope. */
     public DefaultSymbolTable() {
@@ -434,17 +434,11 @@ public final class DefaultSymbolTable implements SymbolTable {
     }
 
     private SymbolId nextSymbolId() {
-        if (symbolIdSequence == Long.MAX_VALUE) {
-            throw new IllegalStateException("symbol id space exhausted");
-        }
-        return new SymbolId(symbolIdSequence++);
+        return new SymbolId(symbolIdSequence.next());
     }
 
     private ScopeId nextScopeId() {
-        if (scopeIdSequence == Long.MAX_VALUE) {
-            throw new IllegalStateException("scope id space exhausted");
-        }
-        return new ScopeId(scopeIdSequence++);
+        return new ScopeId(scopeIdSequence.next());
     }
 
     private static void validateName(final String name) {
