@@ -14,7 +14,12 @@ public interface SymbolTable {
     /** Returns the immutable snapshot of the active scope. */
     Scope currentScope();
 
-    /** Enters a block or loop scope below the current scope. */
+    /**
+     * Enters a non-function child scope below the current scope.
+     *
+     * @param kind scope kind, either {@link ScopeKind#BLOCK} or {@link ScopeKind#LOOP}
+     * @return immutable snapshot of the newly active scope
+     */
     Scope enterScope(ScopeKind kind);
 
     /** Enters a function scope owned by the given function symbol. */
@@ -22,6 +27,14 @@ public interface SymbolTable {
 
     /** Exits the active scope and returns its final immutable snapshot. */
     Scope exitScope();
+
+    /**
+     * Opens a block or loop scope whose close operation exits exactly that scope.
+     *
+     * @param kind scope kind, either {@link ScopeKind#BLOCK} or {@link ScopeKind#LOOP}
+     * @return structured scope handle
+     */
+    ScopeHandle openScope(ScopeKind kind);
 
     /** Returns a historical immutable scope snapshot. */
     Optional<Scope> findScope(ScopeId id);
@@ -52,6 +65,9 @@ public interface SymbolTable {
 
     /** Resolves a name only in the active scope. */
     Optional<Symbol> lookupLocal(String name);
+
+    /** Resolves a name only in the specified scope. */
+    Optional<Symbol> lookupLocal(ScopeId scopeId, String name);
 
     /** Resolves a symbol by stable identity. */
     Optional<Symbol> find(SymbolId id);
