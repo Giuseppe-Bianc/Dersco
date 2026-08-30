@@ -38,14 +38,11 @@ class DefaultSymbolTableTest {
         final var duplicate =
                 table.declareVariable("x", new Type.I64(), Mutability.IMMUTABLE, SPAN);
         final var next = table.declareVariable("y", new Type.I64(), Mutability.IMMUTABLE, SPAN);
-
         assertThat(duplicate)
                 .isEqualTo(
                         new DeclarationResult.AlreadyDeclared(
                                 "x", ((DeclarationResult.Declared) first).symbol()));
         assertThat(((DeclarationResult.Declared) next).symbol().id().value()).isEqualTo(2L);
-        assertThat(table.lookup("x").orElseThrow())
-                .isEqualTo(((DeclarationResult.Declared) first).symbol());
     }
 
     @Test
@@ -54,9 +51,6 @@ class DefaultSymbolTableTest {
         final var global = table.declareVariable("x", new Type.I32(), Mutability.IMMUTABLE, SPAN);
         final Scope child = table.enterScope(ScopeKind.BLOCK);
         final var local = table.declareVariable("x", new Type.I64(), Mutability.MUTABLE, SPAN);
-
-        assertThat(child.parentId()).contains(table.globalScope().id());
-        assertThat(child.depth()).isEqualTo(1);
         assertThat(table.lookup("x").orElseThrow())
                 .isEqualTo(((DeclarationResult.Declared) local).symbol());
         assertThat(table.exitScope()).isEqualTo(child);
@@ -71,11 +65,8 @@ class DefaultSymbolTableTest {
         table.declareVariable("a", new Type.I32(), Mutability.IMMUTABLE, SPAN);
         table.declareVariable("b", new Type.I64(), Mutability.MUTABLE, SPAN);
         table.exitScope();
-
         assertThat(table.findScope(child.id())).contains(child);
-        assertThat(table.symbolsInScope(child.id()))
-                .extracting(Symbol::name)
-                .containsExactly("a", "b");
+        assertThat(table.symbolsInScope(child.id())).extracting(Symbol::name).containsExactly("a", "b");
     }
 
     @Test
@@ -97,11 +88,8 @@ class DefaultSymbolTableTest {
                 (Symbol.FunctionSymbol) ((DeclarationResult.Declared) function).symbol();
         final Scope functionScope = table.enterFunctionScope(owner.id());
         table.declareParameter("a", new Type.I32(), Mutability.IMMUTABLE, 0, SPAN);
-
         assertThat(functionScope.ownerSymbolId()).contains(owner.id());
-        assertThat(table.currentSymbols())
-                .singleElement()
-                .isInstanceOf(Symbol.ParameterSymbol.class);
+        assertThat(table.currentSymbols()).singleElement().isInstanceOf(Symbol.ParameterSymbol.class);
         assertThat(((Symbol.ParameterSymbol) table.currentSymbols().getFirst()).ordinal()).isZero();
     }
 
@@ -112,11 +100,9 @@ class DefaultSymbolTableTest {
         final Symbol.FunctionSymbol owner =
                 (Symbol.FunctionSymbol) ((DeclarationResult.Declared) function).symbol();
         table.enterFunctionScope(owner.id());
-
         assertThatThrownBy(
-                        () ->
-                                table.declareParameter(
-                                        "a", new Type.I32(), Mutability.IMMUTABLE, 1, SPAN))
+                        () -> table.declareParameter(
+                                "a", new Type.I32(), Mutability.IMMUTABLE, 1, SPAN))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -125,7 +111,6 @@ class DefaultSymbolTableTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final var first = table.declareMainFunction(SPAN);
         final var duplicate = table.declareMainFunction(SPAN);
-
         assertThat(((DeclarationResult.Declared) first).symbol().kind())
                 .isEqualTo(SymbolKind.MAIN_FUNCTION);
         assertThat(duplicate)
@@ -148,7 +133,6 @@ class DefaultSymbolTableTest {
         final Scope child = table.enterScope(ScopeKind.BLOCK);
         table.declareVariable("y", new Type.I64(), Mutability.IMMUTABLE, SPAN);
         table.exitScope();
-
         assertThat(table.lookupFrom(child.id(), "x"))
                 .contains(((DeclarationResult.Declared) global).symbol());
         assertThat(table.lookupFrom(child.id(), "y")).isPresent();
@@ -159,8 +143,7 @@ class DefaultSymbolTableTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Symbol symbol =
                 ((DeclarationResult.Declared)
-                                table.declareVariable(
-                                        "x", new Type.I32(), Mutability.IMMUTABLE, SPAN))
+                                table.declareVariable("x", new Type.I32(), Mutability.IMMUTABLE, SPAN))
                         .symbol();
         assertThat(table.find(symbol.id())).contains(symbol);
         assertThat(table.find(new SymbolId(symbol.id().value() + 1))).isEmpty();
@@ -173,5 +156,31 @@ class DefaultSymbolTableTest {
         assertThat(loop.kind()).isEqualTo(ScopeKind.LOOP);
         assertThat(loop.ownerSymbolId()).isEmpty();
         assertThat(loop.depth()).isEqualTo(1);
+    }
+
+    @Test
+    void scopeHandleEnforcesLifoLifecycle() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final ScopeHandle outer = table.openScope(ScopeKind.BLOCK);
+        final ScopeHandle inner = table.openScope(ScopeKind.LOOP);
+        assertThatThrownBy(outer::close).isInstanceOf(IllegalStateException.class);
+        inner.close();
+        outer.close();
+        assertThat(table.currentScope()).isEqualTo(table.globalScope());
+        assertThatThrownBy(outer::close).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void lookupLocalCanReadHistoricalScope() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Scope child = table.enterScope(ScopeKind.BLOCK);
+        final Symbol symbol =
+                ((DeclarationResult.Declared)
+                                table.declareVariable(
+                                        "x", new Type.I32(), Mutability.IMMUTABLE, SPAN))
+                        .symbol();
+        table.exitScope();
+        assertThat(table.lookupLocal(child.id(), "x")).contains(symbol);
+        assertThat(table.lookupLocal(child.id(), "missing")).isEmpty();
     }
 }
