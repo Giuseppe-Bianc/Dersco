@@ -296,7 +296,7 @@ public final class DefaultSymbolTable implements SymbolTable {
     }
 
     /** Verifies all structural and cross-reference invariants for tests in this package. */
-    public void assertConsistent() {
+    void assertConsistent() {
         if (scopeStack.isEmpty()) {
             throw new AssertionError("scope stack must not be empty");
         }
@@ -463,10 +463,10 @@ public final class DefaultSymbolTable implements SymbolTable {
         /** Immutable scope metadata. */
         private final Scope scope;
 
-        /** Symbols declared in this scope indexed by name. */
+        /** Symbols declared in this scope, preserved in declaration order. */
         private final Map<String, Symbol> symbolsByName = new LinkedHashMap<>();
 
-        /** Number of parameters declared in this scope so far. */
+        /** Number of successfully declared parameters in this function scope. */
         private int parameterCount;
 
         private ScopeState(final Scope scope) {
@@ -474,7 +474,7 @@ public final class DefaultSymbolTable implements SymbolTable {
         }
     }
 
-    /** Concrete implementation of a declared variable symbol. */
+    /** Concrete immutable variable symbol. */
     private record VariableSymbolImpl(
             SymbolId id,
             String name,
@@ -489,7 +489,7 @@ public final class DefaultSymbolTable implements SymbolTable {
         }
     }
 
-    /** Concrete implementation of a function parameter symbol. */
+    /** Concrete immutable parameter symbol. */
     private record ParameterSymbolImpl(
             SymbolId id,
             String name,
