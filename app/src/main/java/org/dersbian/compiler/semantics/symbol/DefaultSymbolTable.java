@@ -66,7 +66,8 @@ public final class DefaultSymbolTable implements SymbolTable {
             throw new IllegalStateException("function scope owner must be a function symbol");
         }
         if (!owner.scopeId().equals(currentScope().id())) {
-            throw new IllegalStateException("function scope owner must belong to the current parent scope");
+            throw new IllegalStateException(
+                    "function scope owner must belong to the current parent scope");
         }
         return createScope(kind, Optional.of(ownerSymbolId));
     }
@@ -94,8 +95,14 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (duplicate != null) {
             return duplicate;
         }
-        final VariableSymbol symbol = new VariableSymbolImpl(
-                nextSymbolId(), name, currentScope().id(), declarationSpan, type, mutability);
+        final VariableSymbol symbol =
+                new VariableSymbolImpl(
+                        nextSymbolId(),
+                        name,
+                        currentScope().id(),
+                        declarationSpan,
+                        type,
+                        mutability);
         register(symbol);
         return new DeclarationResult.Declared(symbol);
     }
@@ -119,14 +126,22 @@ public final class DefaultSymbolTable implements SymbolTable {
         }
         final ScopeState state = currentState();
         if (ordinal != state.parameterCount) {
-            throw new IllegalArgumentException("parameter ordinal must be consecutive starting at zero");
+            throw new IllegalArgumentException(
+                    "parameter ordinal must be consecutive starting at zero");
         }
         final DeclarationResult duplicate = duplicate(name);
         if (duplicate != null) {
             return duplicate;
         }
-        final ParameterSymbol symbol = new ParameterSymbolImpl(
-                nextSymbolId(), name, currentScope().id(), declarationSpan, type, mutability, ordinal);
+        final ParameterSymbol symbol =
+                new ParameterSymbolImpl(
+                        nextSymbolId(),
+                        name,
+                        currentScope().id(),
+                        declarationSpan,
+                        type,
+                        mutability,
+                        ordinal);
         register(symbol);
         state.parameterCount++;
         return new DeclarationResult.Declared(symbol);
@@ -147,8 +162,14 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (duplicate != null) {
             return duplicate;
         }
-        final FunctionSymbol symbol = new FunctionSymbolImpl(
-                nextSymbolId(), name, currentScope().id(), declarationSpan, signature, returnType);
+        final FunctionSymbol symbol =
+                new FunctionSymbolImpl(
+                        nextSymbolId(),
+                        name,
+                        currentScope().id(),
+                        declarationSpan,
+                        signature,
+                        returnType);
         register(symbol);
         return new DeclarationResult.Declared(symbol);
     }
@@ -163,8 +184,13 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (duplicate != null) {
             return duplicate;
         }
-        final MainFunctionSymbol symbol = new MainFunctionSymbolImpl(
-                nextSymbolId(), MAIN_NAME, currentScope().id(), declarationSpan, new Type.VoidT());
+        final MainFunctionSymbol symbol =
+                new MainFunctionSymbolImpl(
+                        nextSymbolId(),
+                        MAIN_NAME,
+                        currentScope().id(),
+                        declarationSpan,
+                        new Type.VoidT());
         register(symbol);
         return new DeclarationResult.Declared(symbol);
     }
@@ -210,7 +236,9 @@ public final class DefaultSymbolTable implements SymbolTable {
         Objects.requireNonNull(scopeId, "scopeId must not be null");
         validateLookupName(name);
         final ScopeState state = scopes.get(scopeId);
-        return state == null ? Optional.empty() : Optional.ofNullable(state.symbolsByName.get(name));
+        return state == null
+                ? Optional.empty()
+                : Optional.ofNullable(state.symbolsByName.get(name));
     }
 
     @Override
@@ -248,13 +276,16 @@ public final class DefaultSymbolTable implements SymbolTable {
                 throw new AssertionError("scope stack contains an unknown scope");
             }
         }
-        if (scopes.values().stream().filter(state -> state.scope.kind() == ScopeKind.GLOBAL).count() != 1) {
+        if (scopes.values().stream().filter(state -> state.scope.kind() == ScopeKind.GLOBAL).count()
+                != 1) {
             throw new AssertionError("exactly one global scope is required");
         }
         for (ScopeState state : scopes.values()) {
             final Scope scope = state.scope;
             if (scope.kind() == ScopeKind.GLOBAL) {
-                if (scope.parentId().isPresent() || scope.depth() != 0 || scope.ownerSymbolId().isPresent()) {
+                if (scope.parentId().isPresent()
+                        || scope.depth() != 0
+                        || scope.ownerSymbolId().isPresent()) {
                     throw new AssertionError("invalid global scope");
                 }
             } else {
@@ -266,7 +297,9 @@ public final class DefaultSymbolTable implements SymbolTable {
                 if (scope.kind() == ScopeKind.FUNCTION) {
                     final SymbolId ownerId = scope.ownerSymbolId().orElseThrow();
                     final Symbol owner = symbols.get(ownerId);
-                    if (owner == null || (owner.kind() != SymbolKind.FUNCTION && owner.kind() != SymbolKind.MAIN_FUNCTION)
+                    if (owner == null
+                            || (owner.kind() != SymbolKind.FUNCTION
+                                    && owner.kind() != SymbolKind.MAIN_FUNCTION)
                             || !owner.scopeId().equals(parentId)) {
                         throw new AssertionError("invalid function scope owner");
                     }
@@ -312,7 +345,8 @@ public final class DefaultSymbolTable implements SymbolTable {
     private Scope createScope(final ScopeKind kind, final Optional<SymbolId> ownerSymbolId) {
         final Scope parent = currentScope();
         final ScopeId id = nextScopeId();
-        final Scope scope = new Scope(id, kind, Optional.of(parent.id()), parent.depth() + 1, ownerSymbolId);
+        final Scope scope =
+                new Scope(id, kind, Optional.of(parent.id()), parent.depth() + 1, ownerSymbolId);
         scopes.put(id, new ScopeState(scope));
         scopeStack.push(id);
         return scope;
@@ -336,7 +370,8 @@ public final class DefaultSymbolTable implements SymbolTable {
         symbols.put(symbol.id(), symbol);
     }
 
-    private List<ParameterDescriptor> validateParameters(final List<ParameterDescriptor> parameters) {
+    private List<ParameterDescriptor> validateParameters(
+            final List<ParameterDescriptor> parameters) {
         final List<ParameterDescriptor> copy = List.copyOf(parameters);
         final Map<String, Boolean> names = new LinkedHashMap<>();
         for (ParameterDescriptor parameter : copy) {
@@ -383,7 +418,12 @@ public final class DefaultSymbolTable implements SymbolTable {
     }
 
     private record VariableSymbolImpl(
-            SymbolId id, String name, ScopeId scopeId, Span declarationSpan, Type type, Mutability mutability)
+            SymbolId id,
+            String name,
+            ScopeId scopeId,
+            Span declarationSpan,
+            Type type,
+            Mutability mutability)
             implements VariableSymbol {}
 
     private record ParameterSymbolImpl(

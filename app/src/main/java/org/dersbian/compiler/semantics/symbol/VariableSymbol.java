@@ -4,9 +4,13 @@ import org.dersbian.compiler.syntax.ast.Type;
 
 /** Symbol representing a variable binding. */
 public interface VariableSymbol extends Symbol {
-    /** @return declared type */
+    /**
+     * @return declared type
+     */
     Type type();
 
-    /** @return retained mutability */
+    /**
+     * @return retained mutability
+     */
     Mutability mutability();
 }

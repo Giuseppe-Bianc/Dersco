@@ -43,8 +43,12 @@ class DefaultSymbolTableInvariantTest {
     @Test
     void functionOwnerMustBeInImmediateParentScope() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final FunctionSymbol function = (FunctionSymbol) ((DeclarationResult.Declared) table
-                .declareFunction("f", List.of(), new Type.VoidT(), SPAN)).symbol();
+        final FunctionSymbol function =
+                (FunctionSymbol)
+                        ((DeclarationResult.Declared)
+                                        table.declareFunction(
+                                                "f", List.of(), new Type.VoidT(), SPAN))
+                                .symbol();
         table.enterScope(ScopeKind.BLOCK);
 
         assertThatThrownBy(() -> table.enterScope(ScopeKind.FUNCTION, function.id()))
@@ -55,27 +59,44 @@ class DefaultSymbolTableInvariantTest {
     @Test
     void nonFunctionScopesRejectOwners() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final FunctionSymbol function = (FunctionSymbol) ((DeclarationResult.Declared) table
-                .declareFunction("f", List.of(), new Type.VoidT(), SPAN)).symbol();
+        final FunctionSymbol function =
+                (FunctionSymbol)
+                        ((DeclarationResult.Declared)
+                                        table.declareFunction(
+                                                "f", List.of(), new Type.VoidT(), SPAN))
+                                .symbol();
 
         assertThatThrownBy(() -> table.enterScope(ScopeKind.BLOCK, function.id()))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> table.enterScope(ScopeKind.GLOBAL)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> table.enterScope(ScopeKind.FUNCTION)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> table.enterScope(ScopeKind.GLOBAL))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> table.enterScope(ScopeKind.FUNCTION))
+                .isInstanceOf(IllegalArgumentException.class);
         table.assertConsistent();
     }
 
     @Test
     void parameterOrdinalStateRemainsUnchangedAfterInvalidDeclaration() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final FunctionSymbol function = (FunctionSymbol) ((DeclarationResult.Declared) table
-                .declareFunction("f", List.of(), new Type.VoidT(), SPAN)).symbol();
+        final FunctionSymbol function =
+                (FunctionSymbol)
+                        ((DeclarationResult.Declared)
+                                        table.declareFunction(
+                                                "f", List.of(), new Type.VoidT(), SPAN))
+                                .symbol();
         table.enterScope(ScopeKind.FUNCTION, function.id());
 
-        assertThatThrownBy(() -> table.declareParameter("bad", new Type.I32(), Mutability.IMMUTABLE, 1, SPAN))
+        assertThatThrownBy(
+                        () ->
+                                table.declareParameter(
+                                        "bad", new Type.I32(), Mutability.IMMUTABLE, 1, SPAN))
                 .isInstanceOf(IllegalArgumentException.class);
-        final ParameterSymbol parameter = (ParameterSymbol) ((DeclarationResult.Declared) table
-                .declareParameter("a", new Type.I32(), Mutability.IMMUTABLE, 0, SPAN)).symbol();
+        final ParameterSymbol parameter =
+                (ParameterSymbol)
+                        ((DeclarationResult.Declared)
+                                        table.declareParameter(
+                                                "a", new Type.I32(), Mutability.IMMUTABLE, 0, SPAN))
+                                .symbol();
         assertThat(parameter.ordinal()).isZero();
         table.assertConsistent();
     }
@@ -87,10 +108,16 @@ class DefaultSymbolTableInvariantTest {
         assertThat(first.globalScope().id().value()).isPositive();
         assertThat(second.globalScope().id().value()).isPositive();
 
-        final Symbol a = ((DeclarationResult.Declared) first
-                .declareVariable("a", new Type.I32(), Mutability.IMMUTABLE, SPAN)).symbol();
-        final Symbol b = ((DeclarationResult.Declared) first
-                .declareVariable("b", new Type.I32(), Mutability.IMMUTABLE, SPAN)).symbol();
+        final Symbol a =
+                ((DeclarationResult.Declared)
+                                first.declareVariable(
+                                        "a", new Type.I32(), Mutability.IMMUTABLE, SPAN))
+                        .symbol();
+        final Symbol b =
+                ((DeclarationResult.Declared)
+                                first.declareVariable(
+                                        "b", new Type.I32(), Mutability.IMMUTABLE, SPAN))
+                        .symbol();
         assertThat(a.id().value()).isLessThan(b.id().value());
         assertThat(a.id()).isNotEqualTo(b.id());
         assertThat(first.find(a.id())).containsSame(a);
@@ -101,13 +128,22 @@ class DefaultSymbolTableInvariantTest {
     @Test
     void declarationOrderIsStableAfterShadowingAndScopeExit() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final Symbol a = ((DeclarationResult.Declared) table
-                .declareVariable("a", new Type.I32(), Mutability.IMMUTABLE, SPAN)).symbol();
-        final Symbol b = ((DeclarationResult.Declared) table
-                .declareVariable("b", new Type.I32(), Mutability.IMMUTABLE, SPAN)).symbol();
+        final Symbol a =
+                ((DeclarationResult.Declared)
+                                table.declareVariable(
+                                        "a", new Type.I32(), Mutability.IMMUTABLE, SPAN))
+                        .symbol();
+        final Symbol b =
+                ((DeclarationResult.Declared)
+                                table.declareVariable(
+                                        "b", new Type.I32(), Mutability.IMMUTABLE, SPAN))
+                        .symbol();
         final Scope block = table.enterScope(ScopeKind.BLOCK);
-        final Symbol shadow = ((DeclarationResult.Declared) table
-                .declareVariable("a", new Type.I64(), Mutability.MUTABLE, SPAN)).symbol();
+        final Symbol shadow =
+                ((DeclarationResult.Declared)
+                                table.declareVariable(
+                                        "a", new Type.I64(), Mutability.MUTABLE, SPAN))
+                        .symbol();
 
         assertThat(table.symbolsInScope(block.id())).containsExactly(shadow);
         table.exitScope();

@@ -22,7 +22,8 @@ public record ParameterDescriptor(String name, Type type, Mutability mutability)
     }
 
     /** Copies a parameter descriptor list into an immutable list. */
-    public static List<ParameterDescriptor> immutableCopy(final List<ParameterDescriptor> parameters) {
+    public static List<ParameterDescriptor> immutableCopy(
+            final List<ParameterDescriptor> parameters) {
         if (parameters == null) {
             throw new NullPointerException("parameters must not be null");
         }

@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
-import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.lexer.token.SourceLocation;
+import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
 
@@ -40,9 +40,11 @@ class DefaultSymbolTableTest {
     @Test
     void declarationPreservesIdentityAndRejectsDuplicatesWithoutMutation() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final DeclarationResult first = table.declareVariable("x", new Type.I32(), Mutability.MUTABLE, SPAN);
+        final DeclarationResult first =
+                table.declareVariable("x", new Type.I32(), Mutability.MUTABLE, SPAN);
         final List<Symbol> before = table.currentSymbols();
-        final DeclarationResult duplicate = table.declareVariable("x", new Type.I64(), Mutability.IMMUTABLE, SPAN);
+        final DeclarationResult duplicate =
+                table.declareVariable("x", new Type.I64(), Mutability.IMMUTABLE, SPAN);
 
         assertThat(first).isInstanceOf(DeclarationResult.Declared.class);
         assertThat(duplicate).isInstanceOf(DeclarationResult.AlreadyDeclared.class);
@@ -54,11 +56,17 @@ class DefaultSymbolTableTest {
     @Test
     void shadowingResolvesNearestBinding() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final Symbol global = ((DeclarationResult.Declared) table
-                .declareVariable("x", new Type.I32(), Mutability.MUTABLE, SPAN)).symbol();
+        final Symbol global =
+                ((DeclarationResult.Declared)
+                                table.declareVariable(
+                                        "x", new Type.I32(), Mutability.MUTABLE, SPAN))
+                        .symbol();
         final Scope block = table.enterScope(ScopeKind.BLOCK);
-        final Symbol local = ((DeclarationResult.Declared) table
-                .declareVariable("x", new Type.I64(), Mutability.IMMUTABLE, SPAN)).symbol();
+        final Symbol local =
+                ((DeclarationResult.Declared)
+                                table.declareVariable(
+                                        "x", new Type.I64(), Mutability.IMMUTABLE, SPAN))
+                        .symbol();
 
         assertThat(table.lookup("x")).contains(local);
         assertThat(table.lookupLocal(block.id())).contains(local);
@@ -85,15 +93,22 @@ class DefaultSymbolTableTest {
     @Test
     void parametersRequireConsecutiveOrdinalsAndUniqueNames() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final Symbol function = ((DeclarationResult.Declared) table
-                .declareFunction("f", List.of(), new Type.VoidT(), SPAN)).symbol();
+        final Symbol function =
+                ((DeclarationResult.Declared)
+                                table.declareFunction("f", List.of(), new Type.VoidT(), SPAN))
+                        .symbol();
         table.enterScope(ScopeKind.FUNCTION, function.id());
 
-        final DeclarationResult first = table.declareParameter("a", new Type.I32(), Mutability.IMMUTABLE, 0, SPAN);
-        final DeclarationResult second = table.declareParameter("b", new Type.I64(), Mutability.MUTABLE, 1, SPAN);
+        final DeclarationResult first =
+                table.declareParameter("a", new Type.I32(), Mutability.IMMUTABLE, 0, SPAN);
+        final DeclarationResult second =
+                table.declareParameter("b", new Type.I64(), Mutability.MUTABLE, 1, SPAN);
         assertThat(first).isInstanceOf(DeclarationResult.Declared.class);
         assertThat(second).isInstanceOf(DeclarationResult.Declared.class);
-        assertThatThrownBy(() -> table.declareParameter("c", new Type.I32(), Mutability.IMMUTABLE, 3, SPAN))
+        assertThatThrownBy(
+                        () ->
+                                table.declareParameter(
+                                        "c", new Type.I32(), Mutability.IMMUTABLE, 3, SPAN))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(table.currentSymbols()).extracting(Symbol::name).containsExactly("a", "b");
     }
@@ -120,26 +135,33 @@ class DefaultSymbolTableTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final List<Symbol> before = table.currentSymbols();
 
-        assertThatThrownBy(() -> table.declareVariable("", new Type.I32(), Mutability.MUTABLE, SPAN))
+        assertThatThrownBy(
+                        () -> table.declareVariable("", new Type.I32(), Mutability.MUTABLE, SPAN))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> table.declareVariable("x", null, Mutability.MUTABLE, SPAN))
                 .isInstanceOf(NullPointerException.class);
         assertThat(table.currentSymbols()).containsExactlyElementsOf(before);
 
         final List<Symbol> returned = table.currentSymbols();
-        assertThatThrownBy(() -> returned.add(null)).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> returned.add(null))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @Test
     void functionSignatureIsImmutableAndParametersAreCopied() {
-        final var parameters = new java.util.ArrayList<>(List.of(
-                new ParameterDescriptor("a", new Type.I32(), Mutability.IMMUTABLE),
-                new ParameterDescriptor("b", new Type.I64(), Mutability.MUTABLE)));
-        final FunctionSymbol function = (FunctionSymbol) ((DeclarationResult.Declared) tableWithFunction(parameters)).symbol();
+        final var parameters =
+                new java.util.ArrayList<>(
+                        List.of(
+                                new ParameterDescriptor("a", new Type.I32(), Mutability.IMMUTABLE),
+                                new ParameterDescriptor("b", new Type.I64(), Mutability.MUTABLE)));
+        final FunctionSymbol function =
+                (FunctionSymbol)
+                        ((DeclarationResult.Declared) tableWithFunction(parameters)).symbol();
         parameters.clear();
 
         assertThat(function.parameters()).hasSize(2);
-        assertThatThrownBy(() -> function.parameters().clear()).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> function.parameters().clear())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     private static DeclarationResult tableWithFunction(final List<ParameterDescriptor> parameters) {

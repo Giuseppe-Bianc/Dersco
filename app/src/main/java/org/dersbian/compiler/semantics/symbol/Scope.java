@@ -26,11 +26,14 @@ public record Scope(
         if (depth < 0) {
             throw new IllegalArgumentException("depth must not be negative");
         }
-        if (kind == ScopeKind.GLOBAL && (parentId.isPresent() || depth != 0 || ownerSymbolId.isPresent())) {
-            throw new IllegalArgumentException("global scope must have no parent, depth zero, or owner");
+        if (kind == ScopeKind.GLOBAL
+                && (parentId.isPresent() || depth != 0 || ownerSymbolId.isPresent())) {
+            throw new IllegalArgumentException(
+                    "global scope must have no parent, depth zero, or owner");
         }
         if (kind != ScopeKind.GLOBAL && (parentId.isEmpty() || depth == 0)) {
-            throw new IllegalArgumentException("non-global scope must have a parent and positive depth");
+            throw new IllegalArgumentException(
+                    "non-global scope must have a parent and positive depth");
         }
     }
 }

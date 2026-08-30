@@ -1,7 +1,8 @@
 package org.dersbian.compiler.semantics.symbol;
 
 /** Result of a declaration attempt, including the existing binding on conflict. */
-public sealed interface DeclarationResult permits DeclarationResult.Declared, DeclarationResult.AlreadyDeclared {
+public sealed interface DeclarationResult
+        permits DeclarationResult.Declared, DeclarationResult.AlreadyDeclared {
     /** A declaration accepted by the current scope. */
     record Declared(Symbol symbol) implements DeclarationResult {
         /** Validates the accepted symbol. */
