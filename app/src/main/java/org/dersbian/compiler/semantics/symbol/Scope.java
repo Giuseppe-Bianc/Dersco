@@ -29,5 +29,11 @@ public record Scope(
             throw new IllegalArgumentException(
                     "non-global scope must have a parent and positive depth");
         }
+        if (kind == ScopeKind.FUNCTION && ownerSymbolId.isEmpty()) {
+            throw new IllegalArgumentException("function scope must have an owner");
+        }
+        if (kind != ScopeKind.FUNCTION && ownerSymbolId.isPresent()) {
+            throw new IllegalArgumentException("only function scopes may have an owner");
+        }
     }
 }
