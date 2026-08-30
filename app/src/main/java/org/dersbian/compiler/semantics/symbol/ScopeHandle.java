@@ -3,8 +3,8 @@ package org.dersbian.compiler.semantics.symbol;
 import java.util.Objects;
 
 /**
- * Structured handle for a lexical scope opened through {@link SymbolTable#openScope(ScopeKind)}.
- * A handle may be closed exactly once and only while its scope is the active scope.
+ * Structured handle for a lexical scope opened through {@link SymbolTable#openScope(ScopeKind)}. A
+ * handle may be closed exactly once and only while its scope is the active scope.
  */
 public final class ScopeHandle implements AutoCloseable {
     private final SymbolTable table;
@@ -24,8 +24,8 @@ public final class ScopeHandle implements AutoCloseable {
     /**
      * Closes this scope handle.
      *
-     * @throws IllegalStateException if the handle has already been closed or its scope is no
-     *     longer active
+     * @throws IllegalStateException if the handle has already been closed or its scope is no longer
+     *     active
      */
     @Override
     public void close() {
