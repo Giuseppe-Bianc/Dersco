@@ -6,7 +6,6 @@ import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 
 /** Immutable semantic binding. */
-@SuppressWarnings({"PMD.ShortVariable", "PMD.ShortMethodName"})
 public sealed interface Symbol
         permits Symbol.VariableSymbol,
                 Symbol.ParameterSymbol,
@@ -18,13 +17,13 @@ public sealed interface Symbol
     /** Returns the declared name of this symbol. */
     String name();
 
-    /** Returns the classification of this symbol. */
+    /** Returns the semantic kind of this symbol. */
     SymbolKind kind();
 
-    /** Returns the identifier of the scope that owns this symbol. */
+    /** Returns the owning lexical scope identifier. */
     ScopeId scopeId();
 
-    /** Returns the source span covering the declaration of this symbol. */
+    /** Returns the source span covering the declaration. */
     Span declarationSpan();
 
     /** Immutable variable binding. */
@@ -48,7 +47,7 @@ public sealed interface Symbol
         }
     }
 
-    /** Immutable parameter binding with its position in the function signature. */
+    /** Immutable parameter binding with its zero-based function ordinal. */
     record ParameterSymbol(
             SymbolId id,
             String name,
@@ -73,7 +72,7 @@ public sealed interface Symbol
         }
     }
 
-    /** Immutable function binding and its ordered signature. */
+    /** Immutable function binding containing its ordered signature descriptors. */
     record FunctionSymbol(
             SymbolId id,
             String name,
@@ -96,7 +95,7 @@ public sealed interface Symbol
         }
     }
 
-    /** The unique global main function binding. */
+    /** Immutable global entry-point binding. */
     record MainFunctionSymbol(
             SymbolId id, String name, Type returnType, ScopeId scopeId, Span declarationSpan)
             implements Symbol {
@@ -105,6 +104,9 @@ public sealed interface Symbol
             Objects.requireNonNull(returnType, "returnType must not be null");
             if (!"main".equals(name)) {
                 throw new IllegalArgumentException("main function must be named main");
+            }
+            if (!(returnType instanceof Type.VoidT)) {
+                throw new IllegalArgumentException("main function must return void");
             }
         }
 
@@ -130,10 +132,10 @@ public sealed interface Symbol
 
     private static void validateParameters(final List<ParameterDescriptor> parameters) {
         for (int index = 0; index < parameters.size(); index++) {
+            final ParameterDescriptor parameter = parameters.get(index);
             for (int previous = 0; previous < index; previous++) {
-                if (parameters.get(previous).name().equals(parameters.get(index).name())) {
-                    throw new IllegalArgumentException(
-                            "duplicate parameter name: " + parameters.get(index).name());
+                if (parameters.get(previous).name().equals(parameter.name())) {
+                    throw new IllegalArgumentException("duplicate parameter name: " + parameter.name());
                 }
             }
         }
