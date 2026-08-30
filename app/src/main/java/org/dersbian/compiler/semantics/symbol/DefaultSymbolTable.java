@@ -56,6 +56,7 @@ public final class DefaultSymbolTable implements SymbolTable {
                 new ScopeState(
                         globalScope, ScopeKind.GLOBAL, Optional.empty(), 0, Optional.empty()));
         scopeStack.push(globalScope);
+        assertInvariants();
     }
 
     @Override
@@ -80,6 +81,11 @@ public final class DefaultSymbolTable implements SymbolTable {
     @Override
     public ScopeHandle openScope(final ScopeKind kind) {
         return new ScopeHandle(this, enterScope(kind));
+    }
+
+    /** Opens a function scope and returns a closeable handle for structured analysis. */
+    public ScopeHandle openFunctionScope(final SymbolId ownerSymbolId) {
+        return new ScopeHandle(this, enterFunctionScope(ownerSymbolId));
     }
 
     @Override
@@ -108,6 +114,7 @@ public final class DefaultSymbolTable implements SymbolTable {
             validateFunctionScope(state);
         }
         scopeStack.pop();
+        assertInvariants();
         return state.snapshot();
     }
 
@@ -250,6 +257,44 @@ public final class DefaultSymbolTable implements SymbolTable {
         return state == null ? List.of() : List.copyOf(state.symbols.values());
     }
 
+    /** Performs a full internal consistency check; package-private for invariant tests. */
+    void assertInvariants() {
+        if (scopes.size() < 1 || !scopes.containsKey(globalScope)) {
+            throw new IllegalStateException("global scope registry is invalid");
+        }
+        if (scopeStack.isEmpty() || !scopeStack.contains(globalScope)) {
+            throw new IllegalStateException("scope stack does not contain global scope");
+        }
+        if (!scopeStack.peek().equals(currentScopeId())) {
+            throw new IllegalStateException("scope stack top is not the current scope");
+        }
+        for (ScopeState state : scopes.values()) {
+            validateScopeState(state);
+            for (Symbol symbol : state.symbols.values()) {
+                if (!symbol.scopeId().equals(state.id)) {
+                    throw new IllegalStateException("symbol points to the wrong owning scope");
+                }
+                final Symbol indexed = symbols.get(symbol.id());
+                if (indexed != symbol) {
+                    throw new IllegalStateException("scope and symbol indices disagree");
+                }
+            }
+        }
+        for (Map.Entry<SymbolId, Symbol> entry : symbols.entrySet()) {
+            final Symbol symbol = entry.getValue();
+            if (!entry.getKey().equals(symbol.id())) {
+                throw new IllegalStateException("symbol index key does not match symbol id");
+            }
+            final ScopeState state = scopes.get(symbol.scopeId());
+            if (state == null || state.symbols.get(symbol.name()) != symbol) {
+                throw new IllegalStateException("symbol index contains an unreachable symbol");
+            }
+        }
+        if (scopes.get(globalScope).kind != ScopeKind.GLOBAL) {
+            throw new IllegalStateException("global scope has non-global kind");
+        }
+    }
+
     private Scope createScope(final ScopeKind kind, final Optional<SymbolId> owner) {
         final ScopeId parent = currentScopeId();
         final ScopeState parentState = currentState();
@@ -258,6 +303,7 @@ public final class DefaultSymbolTable implements SymbolTable {
                 new ScopeState(id, kind, Optional.of(parent), parentState.depth + 1, owner);
         scopes.put(id, state);
         scopeStack.push(id);
+        assertInvariants();
         return state.snapshot();
     }
 
@@ -282,6 +328,7 @@ public final class DefaultSymbolTable implements SymbolTable {
             state.symbols.remove(symbol.name());
             throw new IllegalStateException("symbol identifier collision");
         }
+        assertInvariants();
         return new DeclarationResult.Declared(symbol);
     }
 
@@ -330,6 +377,27 @@ public final class DefaultSymbolTable implements SymbolTable {
                 throw new IllegalStateException(
                         "parameter symbol does not match function signature: " + descriptor.name());
             }
+        }
+    }
+
+    private static void validateScopeState(final ScopeState state) {
+        if (state.kind == ScopeKind.GLOBAL) {
+            if (state.parentId.isPresent() || state.ownerSymbolId.isPresent() || state.depth != 0) {
+                throw new IllegalStateException("global scope invariants are broken");
+            }
+            return;
+        }
+        if (state.parentId.isEmpty()) {
+            throw new IllegalStateException("non-global scope has no parent");
+        }
+        if (state.depth <= 0) {
+            throw new IllegalStateException("non-global scope has invalid depth");
+        }
+        if (state.kind == ScopeKind.FUNCTION && state.ownerSymbolId.isEmpty()) {
+            throw new IllegalStateException("function scope has no owner");
+        }
+        if (state.kind != ScopeKind.FUNCTION && state.ownerSymbolId.isPresent()) {
+            throw new IllegalStateException("non-function scope has an owner");
         }
     }
 
