@@ -5,18 +5,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /** Additional edge-case and stress tests for the version-one symbol table contract. */
-@SuppressWarnings({"PMD.UnitTestContainsTooManyAsserts", "PMD.AvoidDuplicateLiterals"})
+@SuppressWarnings({
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.AvoidDuplicateLiterals",
+    "PMD.AtLeastOneConstructor",
+    "PMD.TooManyMethods"
+})
 class DefaultSymbolTableEdgeCaseTest {
     /** Synthetic span used across symbol test declarations. */
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));
@@ -46,12 +50,15 @@ class DefaultSymbolTableEdgeCaseTest {
     @Test
     void functionSignaturePreservesDescriptorOrderAndValues() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final List<ParameterDescriptor> descriptors = List.of(
-                new ParameterDescriptor("first", new Type.I32(), Mutability.IMMUTABLE),
-                new ParameterDescriptor("second", new Type.F64(), Mutability.MUTABLE));
+        final List<ParameterDescriptor> descriptors =
+                List.of(
+                        new ParameterDescriptor("first", new Type.I32(), Mutability.IMMUTABLE),
+                        new ParameterDescriptor("second", new Type.F64(), Mutability.MUTABLE));
 
         final FunctionSymbol function =
-                (FunctionSymbol) declaredResult(table.declareFunction("f", descriptors, new Type.Bool(), SPAN));
+                (FunctionSymbol)
+                        declaredResult(
+                                table.declareFunction("f", descriptors, new Type.Bool(), SPAN));
 
         assertThat(function.parameters()).containsExactlyElementsOf(descriptors);
         assertThat(function.returnType()).isEqualTo(new Type.Bool());
@@ -76,14 +83,15 @@ class DefaultSymbolTableEdgeCaseTest {
     }
 
     @Test
-    void unknownHistoricalScopeIsNotAVisibleScope() {
+    void unknownHistoricalScopeIsNotVisible() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Scope block = table.enterScope(ScopeKind.BLOCK);
         declaredVariable(table, "x");
         table.exitScope();
 
         assertThat(table.findScope(block.id())).contains(block);
-        assertThat(table.lookupLocal(block.id(), "x")).containsMatch(symbol -> symbol.name().equals("x"));
+        assertThat(table.lookupLocal(block.id(), "x")).isPresent();
+        assertThat(table.lookupLocal(block.id(), "x").get().name()).isEqualTo("x");
         assertThat(table.lookupFrom(block.id(), "x")).isPresent();
         assertThat(table.lookupLocal(new ScopeId(Long.MAX_VALUE), "x")).isEmpty();
         assertThat(table.lookupFrom(new ScopeId(Long.MAX_VALUE), "x")).isEmpty();
@@ -111,7 +119,8 @@ class DefaultSymbolTableEdgeCaseTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final FunctionSymbol function =
                 (FunctionSymbol)
-                        declaredResult(table.declareFunction("f", List.of(), new Type.VoidT(), SPAN));
+                        declaredResult(
+                                table.declareFunction("f", List.of(), new Type.VoidT(), SPAN));
         table.enterScope(ScopeKind.FUNCTION, function.id());
         declaredParameter(table, "a", 0);
 
@@ -170,8 +179,10 @@ class DefaultSymbolTableEdgeCaseTest {
 
         IntStream.range(0, count).forEach(index -> declaredVariable(table, "v" + index));
 
-        assertThat(table.currentSymbols()).extracting(Symbol::name).containsExactlyElementsOf(
-                IntStream.range(0, count).mapToObj(index -> "v" + index).toList());
+        assertThat(table.currentSymbols())
+                .extracting(Symbol::name)
+                .containsExactlyElementsOf(
+                        IntStream.range(0, count).mapToObj(index -> "v" + index).toList());
         table.assertConsistent();
     }
 
@@ -179,13 +190,16 @@ class DefaultSymbolTableEdgeCaseTest {
     void allPublicLookupOperationsRejectNullNames() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Scope scope = table.globalScope();
-        final List<Executable> calls = List.of(
-                () -> table.lookup(null),
-                () -> table.lookupFrom(scope.id(), null),
-                () -> table.lookupLocal(null),
-                () -> table.lookupLocal(scope.id(), null));
+        final List<ThrowingCallable> calls =
+                List.of(
+                        () -> table.lookup(null),
+                        () -> table.lookupFrom(scope.id(), null),
+                        () -> table.lookupLocal(null),
+                        () -> table.lookupLocal(scope.id(), null));
 
-        assertThat(calls).allSatisfy(call -> assertThatThrownBy(call).isInstanceOf(NullPointerException.class));
+        assertThat(calls)
+                .allSatisfy(
+                        call -> assertThatThrownBy(call).isInstanceOf(NullPointerException.class));
     }
 
     @Test
@@ -207,11 +221,13 @@ class DefaultSymbolTableEdgeCaseTest {
         final DefaultSymbolTable first = new DefaultSymbolTable();
         assertThat(first.declareFunction("main", List.of(), new Type.VoidT(), SPAN))
                 .isInstanceOf(DeclarationResult.Declared.class);
-        assertThat(first.declareMainFunction(SPAN)).isInstanceOf(DeclarationResult.AlreadyDeclared.class);
+        assertThat(first.declareMainFunction(SPAN))
+                .isInstanceOf(DeclarationResult.AlreadyDeclared.class);
 
         final DefaultSymbolTable second = new DefaultSymbolTable();
         declaredVariable(second, "main");
-        assertThat(second.declareMainFunction(SPAN)).isInstanceOf(DeclarationResult.AlreadyDeclared.class);
+        assertThat(second.declareMainFunction(SPAN))
+                .isInstanceOf(DeclarationResult.AlreadyDeclared.class);
     }
 
     private static Symbol declaredVariable(final DefaultSymbolTable table, final String name) {

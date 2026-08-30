@@ -296,7 +296,7 @@ public final class DefaultSymbolTable implements SymbolTable {
     }
 
     /** Verifies all structural and cross-reference invariants for tests in this package. */
-    void assertConsistent() {
+    public void assertConsistent() {
         if (scopeStack.isEmpty()) {
             throw new AssertionError("scope stack must not be empty");
         }

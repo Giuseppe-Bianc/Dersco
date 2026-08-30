@@ -6,6 +6,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 
 /** Verifies structured scope lifecycle semantics independently from declaration tests. */
+@SuppressWarnings({
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.AtLeastOneConstructor",
+    "PMD.CloseResource"
+})
 class DefaultSymbolTableScopeLifecycleTest {
     @Test
     void openScopeReturnsStableSnapshotAndCloseIsIdempotent() {
@@ -58,7 +63,7 @@ class DefaultSymbolTableScopeLifecycleTest {
     }
 
     @Test
-    void closingAHandleDoesNotRemoveItsHistoricalScope() {
+    void closingAnHandleDoesNotRemoveItsHistoricalScope() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
 
         final ScopeHandle handle = table.openScope(ScopeKind.BLOCK);
