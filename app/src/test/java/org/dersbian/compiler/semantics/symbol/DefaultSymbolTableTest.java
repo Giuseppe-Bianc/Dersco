@@ -9,7 +9,14 @@ import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
 
+/** Unit tests for {@link DefaultSymbolTable}. */
+@SuppressWarnings({
+    "PMD.UnitTestContainsTooManyAsserts",
+    "PMD.AtLeastOneConstructor",
+    "PMD.UseExplicitTypes"
+})
 class DefaultSymbolTableTest {
+    /** Reusable single-character span for declarations under test. */
     private static final Span SPAN =
             Span.create(SourceLocation.create(1, 1, 0), SourceLocation.create(1, 2, 1));
 

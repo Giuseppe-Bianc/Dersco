@@ -4,12 +4,21 @@ import java.util.Objects;
 import java.util.Optional;
 
 /** Immutable public snapshot describing a lexical scope. */
+@SuppressWarnings({"PMD.ShortVariable"})
 public record Scope(
         ScopeId id,
         ScopeKind kind,
         Optional<ScopeId> parentId,
         int depth,
         Optional<SymbolId> ownerSymbolId) {
+    /**
+     * Validates the scope snapshot.
+     *
+     * @throws NullPointerException if any reference component is {@code null}
+     * @throws IllegalArgumentException if {@code depth} is negative, if a global scope has a
+     *     parent, owner, or non-zero depth, if a non-global scope lacks a parent, if a function
+     *     scope lacks an owner symbol, or if a non-function scope has an owner symbol
+     */
     public Scope {
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(kind, "kind must not be null");

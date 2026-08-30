@@ -6,6 +6,7 @@ import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 
 /** Mutable semantic symbol table with lexical scope management. */
+@SuppressWarnings({"PMD.ShortVariable", "PMD.TooManyMethods"})
 public interface SymbolTable {
     /** Returns the immutable global scope snapshot. */
     Scope globalScope();

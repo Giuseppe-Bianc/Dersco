@@ -11,14 +11,41 @@ import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 
 /** Default single-threaded lexical symbol table with historical scope retention. */
+@SuppressWarnings({
+    "PMD.ShortVariable",
+    "PMD.LongVariable",
+    "PMD.OnlyOneReturn",
+    "PMD.UseConcurrentHashMap",
+    "PMD.LawOfDemeter",
+    "PMD.GodClass",
+    "PMD.TooManyMethods",
+    "PMD.CouplingBetweenObjects",
+    "PMD.AvoidFieldNameMatchingMethodName",
+    "PMD.LocalVariableCouldBeFinal"
+})
 public final class DefaultSymbolTable implements SymbolTable {
+    /** Reserved name for the program entry point. */
     private static final String MAIN_NAME = "main";
 
+    /** Scope-stack size when only the permanent global scope is present. */
+    private static final int GLOBAL_SCOPE_ONLY = 1;
+
+    /** Mapping from scope identifier to its mutable state, preserving insertion order. */
     private final Map<ScopeId, ScopeState> scopes = new LinkedHashMap<>();
+
+    /** Mapping from symbol identifier to its definition, preserving insertion order. */
     private final Map<SymbolId, Symbol> symbols = new LinkedHashMap<>();
+
+    /** Stack of active scope identifiers; the top element is the current scope. */
     private final Deque<ScopeId> scopeStack = new ArrayDeque<>();
+
+    /** Monotonically increasing counter for scope identifier allocation. */
     private long nextScopeId = 1L;
+
+    /** Monotonically increasing counter for symbol identifier allocation. */
     private long nextSymbolId = 1L;
+
+    /** Identifier of the permanent root scope created at construction time. */
     private final ScopeId globalScope;
 
     /** Creates a table containing exactly one permanent global scope. */
@@ -67,7 +94,7 @@ public final class DefaultSymbolTable implements SymbolTable {
 
     @Override
     public Scope exitScope() {
-        if (scopeStack.size() == 1) {
+        if (scopeStack.size() == GLOBAL_SCOPE_ONLY) {
             throw new IllegalStateException("global scope cannot be exited");
         }
         final ScopeId exiting = scopeStack.pop();
@@ -296,13 +323,27 @@ public final class DefaultSymbolTable implements SymbolTable {
         }
     }
 
+    /** Mutable internal bookkeeping for a single scope. */
     private static final class ScopeState {
+        /** Unique identifier of this scope. */
         private final ScopeId id;
+
+        /** Kind describing the lexical context of this scope. */
         private final ScopeKind kind;
+
+        /** Identifier of the enclosing parent scope, empty for the global scope. */
         private final Optional<ScopeId> parentId;
+
+        /** Nesting depth relative to the global scope (which has depth zero). */
         private final int depth;
+
+        /** Symbol that owns this scope, e.g. a function symbol for a function body. */
         private final Optional<SymbolId> ownerSymbolId;
+
+        /** Symbols declared directly in this scope, preserving declaration order. */
         private final Map<String, Symbol> symbols = new LinkedHashMap<>();
+
+        /** Ordinal counter for the next parameter declaration in this scope. */
         private int nextParameterOrdinal;
 
         private ScopeState(

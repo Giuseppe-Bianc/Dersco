@@ -6,19 +6,25 @@ import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 
 /** Immutable semantic binding. */
+@SuppressWarnings({"PMD.ShortVariable", "PMD.ShortMethodName"})
 public sealed interface Symbol
         permits Symbol.VariableSymbol,
                 Symbol.ParameterSymbol,
                 Symbol.FunctionSymbol,
                 Symbol.MainFunctionSymbol {
+    /** Returns the unique identifier assigned to this symbol. */
     SymbolId id();
 
+    /** Returns the declared name of this symbol. */
     String name();
 
+    /** Returns the classification of this symbol. */
     SymbolKind kind();
 
+    /** Returns the identifier of the scope that owns this symbol. */
     ScopeId scopeId();
 
+    /** Returns the source span covering the declaration of this symbol. */
     Span declarationSpan();
 
     /** Immutable variable binding. */

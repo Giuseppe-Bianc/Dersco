@@ -5,6 +5,7 @@ import org.dersbian.compiler.syntax.ast.Type;
 
 /** Immutable descriptor used to define a function parameter in a signature. */
 public record ParameterDescriptor(String name, Type type, Mutability mutability) {
+    /** Validates that all components are non-null and the name is not blank. */
     public ParameterDescriptor {
         Objects.requireNonNull(name, "name must not be null");
         Objects.requireNonNull(type, "type must not be null");
