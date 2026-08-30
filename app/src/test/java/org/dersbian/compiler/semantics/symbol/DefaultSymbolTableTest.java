@@ -66,7 +66,9 @@ class DefaultSymbolTableTest {
         table.declareVariable("b", new Type.I64(), Mutability.MUTABLE, SPAN);
         table.exitScope();
         assertThat(table.findScope(child.id())).contains(child);
-        assertThat(table.symbolsInScope(child.id())).extracting(Symbol::name).containsExactly("a", "b");
+        assertThat(table.symbolsInScope(child.id()))
+                .extracting(Symbol::name)
+                .containsExactly("a", "b");
     }
 
     @Test
@@ -89,7 +91,9 @@ class DefaultSymbolTableTest {
         final Scope functionScope = table.enterFunctionScope(owner.id());
         table.declareParameter("a", new Type.I32(), Mutability.IMMUTABLE, 0, SPAN);
         assertThat(functionScope.ownerSymbolId()).contains(owner.id());
-        assertThat(table.currentSymbols()).singleElement().isInstanceOf(Symbol.ParameterSymbol.class);
+        assertThat(table.currentSymbols())
+                .singleElement()
+                .isInstanceOf(Symbol.ParameterSymbol.class);
         assertThat(((Symbol.ParameterSymbol) table.currentSymbols().getFirst()).ordinal()).isZero();
     }
 
@@ -101,8 +105,9 @@ class DefaultSymbolTableTest {
                 (Symbol.FunctionSymbol) ((DeclarationResult.Declared) function).symbol();
         table.enterFunctionScope(owner.id());
         assertThatThrownBy(
-                        () -> table.declareParameter(
-                                "a", new Type.I32(), Mutability.IMMUTABLE, 1, SPAN))
+                        () ->
+                                table.declareParameter(
+                                        "a", new Type.I32(), Mutability.IMMUTABLE, 1, SPAN))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -143,7 +148,8 @@ class DefaultSymbolTableTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Symbol symbol =
                 ((DeclarationResult.Declared)
-                                table.declareVariable("x", new Type.I32(), Mutability.IMMUTABLE, SPAN))
+                                table.declareVariable(
+                                        "x", new Type.I32(), Mutability.IMMUTABLE, SPAN))
                         .symbol();
         assertThat(table.find(symbol.id())).contains(symbol);
         assertThat(table.find(new SymbolId(symbol.id().value() + 1))).isEmpty();

@@ -7,8 +7,13 @@ import java.util.Objects;
  * handle may be closed exactly once and only while its scope is the active scope.
  */
 public final class ScopeHandle implements AutoCloseable {
+    /** The symbol table in which the scope was opened. */
     private final SymbolTable table;
+
+    /** The scope managed by this handle. */
     private final Scope scope;
+
+    /** Whether this handle has already been closed. */
     private boolean closed;
 
     ScopeHandle(final SymbolTable table, final Scope scope) {
