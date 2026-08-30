@@ -6,6 +6,7 @@ import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Type;
 
 /** Immutable semantic binding. */
+@SuppressWarnings({"PMD.ShortVariable", "PMD.ShortMethodName"})
 public sealed interface Symbol
         permits Symbol.VariableSymbol,
                 Symbol.ParameterSymbol,

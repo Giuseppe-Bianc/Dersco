@@ -6,6 +6,7 @@ import java.util.Objects;
  * Structured handle for a lexical scope opened through {@link SymbolTable#openScope(ScopeKind)}. A
  * handle may be closed exactly once and only while its scope is the active scope.
  */
+@SuppressWarnings({"PMD.AvoidFieldNameMatchingMethodName"})
 public final class ScopeHandle implements AutoCloseable {
     /** The symbol table in which the scope was opened. */
     private final SymbolTable table;
@@ -16,7 +17,14 @@ public final class ScopeHandle implements AutoCloseable {
     /** Whether this handle has already been closed. */
     private boolean closed;
 
-    ScopeHandle(final SymbolTable table, final Scope scope) {
+    /**
+     * Constructs a handle for the given scope in the symbol table.
+     *
+     * @param table the symbol table managing the scope
+     * @param scope the active scope to manage
+     * @throws NullPointerException if either parameter is null
+     */
+    public ScopeHandle(final SymbolTable table, final Scope scope) {
         this.table = Objects.requireNonNull(table, "table must not be null");
         this.scope = Objects.requireNonNull(scope, "scope must not be null");
     }

@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test;
     "PMD.AtLeastOneConstructor",
     "PMD.TooManyMethods",
     "PMD.UseExplicitTypes",
-    "PMD.CommentRequired"
+    "PMD.CommentRequired",
+    "PMD.CloseResource"
 })
 class DefaultSymbolTableTest {
     private static final Span SPAN =
