@@ -135,7 +135,8 @@ public sealed interface Symbol
             final ParameterDescriptor parameter = parameters.get(index);
             for (int previous = 0; previous < index; previous++) {
                 if (parameters.get(previous).name().equals(parameter.name())) {
-                    throw new IllegalArgumentException("duplicate parameter name: " + parameter.name());
+                    throw new IllegalArgumentException(
+                            "duplicate parameter name: " + parameter.name());
                 }
             }
         }

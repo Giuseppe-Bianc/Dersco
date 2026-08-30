@@ -24,21 +24,37 @@ import org.dersbian.compiler.syntax.ast.Type;
     "PMD.LocalVariableCouldBeFinal"
 })
 public final class DefaultSymbolTable implements SymbolTable {
+    /** Canonical name of the main function entry point. */
     private static final String MAIN_NAME = "main";
+
+    /** Stack depth that indicates only the global scope is present. */
     private static final int GLOBAL_SCOPE_ONLY = 1;
 
+    /** Retained mutable state for every scope ever created, keyed by scope identifier. */
     private final Map<ScopeId, ScopeState> scopes = new LinkedHashMap<>();
+
+    /** Global index of every symbol ever declared, keyed by symbol identifier. */
     private final Map<SymbolId, Symbol> symbols = new LinkedHashMap<>();
+
+    /** LIFO stack of active scope identifiers; the top is the current scope. */
     private final Deque<ScopeId> scopeStack = new ArrayDeque<>();
+
+    /** Monotonically increasing counter for scope identifier allocation. */
     private long nextScopeId = 1L;
+
+    /** Monotonically increasing counter for symbol identifier allocation. */
     private long nextSymbolId = 1L;
+
+    /** Identifier of the permanent global scope created at construction time. */
     private final ScopeId globalScope;
 
     /** Creates a table containing exactly one permanent global scope. */
     public DefaultSymbolTable() {
         globalScope = allocateScopeId();
-        scopes.put(globalScope, new ScopeState(
-                globalScope, ScopeKind.GLOBAL, Optional.empty(), 0, Optional.empty()));
+        scopes.put(
+                globalScope,
+                new ScopeState(
+                        globalScope, ScopeKind.GLOBAL, Optional.empty(), 0, Optional.empty()));
         scopeStack.push(globalScope);
     }
 
@@ -98,8 +114,16 @@ public final class DefaultSymbolTable implements SymbolTable {
             final Mutability mutability,
             final Span declarationSpan) {
         validateDeclarationArguments(name, type, mutability, declarationSpan);
-        return declare(name, () -> new Symbol.VariableSymbol(
-                nextSymbol(), name, type, mutability, currentScopeId(), declarationSpan));
+        return declare(
+                name,
+                () ->
+                        new Symbol.VariableSymbol(
+                                nextSymbol(),
+                                name,
+                                type,
+                                mutability,
+                                currentScopeId(),
+                                declarationSpan));
     }
 
     @Override
@@ -117,8 +141,16 @@ public final class DefaultSymbolTable implements SymbolTable {
         }
         final List<ParameterDescriptor> copy = List.copyOf(parameters);
         validateParameterNames(copy);
-        return declare(name, () -> new Symbol.FunctionSymbol(
-                nextSymbol(), name, returnType, copy, currentScopeId(), declarationSpan));
+        return declare(
+                name,
+                () ->
+                        new Symbol.FunctionSymbol(
+                                nextSymbol(),
+                                name,
+                                returnType,
+                                copy,
+                                currentScopeId(),
+                                declarationSpan));
     }
 
     @Override
@@ -127,8 +159,15 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (!currentScopeId().equals(globalScope)) {
             throw new IllegalStateException("main must be declared in the global scope");
         }
-        return declare(MAIN_NAME, () -> new Symbol.MainFunctionSymbol(
-                nextSymbol(), MAIN_NAME, new Type.VoidT(), globalScope, declarationSpan));
+        return declare(
+                MAIN_NAME,
+                () ->
+                        new Symbol.MainFunctionSymbol(
+                                nextSymbol(),
+                                MAIN_NAME,
+                                new Type.VoidT(),
+                                globalScope,
+                                declarationSpan));
     }
 
     @Override
@@ -150,10 +189,12 @@ public final class DefaultSymbolTable implements SymbolTable {
             return duplicate(name);
         }
         if (ordinal != state.nextParameterOrdinal) {
-            throw new IllegalArgumentException("parameter ordinal must be " + state.nextParameterOrdinal);
+            throw new IllegalArgumentException(
+                    "parameter ordinal must be " + state.nextParameterOrdinal);
         }
-        final Symbol.ParameterSymbol symbol = new Symbol.ParameterSymbol(
-                nextSymbol(), name, type, mutability, ordinal, state.id, declarationSpan);
+        final Symbol.ParameterSymbol symbol =
+                new Symbol.ParameterSymbol(
+                        nextSymbol(), name, type, mutability, ordinal, state.id, declarationSpan);
         state.nextParameterOrdinal++;
         return insert(symbol);
     }
@@ -210,8 +251,8 @@ public final class DefaultSymbolTable implements SymbolTable {
         final ScopeId parent = currentScopeId();
         final ScopeState parentState = currentState();
         final ScopeId id = allocateScopeId();
-        final ScopeState state = new ScopeState(
-                id, kind, Optional.of(parent), parentState.depth + 1, owner);
+        final ScopeState state =
+                new ScopeState(id, kind, Optional.of(parent), parentState.depth + 1, owner);
         scopes.put(id, state);
         scopeStack.push(id);
         return state.snapshot();
@@ -303,19 +344,28 @@ public final class DefaultSymbolTable implements SymbolTable {
         }
     }
 
+    /** Factory callback that lazily constructs a {@link Symbol} during declaration. */
     @FunctionalInterface
     private interface SymbolFactory {
+        /** Creates and returns a new symbol instance. */
         Symbol create();
     }
 
     /** Mutable internal bookkeeping for one scope. */
     private static final class ScopeState {
+        /** Unique identifier for this scope. */
         private final ScopeId id;
+        /** Lexical kind of this scope (global, function, block, etc.). */
         private final ScopeKind kind;
+        /** Identifier of the enclosing parent scope, empty for the global scope. */
         private final Optional<ScopeId> parentId;
+        /** Zero-based nesting depth from the global scope. */
         private final int depth;
+        /** Symbol that owns this scope, present only for function scopes. */
         private final Optional<SymbolId> ownerSymbolId;
+        /** Symbols declared directly in this scope, keyed by name for fast local lookup. */
         private final Map<String, Symbol> symbols = new LinkedHashMap<>();
+        /** Ordinal counter for the next parameter to be declared in this scope. */
         private int nextParameterOrdinal;
 
         private ScopeState(
