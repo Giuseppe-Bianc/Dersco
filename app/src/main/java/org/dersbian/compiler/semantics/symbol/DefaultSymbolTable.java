@@ -19,7 +19,6 @@ import org.dersbian.compiler.syntax.ast.Type;
     "PMD.LongVariable",
     "PMD.ShortVariable",
     "PMD.LawOfDemeter",
-    "PMD.AssignmentInOperand",
     "PMD.CyclomaticComplexity",
     "PMD.UseConcurrentHashMap",
     "PMD.GodClass",
