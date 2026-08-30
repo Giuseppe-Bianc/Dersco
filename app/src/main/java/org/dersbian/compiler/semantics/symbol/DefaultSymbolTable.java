@@ -128,7 +128,12 @@ public final class DefaultSymbolTable implements SymbolTable {
                 name,
                 () ->
                         new Symbol.VariableSymbol(
-                                nextSymbol(), name, type, mutability, currentScopeId(), declarationSpan));
+                                nextSymbol(),
+                                name,
+                                type,
+                                mutability,
+                                currentScopeId(),
+                                declarationSpan));
     }
 
     @Override
@@ -150,7 +155,12 @@ public final class DefaultSymbolTable implements SymbolTable {
                 name,
                 () ->
                         new Symbol.FunctionSymbol(
-                                nextSymbol(), name, returnType, copy, currentScopeId(), declarationSpan));
+                                nextSymbol(),
+                                name,
+                                returnType,
+                                copy,
+                                currentScopeId(),
+                                declarationSpan));
     }
 
     @Override
@@ -163,7 +173,11 @@ public final class DefaultSymbolTable implements SymbolTable {
                 MAIN_NAME,
                 () ->
                         new Symbol.MainFunctionSymbol(
-                                nextSymbol(), MAIN_NAME, new Type.VoidT(), globalScope, declarationSpan));
+                                nextSymbol(),
+                                MAIN_NAME,
+                                new Type.VoidT(),
+                                globalScope,
+                                declarationSpan));
     }
 
     @Override
@@ -294,7 +308,8 @@ public final class DefaultSymbolTable implements SymbolTable {
             throw new IllegalStateException("function scope owner is missing from symbol index");
         }
         if (!owner.scopeId().equals(state.parentId.orElseThrow())) {
-            throw new IllegalStateException("function scope owner is not declared in its parent scope");
+            throw new IllegalStateException(
+                    "function scope owner is not declared in its parent scope");
         }
         if (owner instanceof Symbol.FunctionSymbol function) {
             validateFunctionParameters(function.parameters(), state.symbols, state.id);
@@ -313,7 +328,8 @@ public final class DefaultSymbolTable implements SymbolTable {
             final Map<String, Symbol> parameterScope,
             final ScopeId functionScopeId) {
         if (parameterScope.size() != descriptors.size()) {
-            throw new IllegalStateException("function parameter count does not match its signature");
+            throw new IllegalStateException(
+                    "function parameter count does not match its signature");
         }
         for (int ordinal = 0; ordinal < descriptors.size(); ordinal++) {
             final ParameterDescriptor descriptor = descriptors.get(ordinal);
