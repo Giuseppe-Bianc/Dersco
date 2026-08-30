@@ -1,7 +1,6 @@
 package org.dersbian.compiler.semantics.symbol;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,10 +116,7 @@ public final class DefaultSymbolTable implements SymbolTable {
             throw new IllegalStateException("parameters can only be declared in a function scope");
         }
         final ScopeState state = currentState();
-        final int expectedOrdinal = (int) state.symbolsByName.values().stream()
-                .filter(symbol -> symbol.kind() == SymbolKind.PARAMETER)
-                .count();
-        if (ordinal != expectedOrdinal) {
+        if (ordinal != state.parameterCount) {
             throw new IllegalArgumentException("parameter ordinal must be consecutive starting at zero");
         }
         final DeclarationResult duplicate = duplicate(name);
@@ -130,6 +126,7 @@ public final class DefaultSymbolTable implements SymbolTable {
         final ParameterSymbol symbol = new ParameterSymbolImpl(
                 nextSymbolId(), name, currentScope().id(), declarationSpan, type, mutability, ordinal);
         register(symbol);
+        state.parameterCount++;
         return new DeclarationResult.Declared(symbol);
     }
 
@@ -194,6 +191,9 @@ public final class DefaultSymbolTable implements SymbolTable {
                 return Optional.empty();
             }
             state = scopes.get(parentId.orElseThrow());
+            if (state == null) {
+                throw new IllegalStateException("scope tree contains an orphaned parent");
+            }
         }
     }
 
@@ -236,6 +236,55 @@ public final class DefaultSymbolTable implements SymbolTable {
         return state == null ? List.of() : List.copyOf(state.symbolsByName.values());
     }
 
+    /** Verifies all structural and cross-reference invariants for tests in this package. */
+    void assertConsistent() {
+        if (scopeStack.isEmpty()) {
+            throw new AssertionError("scope stack must not be empty");
+        }
+        if (scopes.size() != scopeStack.stream().distinct().count()) {
+            for (ScopeId id : scopeStack) {
+                if (!scopes.containsKey(id)) {
+                    throw new AssertionError("scope stack contains an unknown scope");
+                }
+            }
+        }
+        if (scopes.values().stream().filter(state -> state.scope.kind() == ScopeKind.GLOBAL).count() != 1) {
+            throw new AssertionError("exactly one global scope is required");
+        }
+        for (ScopeState state : scopes.values()) {
+            final Scope scope = state.scope;
+            if (scope.kind() == ScopeKind.GLOBAL) {
+                if (scope.parentId().isPresent() || scope.depth() != 0 || scope.ownerSymbolId().isPresent()) {
+                    throw new AssertionError("invalid global scope");
+                }
+            } else {
+                final ScopeId parentId = scope.parentId().orElseThrow();
+                final ScopeState parent = scopes.get(parentId);
+                if (parent == null || scope.depth() != parent.scope.depth() + 1) {
+                    throw new AssertionError("invalid scope parent/depth");
+                }
+                if (scope.kind() == ScopeKind.FUNCTION && scope.ownerSymbolId().isEmpty()) {
+                    throw new AssertionError("function scope must have an owner");
+                }
+            }
+            for (Symbol symbol : state.symbolsByName.values()) {
+                if (!symbol.scopeId().equals(scope.id()) || symbols.get(symbol.id()) != symbol) {
+                    throw new AssertionError("symbol cross-reference invariant violated");
+                }
+            }
+        }
+        for (Symbol symbol : symbols.values()) {
+            final ScopeState owner = scopes.get(symbol.scopeId());
+            if (owner == null || owner.symbolsByName.get(symbol.name()) != symbol) {
+                throw new AssertionError("symbol is not registered in its declaring scope");
+            }
+        }
+        final ScopeId currentId = scopeStack.peek();
+        if (!currentId.equals(currentScope().id())) {
+            throw new AssertionError("scope stack/current scope mismatch");
+        }
+    }
+
     private Scope createScope(final ScopeKind kind, final Optional<SymbolId> ownerSymbolId) {
         final Scope parent = currentScope();
         final ScopeId id = nextScopeId();
@@ -255,7 +304,11 @@ public final class DefaultSymbolTable implements SymbolTable {
     }
 
     private void register(final Symbol symbol) {
-        currentState().symbolsByName.put(symbol.name(), symbol);
+        final ScopeState state = currentState();
+        if (state.symbolsByName.containsKey(symbol.name())) {
+            throw new IllegalStateException("attempted to register a duplicate symbol");
+        }
+        state.symbolsByName.put(symbol.name(), symbol);
         symbols.put(symbol.id(), symbol);
     }
 
@@ -263,9 +316,6 @@ public final class DefaultSymbolTable implements SymbolTable {
         final List<ParameterDescriptor> copy = List.copyOf(parameters);
         final Map<String, Boolean> names = new LinkedHashMap<>();
         for (ParameterDescriptor parameter : copy) {
-            if (parameter == null) {
-                throw new NullPointerException("parameters must not contain null");
-            }
             if (names.put(parameter.name(), Boolean.TRUE) != null) {
                 throw new IllegalArgumentException("function parameters must have unique names");
             }
@@ -301,6 +351,7 @@ public final class DefaultSymbolTable implements SymbolTable {
     private static final class ScopeState {
         private final Scope scope;
         private final LinkedHashMap<String, Symbol> symbolsByName = new LinkedHashMap<>();
+        private int parameterCount;
 
         private ScopeState(final Scope scope) {
             this.scope = scope;
