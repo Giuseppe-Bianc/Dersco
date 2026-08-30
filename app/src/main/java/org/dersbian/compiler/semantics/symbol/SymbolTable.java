@@ -15,10 +15,10 @@ public interface SymbolTable {
 
     /**
      * Enters a new non-global scope owned by no symbol.
-     * @param kind scope kind, other than GLOBAL
+     * @param kind scope kind, other than GLOBAL and FUNCTION
      * @return the newly active scope
      * @throws NullPointerException if kind is null
-     * @throws IllegalArgumentException if kind is GLOBAL
+     * @throws IllegalArgumentException if kind is GLOBAL or FUNCTION
      */
     Scope enterScope(ScopeKind kind);
 
@@ -32,6 +32,17 @@ public interface SymbolTable {
      * @throws IllegalStateException if the owner is invalid
      */
     Scope enterScope(ScopeKind kind, SymbolId ownerSymbolId);
+
+    /**
+     * Opens a structured non-function scope.
+     * @param kind BLOCK or LOOP scope kind
+     * @return handle whose close operation exits the opened scope
+     * @throws NullPointerException if kind is null
+     * @throws IllegalArgumentException if kind is GLOBAL or FUNCTION
+     */
+    default ScopeHandle openScope(final ScopeKind kind) {
+        return new DefaultScopeHandle(this, enterScope(kind));
+    }
 
     /**
      * Exits the current non-global scope.
@@ -78,57 +89,55 @@ public interface SymbolTable {
      */
     DeclarationResult declareMainFunction(Span declarationSpan);
 
-    /**
-     * Performs innermost-first lexical lookup from the current scope.
-     * @param name name to resolve
-     * @return the nearest symbol, or empty when absent
-     */
+    /** @param name name to resolve @return nearest lexical symbol, or empty */
     Optional<Symbol> lookup(String name);
 
-    /**
-     * Performs innermost-first lexical lookup from a historical scope.
-     * @param startScope starting scope identifier
-     * @param name name to resolve
-     * @return the nearest symbol, or empty when absent
-     */
+    /** @param startScope starting scope @param name name to resolve @return nearest symbol, or empty */
     Optional<Symbol> lookupFrom(ScopeId startScope, String name);
 
-    /**
-     * Looks only in the current scope.
-     * @param name name to resolve
-     * @return local symbol, or empty when absent
-     */
+    /** @param name name to resolve @return local symbol, or empty */
     Optional<Symbol> lookupLocal(String name);
 
-    /**
-     * Looks only in the specified scope.
-     * @param scopeId scope to inspect
-     * @param name name to resolve
-     * @return local symbol, or empty when absent
-     */
+    /** @param scopeId scope to inspect @param name name to resolve @return local symbol, or empty */
     Optional<Symbol> lookupLocal(ScopeId scopeId, String name);
 
-    /**
-     * Finds a symbol by stable identity.
-     * @param symbolId symbol identifier
-     * @return symbol, or empty when unknown
-     */
+    /** @param symbolId symbol identifier @return symbol, or empty when unknown */
     Optional<Symbol> find(SymbolId symbolId);
 
-    /**
-     * Finds a scope by stable identity.
-     * @param scopeId scope identifier
-     * @return scope, or empty when unknown
-     */
+    /** @param scopeId scope identifier @return scope, or empty when unknown */
     Optional<Scope> findScope(ScopeId scopeId);
 
     /** @return immutable declaration-order snapshot of current-scope symbols */
     List<Symbol> currentSymbols();
 
-    /**
-     * Returns symbols declared directly in a scope, in declaration order.
-     * @param scopeId scope to inspect
-     * @return immutable symbol snapshot
-     */
+    /** @param scopeId scope to inspect @return immutable declaration-order snapshot */
     List<Symbol> symbolsInScope(ScopeId scopeId);
+
+    /** Structured scope-handle implementation. */
+    final class DefaultScopeHandle implements ScopeHandle {
+        private final SymbolTable table;
+        private final Scope scope;
+        private boolean closed;
+
+        private DefaultScopeHandle(final SymbolTable table, final Scope scope) {
+            this.table = table;
+            this.scope = scope;
+        }
+
+        @Override
+        public Scope scope() {
+            return scope;
+        }
+
+        @Override
+        public void close() {
+            if (!closed) {
+                if (!table.currentScope().id().equals(scope.id())) {
+                    throw new IllegalStateException("scope handle must be closed while its scope is current");
+                }
+                table.exitScope();
+                closed = true;
+            }
+        }
+    }
 }
