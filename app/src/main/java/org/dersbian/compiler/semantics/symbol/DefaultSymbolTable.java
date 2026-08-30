@@ -12,9 +12,16 @@ import org.dersbian.compiler.syntax.ast.Type;
 
 /** Default single-threaded lexical symbol table with historical scope retention. */
 @SuppressWarnings({
-    "PMD.ShortVariable", "PMD.LongVariable", "PMD.OnlyOneReturn", "PMD.UseConcurrentHashMap",
-    "PMD.LawOfDemeter", "PMD.GodClass", "PMD.TooManyMethods", "PMD.CouplingBetweenObjects",
-    "PMD.AvoidFieldNameMatchingMethodName", "PMD.LocalVariableCouldBeFinal"
+    "PMD.ShortVariable",
+    "PMD.LongVariable",
+    "PMD.OnlyOneReturn",
+    "PMD.UseConcurrentHashMap",
+    "PMD.LawOfDemeter",
+    "PMD.GodClass",
+    "PMD.TooManyMethods",
+    "PMD.CouplingBetweenObjects",
+    "PMD.AvoidFieldNameMatchingMethodName",
+    "PMD.LocalVariableCouldBeFinal"
 })
 public final class DefaultSymbolTable implements SymbolTable {
     /** Canonical name of the main function entry point. */
@@ -38,7 +45,7 @@ public final class DefaultSymbolTable implements SymbolTable {
     /** Monotonically increasing counter for symbol identifier allocation. */
     private long nextSymbolId = 1L;
 
-    /** Identifier of the permanent global scope created at construction time. */
+    /** Identifier of the permanent root scope created at construction time. */
     private final ScopeId globalScope;
 
     /** Creates a table containing exactly one permanent global scope. */
@@ -95,8 +102,13 @@ public final class DefaultSymbolTable implements SymbolTable {
         if (scopeStack.size() == GLOBAL_SCOPE_ONLY) {
             throw new IllegalStateException("global scope cannot be exited");
         }
-        final ScopeId exiting = scopeStack.pop();
-        return snapshot(exiting);
+        final ScopeId exiting = scopeStack.peek();
+        final ScopeState state = scopes.get(exiting);
+        if (state.kind == ScopeKind.FUNCTION) {
+            validateFunctionScope(state);
+        }
+        scopeStack.pop();
+        return state.snapshot();
     }
 
     @Override
@@ -116,12 +128,7 @@ public final class DefaultSymbolTable implements SymbolTable {
                 name,
                 () ->
                         new Symbol.VariableSymbol(
-                                nextSymbol(),
-                                name,
-                                type,
-                                mutability,
-                                currentScopeId(),
-                                declarationSpan));
+                                nextSymbol(), name, type, mutability, currentScopeId(), declarationSpan));
     }
 
     @Override
@@ -143,12 +150,7 @@ public final class DefaultSymbolTable implements SymbolTable {
                 name,
                 () ->
                         new Symbol.FunctionSymbol(
-                                nextSymbol(),
-                                name,
-                                returnType,
-                                copy,
-                                currentScopeId(),
-                                declarationSpan));
+                                nextSymbol(), name, returnType, copy, currentScopeId(), declarationSpan));
     }
 
     @Override
@@ -161,11 +163,7 @@ public final class DefaultSymbolTable implements SymbolTable {
                 MAIN_NAME,
                 () ->
                         new Symbol.MainFunctionSymbol(
-                                nextSymbol(),
-                                MAIN_NAME,
-                                new Type.VoidT(),
-                                globalScope,
-                                declarationSpan));
+                                nextSymbol(), MAIN_NAME, new Type.VoidT(), globalScope, declarationSpan));
     }
 
     @Override
@@ -285,6 +283,54 @@ public final class DefaultSymbolTable implements SymbolTable {
             throw new IllegalStateException("symbol identifier collision");
         }
         return new DeclarationResult.Declared(symbol);
+    }
+
+    private void validateFunctionScope(final ScopeState state) {
+        if (state.ownerSymbolId.isEmpty()) {
+            throw new IllegalStateException("function scope has no owner");
+        }
+        final Symbol owner = symbols.get(state.ownerSymbolId.orElseThrow());
+        if (owner == null) {
+            throw new IllegalStateException("function scope owner is missing from symbol index");
+        }
+        if (!owner.scopeId().equals(state.parentId.orElseThrow())) {
+            throw new IllegalStateException("function scope owner is not declared in its parent scope");
+        }
+        if (owner instanceof Symbol.FunctionSymbol function) {
+            validateFunctionParameters(function.parameters(), state.symbols, state.id);
+            return;
+        }
+        if (!(owner instanceof Symbol.MainFunctionSymbol)) {
+            throw new IllegalStateException("unsupported function scope owner");
+        }
+        if (!state.symbols.isEmpty()) {
+            throw new IllegalStateException("main function scope cannot contain parameters");
+        }
+    }
+
+    private static void validateFunctionParameters(
+            final List<ParameterDescriptor> descriptors,
+            final Map<String, Symbol> parameterScope,
+            final ScopeId functionScopeId) {
+        if (parameterScope.size() != descriptors.size()) {
+            throw new IllegalStateException("function parameter count does not match its signature");
+        }
+        for (int ordinal = 0; ordinal < descriptors.size(); ordinal++) {
+            final ParameterDescriptor descriptor = descriptors.get(ordinal);
+            final Symbol symbol = parameterScope.get(descriptor.name());
+            if (!(symbol instanceof Symbol.ParameterSymbol parameter)) {
+                throw new IllegalStateException("missing parameter symbol: " + descriptor.name());
+            }
+            if (!parameter.scopeId().equals(functionScopeId)) {
+                throw new IllegalStateException("parameter symbol has an invalid scope");
+            }
+            if (parameter.ordinal() != ordinal
+                    || !parameter.type().equals(descriptor.type())
+                    || parameter.mutability() != descriptor.mutability()) {
+                throw new IllegalStateException(
+                        "parameter symbol does not match function signature: " + descriptor.name());
+            }
+        }
     }
 
     private SymbolId nextSymbol() {
