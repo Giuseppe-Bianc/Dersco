@@ -39,54 +39,72 @@ public final class ExpressionSymbolResolver {
      */
     public ExpressionBindingResult resolve(final Expr expression) {
         Objects.requireNonNull(expression, "expression must not be null");
+        return resolveFrom(symbolTable.currentScope().id(), expression);
+    }
+
+    /**
+     * Resolves every variable reference reachable from the supplied expression and scope.
+     *
+     * <p>The historical scope is queried directly, so the operation does not require that the scope
+     * remain current. This is useful for deferred semantic analysis after AST traversal.
+     *
+     * @param scopeId lexical starting scope
+     * @param expression root expression to resolve
+     * @return immutable expression-to-symbol binding result
+     * @throws NullPointerException when scopeId or expression is null
+     */
+    public ExpressionBindingResult resolveFrom(final ScopeId scopeId, final Expr expression) {
+        Objects.requireNonNull(scopeId, "scopeId must not be null");
+        Objects.requireNonNull(expression, "expression must not be null");
         final Map<Expr, SymbolId> bindings = new LinkedHashMap<>();
-        resolveExpression(expression, bindings);
+        resolveExpression(scopeId, expression, bindings);
         return new ExpressionBindingResult(bindings);
     }
 
     /** Resolves one expression node and recursively processes its children. */
-    private void resolveExpression(final Expr expression, final Map<Expr, SymbolId> bindings) {
+    private void resolveExpression(
+            final ScopeId scopeId, final Expr expression, final Map<Expr, SymbolId> bindings) {
         if (expression instanceof Expr.Variable variable) {
             symbolTable
-                    .lookup(variable.name())
+                    .lookupFrom(scopeId, variable.name())
                     .map(Symbol::id)
                     .ifPresent(id -> bindings.put(variable, id));
             return;
         }
         if (expression instanceof Expr.Binary binary) {
-            resolveExpression(binary.left(), bindings);
-            resolveExpression(binary.right(), bindings);
+            resolveExpression(scopeId, binary.left(), bindings);
+            resolveExpression(scopeId, binary.right(), bindings);
             return;
         }
         if (expression instanceof Expr.Unary unary) {
-            resolveExpression(unary.expr(), bindings);
+            resolveExpression(scopeId, unary.expr(), bindings);
             return;
         }
         if (expression instanceof Expr.Grouping grouping) {
-            resolveExpression(grouping.expr(), bindings);
+            resolveExpression(scopeId, grouping.expr(), bindings);
             return;
         }
         if (expression instanceof Expr.ArrayLiteral arrayLiteral) {
             for (final Expr element : arrayLiteral.elements()) {
-                resolveExpression(element, bindings);
+                resolveExpression(scopeId, element, bindings);
             }
             return;
         }
         if (expression instanceof Expr.Assign assign) {
-            resolveExpression(assign.target(), bindings);
-            resolveExpression(assign.value(), bindings);
+            resolveExpression(scopeId, assign.target(), bindings);
+            resolveExpression(scopeId, assign.value(), bindings);
             return;
         }
         if (expression instanceof Expr.Call call) {
-            resolveExpression(call.callee(), bindings);
+            resolveExpression(scopeId, call.callee(), bindings);
             for (final Expr argument : call.arguments()) {
-                resolveExpression(argument, bindings);
+                resolveExpression(scopeId, argument, bindings);
             }
             return;
         }
         if (expression instanceof Expr.ArrayAccess arrayAccess) {
-            resolveExpression(arrayAccess.array(), bindings);
-            resolveExpression(arrayAccess.index(), bindings);
+            resolveExpression(scopeId, arrayAccess.array(), bindings);
+            resolveExpression(scopeId, arrayAccess.index(), bindings);
         }
     }
 }
