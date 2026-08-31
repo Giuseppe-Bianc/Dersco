@@ -30,7 +30,7 @@ class SymbolBinderTest {
                         SPAN)), SPAN),
                 SPAN);
 
-        final SymbolBindingResult result = binder.bind(List.of(function));
+        final SymbolBindingResult result = binder.bind(List.of(function), Mutability.MUTABLE);
 
         assertEquals(3, result.declarations().size());
         assertInstanceOf(DeclarationResult.Declared.class, result.declarations().get(0));
@@ -55,7 +55,7 @@ class SymbolBinderTest {
                 new Stmt.Block(List.of(), SPAN),
                 SPAN);
 
-        binder.bind(List.of(loop));
+        binder.bind(List.of(loop), Mutability.IMMUTABLE);
 
         assertTrue(table.lookup("i").isEmpty());
         assertEquals(table.globalScope(), table.currentScope());
