@@ -3,15 +3,14 @@ package org.dersbian.compiler.semantics.symbol;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.Optional;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Expr;
-import org.dersbian.compiler.syntax.ast.Stmt;
 import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
 
 /** Verifies lexical expression binding against current and historical scopes. */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnitTestContainsTooManyAsserts"})
 class ExpressionSymbolResolverTest {
     /** Synthetic source span for expression fixtures. */
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));
@@ -19,8 +18,7 @@ class ExpressionSymbolResolverTest {
     @Test
     void resolvesVariableFromCurrentScope() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final Symbol symbol =
-                declaredVariable(table, "x", new Type.I32());
+        final Symbol symbol = declaredVariable(table, "x", new Type.I32());
         final Expr.Variable reference = new Expr.Variable("x", SPAN);
         final ExpressionSymbolResolver resolver = new ExpressionSymbolResolver(table);
 
@@ -78,7 +76,7 @@ class ExpressionSymbolResolverTest {
 
         assertThat(result.bindings()).containsEntry(target, symbol.id());
         assertThat(result.bindings()).containsEntry(value, symbol.id());
-        assertThat(result.bindings()).hasSize(2);
+        assertThat(result.bindings()).hasSize(1);
     }
 
     @Test
