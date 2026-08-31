@@ -10,11 +10,10 @@ public record ExpressionBindingResult(Map<Expr, SymbolId> bindings) {
     /** Validates and defensively copies expression bindings. */
     public ExpressionBindingResult {
         Objects.requireNonNull(bindings, "bindings must not be null");
-        if (bindings.entrySet().stream()
-                .anyMatch(entry -> entry.getKey() == null || entry.getValue() == null)) {
-            throw new NullPointerException("bindings must not contain null keys or values");
-        }
-        bindings = Map.copyOf(bindings);
+        bindings =
+                Map.copyOf(
+                        bindings); // Implicitly throws NullPointerException if any key or value is
+        // null
     }
 
     /**

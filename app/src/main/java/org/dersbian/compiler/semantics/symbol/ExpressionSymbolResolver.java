@@ -6,6 +6,12 @@ import java.util.Objects;
 import org.dersbian.compiler.syntax.ast.Expr;
 
 /** Resolves lexical symbol references occurring inside expressions. */
+@SuppressWarnings({
+    "PMD.OnlyOneReturn",
+    "PMD.CyclomaticComplexity",
+    "PMD.CognitiveComplexity",
+    "PMD.UseConcurrentHashMap"
+})
 public final class ExpressionSymbolResolver {
     /** Symbol table used for lexical lookup. */
     private final SymbolTable symbolTable;
@@ -41,7 +47,10 @@ public final class ExpressionSymbolResolver {
     /** Resolves one expression node and recursively processes its children. */
     private void resolveExpression(final Expr expression, final Map<Expr, SymbolId> bindings) {
         if (expression instanceof Expr.Variable variable) {
-            symbolTable.lookup(variable.name()).map(Symbol::id).ifPresent(id -> bindings.put(variable, id));
+            symbolTable
+                    .lookup(variable.name())
+                    .map(Symbol::id)
+                    .ifPresent(id -> bindings.put(variable, id));
             return;
         }
         if (expression instanceof Expr.Binary binary) {
