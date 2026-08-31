@@ -9,8 +9,6 @@ import org.dersbian.compiler.syntax.ast.Stmt;
 
 /** Binds declarations from the current statement AST into a symbol table. */
 public final class SymbolBinder {
-    private static final Mutability DEFAULT_PARAMETER_MUTABILITY = Mutability.IMMUTABLE;
-
     private final SymbolTable symbols;
     private final List<DeclarationResult> declarations = new ArrayList<>();
 
@@ -20,31 +18,36 @@ public final class SymbolBinder {
     }
 
     /**
-     * Binds a statement list in source order.
+     * Binds a statement list in source order using the explicitly supplied parameter mutability.
      *
      * @param statements statements to bind
+     * @param parameterMutability mutability assigned to every AST parameter
      * @return immutable declaration results in source order
      */
-    public SymbolBindingResult bind(final List<Stmt> statements) {
+    public SymbolBindingResult bind(
+            final List<Stmt> statements, final Mutability parameterMutability) {
         Objects.requireNonNull(statements, "statements must not be null");
+        Objects.requireNonNull(parameterMutability, "parameterMutability must not be null");
         declarations.clear();
         for (final Stmt statement : List.copyOf(statements)) {
-            bindStatement(Objects.requireNonNull(statement, "statements must not contain null"));
+            bindStatement(
+                    Objects.requireNonNull(statement, "statements must not contain null"),
+                    parameterMutability);
         }
         return new SymbolBindingResult(declarations);
     }
 
-    private void bindStatement(final Stmt statement) {
+    private void bindStatement(final Stmt statement, final Mutability parameterMutability) {
         switch (statement) {
             case Stmt.Expression ignored -> {
                 // Expression references are resolved by a later semantic analysis phase.
             }
             case Stmt.VarDeclaration declaration -> bindVariableDeclaration(declaration);
-            case Stmt.Function function -> bindFunction(function);
-            case Stmt.If conditional -> bindIf(conditional);
-            case Stmt.While loop -> bindWhile(loop);
-            case Stmt.For loop -> bindFor(loop);
-            case Stmt.Block block -> bindBlock(block);
+            case Stmt.Function function -> bindFunction(function, parameterMutability);
+            case Stmt.If conditional -> bindIf(conditional, parameterMutability);
+            case Stmt.While loop -> bindWhile(loop, parameterMutability);
+            case Stmt.For loop -> bindFor(loop, parameterMutability);
+            case Stmt.Block block -> bindBlock(block, parameterMutability);
             case Stmt.Return ignored -> {
                 // Return legality is checked by the semantic analyzer, not by symbol binding.
             }
@@ -54,7 +57,7 @@ public final class SymbolBinder {
             case Stmt.Continue ignored -> {
                 // Continue legality is checked by the semantic analyzer, not by symbol binding.
             }
-            case Stmt.MainFunction main -> bindMain(main);
+            case Stmt.MainFunction main -> bindMain(main, parameterMutability);
         }
     }
 
@@ -71,7 +74,8 @@ public final class SymbolBinder {
         }
     }
 
-    private void bindFunction(final Stmt.Function function) {
+    private void bindFunction(
+            final Stmt.Function function, final Mutability parameterMutability) {
         final DeclarationResult result =
                 symbols.declareFunction(
                         function.name(),
@@ -81,7 +85,7 @@ public final class SymbolBinder {
                                                 new ParameterDescriptor(
                                                         parameter.name(),
                                                         parameter.typeAnnotation(),
-                                                        DEFAULT_PARAMETER_MUTABILITY))
+                                                        parameterMutability))
                                 .toList(),
                         function.returnType(),
                         function.span());
@@ -89,74 +93,76 @@ public final class SymbolBinder {
         if (result instanceof DeclarationResult.Declared declared) {
             symbols.enterScope(ScopeKind.FUNCTION, declared.symbol().id());
             try {
-                bindParameters(function.parameters());
-                bindBlock(function.body());
+                bindParameters(function.parameters(), parameterMutability);
+                bindBlock(function.body(), parameterMutability);
             } finally {
                 symbols.exitScope();
             }
         }
     }
 
-    private void bindParameters(final List<Parameter> parameters) {
+    private void bindParameters(
+            final List<Parameter> parameters, final Mutability parameterMutability) {
         for (int ordinal = 0; ordinal < parameters.size(); ordinal++) {
             final Parameter parameter = parameters.get(ordinal);
             declarations.add(
                     symbols.declareParameter(
                             parameter.name(),
                             parameter.typeAnnotation(),
-                            DEFAULT_PARAMETER_MUTABILITY,
+                            parameterMutability,
                             ordinal,
                             parameter.span()));
         }
     }
 
-    private void bindMain(final Stmt.MainFunction main) {
+    private void bindMain(final Stmt.MainFunction main, final Mutability parameterMutability) {
         final DeclarationResult result = symbols.declareMainFunction(main.span());
         declarations.add(result);
         if (result instanceof DeclarationResult.Declared declared) {
             symbols.enterScope(ScopeKind.FUNCTION, declared.symbol().id());
             try {
-                bindBlock(main.body());
+                bindBlock(main.body(), parameterMutability);
             } finally {
                 symbols.exitScope();
             }
         }
     }
 
-    private void bindIf(final Stmt.If conditional) {
-        bindBlock(conditional.thenBranch());
-        bindElseBranch(conditional.elseBranch());
+    private void bindIf(final Stmt.If conditional, final Mutability parameterMutability) {
+        bindBlock(conditional.thenBranch(), parameterMutability);
+        bindElseBranch(conditional.elseBranch(), parameterMutability);
     }
 
-    private void bindElseBranch(final ElseBranch branch) {
+    private void bindElseBranch(
+            final ElseBranch branch, final Mutability parameterMutability) {
         switch (branch) {
             case ElseBranch.None ignored -> {
                 // No scope exists for an absent else branch.
             }
-            case ElseBranch.Block block -> bindBlock(block.block());
-            case ElseBranch.ElseIf elseIf -> bindIf(elseIf.ifStmt());
+            case ElseBranch.Block block -> bindBlock(block.block(), parameterMutability);
+            case ElseBranch.ElseIf elseIf -> bindIf(elseIf.ifStmt(), parameterMutability);
         }
     }
 
-    private void bindWhile(final Stmt.While loop) {
-        bindBlock(loop.body());
+    private void bindWhile(final Stmt.While loop, final Mutability parameterMutability) {
+        bindBlock(loop.body(), parameterMutability);
     }
 
-    private void bindFor(final Stmt.For loop) {
+    private void bindFor(final Stmt.For loop, final Mutability parameterMutability) {
         symbols.enterScope(ScopeKind.LOOP);
         try {
-            loop.initializer().ifPresent(this::bindStatement);
-            bindBlock(loop.body());
+            loop.initializer().ifPresent(statement -> bindStatement(statement, parameterMutability));
+            bindBlock(loop.body(), parameterMutability);
         } finally {
             symbols.exitScope();
         }
     }
 
-    private void bindBlock(final Stmt.Block block) {
+    private void bindBlock(final Stmt.Block block, final Mutability parameterMutability) {
         symbols.enterScope(ScopeKind.BLOCK);
         try {
             for (final Stmt statement : block.statements()) {
-                bindStatement(statement);
+                bindStatement(statement, parameterMutability);
             }
         } finally {
             symbols.exitScope();
