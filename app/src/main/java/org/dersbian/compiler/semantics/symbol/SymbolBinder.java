@@ -1,7 +1,9 @@
 package org.dersbian.compiler.semantics.symbol;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.dersbian.compiler.syntax.ast.ElseBranch;
 import org.dersbian.compiler.syntax.ast.Parameter;
@@ -16,6 +18,9 @@ public final class SymbolBinder {
     /** Accumulated declaration results across the bound statements. */
     private final List<DeclarationResult> declarations = new ArrayList<>();
 
+    /** AST statement to lexical scope association for the current binding operation. */
+    private final Map<Stmt, ScopeId> statementScopes = new LinkedHashMap<>();
+
     /** Creates a binder backed by the supplied symbol table. */
     public SymbolBinder(final SymbolTable symbols) {
         this.symbols = Objects.requireNonNull(symbols, "symbols must not be null");
@@ -26,22 +31,24 @@ public final class SymbolBinder {
      *
      * @param statements statements to bind
      * @param parameterMutability mutability assigned to every AST parameter
-     * @return immutable declaration results in source order
+     * @return immutable binding context in source order
      */
-    public SymbolBindingResult bind(
+    public BindingContext bind(
             final List<Stmt> statements, final Mutability parameterMutability) {
         Objects.requireNonNull(statements, "statements must not be null");
         Objects.requireNonNull(parameterMutability, "parameterMutability must not be null");
         declarations.clear();
+        statementScopes.clear();
         for (final Stmt statement : List.copyOf(statements)) {
             bindStatement(
                     Objects.requireNonNull(statement, "statements must not contain null"),
                     parameterMutability);
         }
-        return new SymbolBindingResult(declarations);
+        return new BindingContext(statementScopes, declarations);
     }
 
     private void bindStatement(final Stmt statement, final Mutability parameterMutability) {
+        statementScopes.put(statement, symbols.currentScope().id());
         switch (statement) {
             case Stmt.Expression ignored -> {
                 // Expression references are resolved by a later semantic analysis phase.
@@ -162,6 +169,7 @@ public final class SymbolBinder {
     private void bindBlock(final Stmt.Block block, final Mutability parameterMutability) {
         symbols.enterScope(ScopeKind.BLOCK);
         try {
+            statementScopes.put(block, symbols.currentScope().id());
             for (final Stmt statement : block.statements()) {
                 bindStatement(statement, parameterMutability);
             }
