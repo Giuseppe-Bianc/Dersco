@@ -175,6 +175,7 @@ public final class SymbolBinder {
     private void bindFor(final Stmt.For loop, final Mutability parameterMutability) {
         symbols.enterScope(ScopeKind.LOOP);
         try {
+            statementScopes.put(loop, symbols.currentScope().id());
             loop.initializer()
                     .ifPresent(statement -> bindStatement(statement, parameterMutability));
             bindBlock(loop.body(), parameterMutability);
