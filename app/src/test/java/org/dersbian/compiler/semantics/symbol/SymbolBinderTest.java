@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Optional;
 import org.dersbian.compiler.lexer.token.Span;
+import org.dersbian.compiler.syntax.ast.Parameter;
 import org.dersbian.compiler.syntax.ast.Stmt;
 import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
@@ -19,20 +21,21 @@ class SymbolBinderTest {
         final SymbolBinder binder = new SymbolBinder(table);
         final Stmt.Function function = new Stmt.Function(
                 "f",
-                List.of(new org.dersbian.compiler.syntax.ast.Parameter("x", new Type.IntT(), SPAN)),
+                List.of(new Parameter("x", new Type.IntT(), SPAN)),
                 new Type.VoidT(),
                 new Stmt.Block(List.of(new Stmt.VarDeclaration(
-                        false,
+                        List.of(new Stmt.VarBinding("y", Optional.empty())),
                         new Type.IntT(),
-                        List.of(new Stmt.VarBinding("y", null, SPAN)),
+                        false,
                         SPAN)), SPAN),
                 SPAN);
 
         final SymbolBindingResult result = binder.bind(List.of(function));
 
-        assertEquals(2, result.declarations().size());
+        assertEquals(3, result.declarations().size());
         assertInstanceOf(DeclarationResult.Declared.class, result.declarations().get(0));
         assertInstanceOf(DeclarationResult.Declared.class, result.declarations().get(1));
+        assertInstanceOf(DeclarationResult.Declared.class, result.declarations().get(2));
         assertEquals(table.globalScope(), table.currentScope());
         assertTrue(table.lookup("f").isPresent());
     }
@@ -42,13 +45,13 @@ class SymbolBinderTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final SymbolBinder binder = new SymbolBinder(table);
         final Stmt.For loop = new Stmt.For(
-                new Stmt.VarDeclaration(
-                        false,
+                Optional.of(new Stmt.VarDeclaration(
+                        List.of(new Stmt.VarBinding("i", Optional.empty())),
                         new Type.IntT(),
-                        List.of(new Stmt.VarBinding("i", null, SPAN)),
-                        SPAN),
-                null,
-                null,
+                        false,
+                        SPAN)),
+                Optional.empty(),
+                Optional.empty(),
                 new Stmt.Block(List.of(), SPAN),
                 SPAN);
 
