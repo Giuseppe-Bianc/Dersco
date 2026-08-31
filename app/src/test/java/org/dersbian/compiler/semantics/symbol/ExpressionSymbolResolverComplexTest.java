@@ -3,7 +3,6 @@ package org.dersbian.compiler.semantics.symbol;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.Optional;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.BinaryOp;
@@ -15,6 +14,7 @@ import org.dersbian.compiler.syntax.ast.UnaryOpSide;
 import org.junit.jupiter.api.Test;
 
 /** Covers recursive lexical resolution for compound expression forms. */
+@SuppressWarnings({"PMD.AtLeastOneConstructor", "PMD.UnitTestContainsTooManyAsserts"})
 class ExpressionSymbolResolverComplexTest {
     /** Synthetic source span for expression fixtures. */
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));
