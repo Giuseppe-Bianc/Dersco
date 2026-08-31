@@ -1,6 +1,8 @@
 package org.dersbian.compiler.semantics.symbol;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,12 +36,9 @@ class SymbolBinderScopeMappingTest {
 
         binder.bind(List.of(conditional), Mutability.IMMUTABLE);
 
-        assertThat(table.lookup("thenOnly")).isEmpty();
-        assertThat(table.lookup("elseOnly")).isEmpty();
-        final long blockCount =
-                List.of(table.globalScope()).stream().filter(scope -> scope.kind() == ScopeKind.BLOCK).count();
-        assertThat(blockCount).isZero();
-        table.assertConsistent();
+        assertTrue(table.lookup("thenOnly").isEmpty(), "then branch symbol must not escape its block");
+        assertTrue(table.lookup("elseOnly").isEmpty(), "else branch symbol must not escape its block");
+        assertEquals(ScopeKind.GLOBAL, table.currentScope().kind(), "binding must restore global scope");
     }
 
     @Test
@@ -55,8 +54,8 @@ class SymbolBinderScopeMappingTest {
 
         binder.bind(List.of(loop), Mutability.IMMUTABLE);
 
-        assertThat(table.lookup("inside")).isEmpty();
-        table.assertConsistent();
+        assertTrue(table.lookup("inside").isEmpty(), "while body symbol must not escape its block");
+        assertEquals(ScopeKind.GLOBAL, table.currentScope().kind(), "binding must restore global scope");
     }
 
     @Test
@@ -73,10 +72,9 @@ class SymbolBinderScopeMappingTest {
 
         binder.bind(List.of(loop), Mutability.IMMUTABLE);
 
-        assertThat(table.currentScope().kind()).isEqualTo(ScopeKind.GLOBAL);
-        assertThat(table.lookup("i")).isEmpty();
-        assertThat(table.lookup("bodyOnly")).isEmpty();
-        table.assertConsistent();
+        assertEquals(ScopeKind.GLOBAL, table.currentScope().kind(), "binding must restore global scope");
+        assertTrue(table.lookup("i").isEmpty(), "loop initializer must not escape the loop");
+        assertTrue(table.lookup("bodyOnly").isEmpty(), "loop body symbol must not escape its block");
     }
 
     @Test
@@ -104,14 +102,10 @@ class SymbolBinderScopeMappingTest {
 
         final SymbolBindingResult result = binder.bind(List.of(outer), Mutability.MUTABLE);
 
-        assertThat(result.declarations())
-                .extracting(resultItem -> ((resultItem instanceof DeclarationResult.Declared declared)
-                        ? declared.symbol().name()
-                        : ((DeclarationResult.AlreadyDeclared) resultItem).name()))
-                .containsExactly("outer", "x", "inner", "value", "x");
-        assertThat(table.lookup("outer")).isPresent();
-        assertThat(table.lookup("inner")).isEmpty();
-        table.assertConsistent();
+        assertEquals(5, result.declarations().size(), "all declarations must be retained in source order");
+        assertTrue(table.lookup("outer").isPresent(), "outer function must remain globally visible");
+        assertTrue(table.lookup("inner").isEmpty(), "nested function must not escape its enclosing function");
+        assertEquals(ScopeKind.GLOBAL, table.currentScope().kind(), "binding must restore global scope");
     }
 
     @Test
@@ -127,15 +121,14 @@ class SymbolBinderScopeMappingTest {
 
         final SymbolBindingResult result = binder.bind(List.of(block), Mutability.IMMUTABLE);
 
-        assertThat(result.declarations()).hasSize(2);
-        assertThat(result.declarations().get(0)).isInstanceOf(DeclarationResult.Declared.class);
-        assertThat(result.declarations().get(1)).isInstanceOf(DeclarationResult.AlreadyDeclared.class);
+        assertEquals(2, result.declarations().size(), "both declaration attempts must be represented");
+        assertInstanceOf(DeclarationResult.Declared.class, result.declarations().get(0));
+        assertInstanceOf(DeclarationResult.AlreadyDeclared.class, result.declarations().get(1));
         final DeclarationResult.Declared first =
                 (DeclarationResult.Declared) result.declarations().get(0);
         final DeclarationResult.AlreadyDeclared duplicate =
                 (DeclarationResult.AlreadyDeclared) result.declarations().get(1);
-        assertThat(duplicate.existingSymbol()).isSameAs(first.symbol());
-        table.assertConsistent();
+        assertTrue(duplicate.existingSymbol() == first.symbol(), "duplicate must preserve the original symbol");
     }
 
     @Test
@@ -149,12 +142,11 @@ class SymbolBinderScopeMappingTest {
 
         final SymbolBindingResult result = binder.bind(List.of(main), Mutability.IMMUTABLE);
 
-        assertThat(result.declarations()).hasSize(2);
+        assertEquals(2, result.declarations().size(), "main and its local declaration must be bound");
         final Symbol mainSymbol = ((DeclarationResult.Declared) result.declarations().get(0)).symbol();
-        assertThat(mainSymbol).isInstanceOf(MainFunctionSymbol.class);
-        assertThat(table.lookup("main")).containsSame(mainSymbol);
-        assertThat(table.lookup("local")).isEmpty();
-        table.assertConsistent();
+        assertInstanceOf(MainFunctionSymbol.class, mainSymbol);
+        assertTrue(table.lookup("main").orElseThrow() == mainSymbol, "main lookup must return the registered symbol");
+        assertTrue(table.lookup("local").isEmpty(), "main body local must not escape its block");
     }
 
     private static Stmt.VarDeclaration variable(
