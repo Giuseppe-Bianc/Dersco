@@ -8,8 +8,12 @@ import org.dersbian.compiler.syntax.ast.Parameter;
 import org.dersbian.compiler.syntax.ast.Stmt;
 
 /** Binds declarations from the current statement AST into a symbol table. */
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.LongVariable"})
 public final class SymbolBinder {
+    /** The symbol table populated during symbol binding. */
     private final SymbolTable symbols;
+
+    /** Accumulated declaration results across the bound statements. */
     private final List<DeclarationResult> declarations = new ArrayList<>();
 
     /** Creates a binder backed by the supplied symbol table. */
@@ -67,15 +71,12 @@ public final class SymbolBinder {
                     symbols.declareVariable(
                             binding.name(),
                             declaration.typeAnnotation(),
-                            declaration.isMutable()
-                                    ? Mutability.MUTABLE
-                                    : Mutability.IMMUTABLE,
+                            declaration.isMutable() ? Mutability.MUTABLE : Mutability.IMMUTABLE,
                             declaration.span()));
         }
     }
 
-    private void bindFunction(
-            final Stmt.Function function, final Mutability parameterMutability) {
+    private void bindFunction(final Stmt.Function function, final Mutability parameterMutability) {
         final DeclarationResult result =
                 symbols.declareFunction(
                         function.name(),
@@ -133,8 +134,7 @@ public final class SymbolBinder {
         bindElseBranch(conditional.elseBranch(), parameterMutability);
     }
 
-    private void bindElseBranch(
-            final ElseBranch branch, final Mutability parameterMutability) {
+    private void bindElseBranch(final ElseBranch branch, final Mutability parameterMutability) {
         switch (branch) {
             case ElseBranch.None ignored -> {
                 // No scope exists for an absent else branch.
@@ -151,7 +151,8 @@ public final class SymbolBinder {
     private void bindFor(final Stmt.For loop, final Mutability parameterMutability) {
         symbols.enterScope(ScopeKind.LOOP);
         try {
-            loop.initializer().ifPresent(statement -> bindStatement(statement, parameterMutability));
+            loop.initializer()
+                    .ifPresent(statement -> bindStatement(statement, parameterMutability));
             bindBlock(loop.body(), parameterMutability);
         } finally {
             symbols.exitScope();
