@@ -87,9 +87,12 @@ public final class SymbolBinder {
                         function.span());
         declarations.add(result);
         if (result instanceof DeclarationResult.Declared declared) {
-            try (ScopeHandle ignored = symbols.openFunctionScope(declared.symbol().id())) {
+            symbols.enterScope(ScopeKind.FUNCTION, declared.symbol().id());
+            try {
                 bindParameters(function.parameters());
                 bindBlock(function.body());
+            } finally {
+                symbols.exitScope();
             }
         }
     }
@@ -111,8 +114,11 @@ public final class SymbolBinder {
         final DeclarationResult result = symbols.declareMainFunction(main.span());
         declarations.add(result);
         if (result instanceof DeclarationResult.Declared declared) {
-            try (ScopeHandle ignored = symbols.openFunctionScope(declared.symbol().id())) {
+            symbols.enterScope(ScopeKind.FUNCTION, declared.symbol().id());
+            try {
                 bindBlock(main.body());
+            } finally {
+                symbols.exitScope();
             }
         }
     }
@@ -137,17 +143,23 @@ public final class SymbolBinder {
     }
 
     private void bindFor(final Stmt.For loop) {
-        try (ScopeHandle ignored = symbols.openScope(ScopeKind.LOOP)) {
+        symbols.enterScope(ScopeKind.LOOP);
+        try {
             loop.initializer().ifPresent(this::bindStatement);
             bindBlock(loop.body());
+        } finally {
+            symbols.exitScope();
         }
     }
 
     private void bindBlock(final Stmt.Block block) {
-        try (ScopeHandle ignored = symbols.openScope(ScopeKind.BLOCK)) {
+        symbols.enterScope(ScopeKind.BLOCK);
+        try {
             for (final Stmt statement : block.statements()) {
                 bindStatement(statement);
             }
+        } finally {
+            symbols.exitScope();
         }
     }
 }
