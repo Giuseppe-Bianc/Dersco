@@ -31,9 +31,28 @@ public final class SymbolBinder {
      *
      * @param statements statements to bind
      * @param parameterMutability mutability assigned to every AST parameter
-     * @return immutable binding context in source order
+     * @return immutable declaration results in source order
      */
-    public BindingContext bind(
+    public SymbolBindingResult bind(
+            final List<Stmt> statements, final Mutability parameterMutability) {
+        bindInternal(statements, parameterMutability);
+        return new SymbolBindingResult(declarations);
+    }
+
+    /**
+     * Binds statements and additionally exposes the immutable AST-to-scope associations.
+     *
+     * @param statements statements to bind
+     * @param parameterMutability mutability assigned to every AST parameter
+     * @return immutable binding context
+     */
+    public BindingContext bindContext(
+            final List<Stmt> statements, final Mutability parameterMutability) {
+        bindInternal(statements, parameterMutability);
+        return new BindingContext(statementScopes, declarations);
+    }
+
+    private void bindInternal(
             final List<Stmt> statements, final Mutability parameterMutability) {
         Objects.requireNonNull(statements, "statements must not be null");
         Objects.requireNonNull(parameterMutability, "parameterMutability must not be null");
@@ -44,7 +63,6 @@ public final class SymbolBinder {
                     Objects.requireNonNull(statement, "statements must not contain null"),
                     parameterMutability);
         }
-        return new BindingContext(statementScopes, declarations);
     }
 
     private void bindStatement(final Stmt statement, final Mutability parameterMutability) {
