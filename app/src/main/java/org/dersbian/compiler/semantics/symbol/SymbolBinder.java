@@ -10,7 +10,7 @@ import org.dersbian.compiler.syntax.ast.Parameter;
 import org.dersbian.compiler.syntax.ast.Stmt;
 
 /** Binds declarations from the current statement AST into a symbol table. */
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.LongVariable"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.LongVariable", "PMD.UseConcurrentHashMap"})
 public final class SymbolBinder {
     /** The symbol table populated during symbol binding. */
     private final SymbolTable symbols;
@@ -52,8 +52,7 @@ public final class SymbolBinder {
         return new BindingContext(statementScopes, declarations);
     }
 
-    private void bindInternal(
-            final List<Stmt> statements, final Mutability parameterMutability) {
+    private void bindInternal(final List<Stmt> statements, final Mutability parameterMutability) {
         Objects.requireNonNull(statements, "statements must not be null");
         Objects.requireNonNull(parameterMutability, "parameterMutability must not be null");
         declarations.clear();

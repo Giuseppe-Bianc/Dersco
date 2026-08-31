@@ -8,18 +8,18 @@ import org.dersbian.compiler.syntax.ast.Stmt;
 
 /** Immutable association between AST statements and the scopes in which they were bound. */
 public record BindingContext(
-        Map<Stmt, ScopeId> statementScopes,
-        List<DeclarationResult> declarations) {
+        Map<Stmt, ScopeId> statementScopes, List<DeclarationResult> declarations) {
     /** Validates and defensively copies binding context collections. */
     public BindingContext {
         Objects.requireNonNull(statementScopes, "statementScopes must not be null");
         Objects.requireNonNull(declarations, "declarations must not be null");
         if (statementScopes.entrySet().stream()
                 .anyMatch(entry -> entry.getKey() == null || entry.getValue() == null)) {
-            throw new NullPointerException("statementScopes must not contain null keys or values");
+            throw new IllegalArgumentException(
+                    "statementScopes must not contain null keys or values");
         }
         if (declarations.stream().anyMatch(Objects::isNull)) {
-            throw new NullPointerException("declarations must not contain null");
+            throw new IllegalArgumentException("declarations must not contain null elements");
         }
         statementScopes = Map.copyOf(statementScopes);
         declarations = List.copyOf(declarations);
