@@ -153,7 +153,8 @@ class NameResolverTest {
     void resolvesParametersInsideFunctionAndPreservesFunctionScopeHistory() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Expr.Variable parameterReference = reference("value", 30);
-        final Parameter parameter = new Parameter("value", new Type.I32(), reference("p", 5).span());
+        final Parameter parameter =
+                new Parameter("value", new Type.I32(), reference("p", 5).span());
         final Stmt.Function function =
                 new Stmt.Function(
                         "identity",
@@ -178,7 +179,8 @@ class NameResolverTest {
     void duplicateParametersProduceDeclarationDiagnostic() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Parameter first = new Parameter("value", new Type.I32(), reference("a", 0).span());
-        final Parameter duplicate = new Parameter("value", new Type.I64(), reference("b", 10).span());
+        final Parameter duplicate =
+                new Parameter("value", new Type.I64(), reference("b", 10).span());
         final Stmt.Function function =
                 new Stmt.Function(
                         "f",
@@ -210,7 +212,8 @@ class NameResolverTest {
         final Expr composite =
                 new Expr.Grouping(
                         new Expr.Binary(
-                                new Expr.Unary(UnaryOp.NEGATE, UnaryOpSide.PREFIX, unaryReference, SPAN),
+                                new Expr.Unary(
+                                        UnaryOp.NEGATE, UnaryOpSide.PREFIX, unaryReference, SPAN),
                                 BinaryOp.ADD,
                                 array,
                                 SPAN),
@@ -228,8 +231,7 @@ class NameResolverTest {
         final Stmt.Expression nested = expression(composite);
 
         final NameResolutionResult result =
-                new NameResolver(table)
-                        .resolve(List.of(nested, statement), Mutability.IMMUTABLE);
+                new NameResolver(table).resolve(List.of(nested, statement), Mutability.IMMUTABLE);
 
         assertThat(result.bindingOf(left)).contains(x.id());
         assertThat(result.bindingOf(right)).contains(y.id());
@@ -268,7 +270,8 @@ class NameResolverTest {
         final Stmt.While loop =
                 new Stmt.While(
                         whileCondition,
-                        new Stmt.Block(List.of(new Stmt.Continue(SPAN), new Stmt.Break(SPAN)), SPAN),
+                        new Stmt.Block(
+                                List.of(new Stmt.Continue(SPAN), new Stmt.Break(SPAN)), SPAN),
                         SPAN);
         final Stmt.For forLoop =
                 new Stmt.For(
@@ -313,7 +316,8 @@ class NameResolverTest {
                 new NameResolver(table).resolve(List.of(loop), Mutability.IMMUTABLE);
 
         assertThat(result.bindingOf(bodyReference)).isPresent();
-        final Symbol loopSymbol = table.find(result.bindingOf(bodyReference).orElseThrow()).orElseThrow();
+        final Symbol loopSymbol =
+                table.find(result.bindingOf(bodyReference).orElseThrow()).orElseThrow();
         assertThat(loopSymbol.name()).isEqualTo("i");
         assertThat(result.scopeOf(loop)).isPresent();
         assertThat(result.scopes().find(result.scopeOf(loop).orElseThrow())).isPresent();
@@ -347,7 +351,8 @@ class NameResolverTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Expr.Variable reference = reference("x", 10);
         final NameResolutionResult result =
-                new NameResolver(table).resolve(List.of(expression(reference)), Mutability.IMMUTABLE);
+                new NameResolver(table)
+                        .resolve(List.of(expression(reference)), Mutability.IMMUTABLE);
 
         assertThatThrownBy(() -> result.referenceBindings().clear())
                 .isInstanceOf(UnsupportedOperationException.class);
@@ -380,13 +385,12 @@ class NameResolverTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Stmt statement = expression(reference("x", 10));
         final Scope global = table.globalScope();
-        assertThatThrownBy(
-                        () -> new ScopeMapping(Map.of(statement, null), List.of(global)))
+        assertThatThrownBy(() -> new ScopeMapping(Map.of(statement, null), List.of(global)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(
-                        () -> new ScopeMapping(Map.of(), List.of((Scope) null)))
+        assertThatThrownBy(() -> new ScopeMapping(Map.of(), List.of((Scope) null)))
                 .isInstanceOf(IllegalArgumentException.class);
-        final ScopeMapping mapping = new ScopeMapping(Map.of(statement, global.id()), List.of(global));
+        final ScopeMapping mapping =
+                new ScopeMapping(Map.of(statement, global.id()), List.of(global));
         assertThat(mapping.scopeOf(statement)).contains(global.id());
         assertThat(mapping.find(global.id())).contains(global);
         assertThatThrownBy(() -> mapping.scopeOf(null)).isInstanceOf(NullPointerException.class);
