@@ -3,6 +3,8 @@ package org.dersbian.compiler.semantics.symbol;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Expr;
 
 /** Resolves lexical symbol references occurring inside expressions. */
@@ -65,8 +67,7 @@ public final class ExpressionSymbolResolver {
     private void resolveExpression(
             final ScopeId scopeId, final Expr expression, final Map<Expr, SymbolId> bindings) {
         if (expression instanceof Expr.Variable variable) {
-            symbolTable
-                    .lookupFrom(scopeId, variable.name())
+            lookupVisibleAt(scopeId, variable.name(), variable.span())
                     .map(Symbol::id)
                     .ifPresent(id -> bindings.put(variable, id));
             return;
@@ -106,5 +107,25 @@ public final class ExpressionSymbolResolver {
             resolveExpression(scopeId, arrayAccess.array(), bindings);
             resolveExpression(scopeId, arrayAccess.index(), bindings);
         }
+    }
+
+    /** Performs lexical lookup while enforcing declaration-order visibility. */
+    private Optional<Symbol> lookupVisibleAt(
+            final ScopeId startScope, final String name, final Span referenceSpan) {
+        Scope scope = symbolTable.findScope(startScope).orElse(null);
+        while (scope != null) {
+            final Optional<Symbol> local = symbolTable.lookupLocal(scope.id(), name);
+            if (local.isPresent()) {
+                final Symbol symbol = local.orElseThrow();
+                if (symbol.declarationSpan().start().offset() <= referenceSpan.start().offset()) {
+                    return local;
+                }
+            }
+            scope =
+                    scope.parentId().isEmpty()
+                            ? null
+                            : symbolTable.findScope(scope.parentId().orElseThrow()).orElse(null);
+        }
+        return Optional.empty();
     }
 }
