@@ -118,6 +118,38 @@ class NameResolverTest {
     }
 
     @Test
+    void treatsFunctionAndVariableWithSameNameAsOneNamespaceConflict() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Stmt.VarDeclaration variable = variable("f", 0);
+        final Stmt.Function function = function("f", 20, expression(reference("f", 30)));
+
+        final NameResolutionResult result =
+                new NameResolver(table).resolve(List.of(variable, function), Mutability.IMMUTABLE);
+
+        assertThat(result.declarations().declarations()).hasSize(2);
+        assertThat(result.declarations().declarations().get(1))
+                .isInstanceOf(DeclarationResult.AlreadyDeclared.class);
+        assertThat(result.diagnostics()).hasSize(1);
+        assertThat(table.currentSymbols()).hasSize(1);
+        assertThat(table.currentSymbols().get(0).kind()).isEqualTo(SymbolKind.VARIABLE);
+    }
+
+    @Test
+    void rejectsSiblingScopeReference() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Expr.Variable reference = reference("x", 30);
+        final Stmt.Block first = new Stmt.Block(List.of(variable("x", 10)), SPAN);
+        final Stmt.Block second = new Stmt.Block(List.of(expression(reference)), SPAN);
+
+        final NameResolutionResult result =
+                new NameResolver(table).resolve(List.of(first, second), Mutability.IMMUTABLE);
+
+        assertThat(result.bindingOf(reference)).isEmpty();
+        assertThat(result.diagnostics()).hasSize(1);
+        table.assertConsistent();
+    }
+
+    @Test
     void resolvesParametersInsideFunctionAndPreservesFunctionScopeHistory() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Expr.Variable parameterReference = reference("value", 30);
@@ -140,6 +172,29 @@ class NameResolverTest {
         assertThat(result.scopes().find(table.globalScope().id())).isPresent();
         assertThat(table.currentScope()).isEqualTo(table.globalScope());
         table.assertConsistent();
+    }
+
+    @Test
+    void duplicateParametersProduceDeclarationDiagnostic() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Parameter first = new Parameter("value", new Type.I32(), reference("a", 0).span());
+        final Parameter duplicate = new Parameter("value", new Type.I64(), reference("b", 10).span());
+        final Stmt.Function function =
+                new Stmt.Function(
+                        "f",
+                        List.of(first, duplicate),
+                        new Type.VoidT(),
+                        new Stmt.Block(List.of(), SPAN),
+                        SPAN);
+
+        final NameResolutionResult result =
+                new NameResolver(table).resolve(List.of(function), Mutability.IMMUTABLE);
+
+        assertThat(result.declarations().declarations()).hasSize(3);
+        assertThat(result.declarations().declarations().get(2))
+                .isInstanceOf(DeclarationResult.AlreadyDeclared.class);
+        assertThat(result.diagnostics()).hasSize(1);
+        assertThat(result.diagnostics().get(0).code()).contains(ErrorCode.E2032);
     }
 
     @Test
@@ -240,6 +295,30 @@ class NameResolverTest {
         assertThat(result.bindingOf(forCondition)).contains(condition.id());
         assertThat(result.bindingOf(increment)).contains(value.id());
         assertThat(result.diagnostics()).isEmpty();
+    }
+
+    @Test
+    void loopInitializerSymbolIsVisibleInLoopBodyAndHistoricalScopeIsRetained() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Expr.Variable bodyReference = reference("i", 30);
+        final Stmt.For loop =
+                new Stmt.For(
+                        Optional.of(variable("i", 10)),
+                        Optional.empty(),
+                        Optional.empty(),
+                        new Stmt.Block(List.of(expression(bodyReference)), SPAN),
+                        SPAN);
+
+        final NameResolutionResult result =
+                new NameResolver(table).resolve(List.of(loop), Mutability.IMMUTABLE);
+
+        assertThat(result.bindingOf(bodyReference)).isPresent();
+        final Symbol loopSymbol = table.find(result.bindingOf(bodyReference).orElseThrow()).orElseThrow();
+        assertThat(loopSymbol.name()).isEqualTo("i");
+        assertThat(result.scopeOf(loop)).isPresent();
+        assertThat(result.scopes().find(result.scopeOf(loop).orElseThrow())).isPresent();
+        assertThat(table.currentScope()).isEqualTo(table.globalScope());
+        table.assertConsistent();
     }
 
     @Test
