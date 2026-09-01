@@ -6,6 +6,7 @@ import java.util.List;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Expr;
+import org.dersbian.compiler.syntax.ast.Stmt;
 import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +46,41 @@ class ExpressionSymbolResolverTest {
         assertThat(current.symbolOf(reference)).contains(local.id());
         assertThat(globalResult.symbolOf(reference)).contains(global.id());
         assertThat(historical.symbolOf(reference)).contains(local.id());
+        table.exitScope();
+        table.assertConsistent();
+    }
+
+    @Test
+    void resolvesOuterDeclarationBeforeInnerShadowingDeclaration() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Symbol outer = declaredVariable(table, "x", new Type.I32());
+        final Scope block = table.enterScope(ScopeKind.BLOCK);
+        final Expr.Variable reference =
+                new Expr.Variable("x", Span.point(SourceLocation.create(1, 2, 1)));
+        table.declareVariable("x", new Type.I64(), Mutability.IMMUTABLE,
+                Span.point(SourceLocation.create(1, 3, 2)));
+
+        final ExpressionBindingResult result =
+                new ExpressionSymbolResolver(table).resolveFrom(block.id(), reference);
+
+        assertThat(result.symbolOf(reference)).contains(outer.id());
+        table.exitScope();
+        table.assertConsistent();
+    }
+
+    @Test
+    void leavesFutureDeclarationUnresolvedWhenNoOuterDeclarationExists() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Scope block = table.enterScope(ScopeKind.BLOCK);
+        final Expr.Variable reference =
+                new Expr.Variable("x", Span.point(SourceLocation.create(1, 2, 1)));
+        table.declareVariable("x", new Type.I64(), Mutability.IMMUTABLE,
+                Span.point(SourceLocation.create(1, 3, 2)));
+
+        final ExpressionBindingResult result =
+                new ExpressionSymbolResolver(table).resolveFrom(block.id(), reference);
+
+        assertThat(result.symbolOf(reference)).isEmpty();
         table.exitScope();
         table.assertConsistent();
     }
