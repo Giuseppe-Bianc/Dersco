@@ -3,6 +3,7 @@ package org.dersbian.compiler.semantics.symbol;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.dersbian.compiler.error.CompileError;
 import org.dersbian.compiler.syntax.ast.Expr;
 import org.dersbian.compiler.syntax.ast.Stmt;
@@ -10,7 +11,7 @@ import org.dersbian.compiler.syntax.ast.Stmt;
 /** Immutable result of declaration binding and lexical name resolution. */
 public record NameResolutionResult(
         SymbolBindingResult declarations,
-        BindingContext scopes,
+        ScopeMapping scopes,
         Map<Expr, SymbolId> referenceBindings,
         List<CompileError> diagnostics) {
     /** Validates and defensively copies the resolution result. */
@@ -31,13 +32,13 @@ public record NameResolutionResult(
     }
 
     /** Returns the resolved symbol for a reference, if one exists. */
-    public java.util.Optional<SymbolId> bindingOf(final Expr reference) {
+    public Optional<SymbolId> bindingOf(final Expr reference) {
         Objects.requireNonNull(reference, "reference must not be null");
-        return java.util.Optional.ofNullable(referenceBindings.get(reference));
+        return Optional.ofNullable(referenceBindings.get(reference));
     }
 
     /** Returns the lexical scope associated with a statement, if known. */
-    public java.util.Optional<ScopeId> scopeOf(final Stmt statement) {
+    public Optional<ScopeId> scopeOf(final Stmt statement) {
         return scopes.scopeOf(statement);
     }
 }
