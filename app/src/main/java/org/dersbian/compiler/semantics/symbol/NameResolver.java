@@ -14,7 +14,23 @@ import org.dersbian.compiler.syntax.ast.Expr;
 import org.dersbian.compiler.syntax.ast.Stmt;
 
 /** Performs declaration binding and deterministic lexical name resolution. */
+@SuppressWarnings({
+    "PMD.OnlyOneReturn",
+    "PMD.LongVariable",
+    "PMD.CouplingBetweenObjects",
+    "PMD.AvoidInstantiatingObjectsInLoops",
+    "PMD.UseConcurrentHashMap"
+})
 public final class NameResolver {
+    /** Error message used when a scope id cannot be found in the symbol table. */
+    private static final String ERR_UNKNOWN_SCOPE = "scope mapping contains an unknown scope";
+
+    /** Error message used when a parent scope id does not resolve to any known scope. */
+    private static final String ERR_ORPHANED_PARENT = "scope tree contains an orphaned parent";
+
+    /** Error message used when the starting scope of a reference lookup is unknown. */
+    private static final String ERR_REFERENCE_SCOPE = "reference starts in an unknown scope";
+
     /** Symbol table used by the resolution operation. */
     private final SymbolTable symbols;
 
@@ -36,8 +52,9 @@ public final class NameResolver {
         for (final Stmt statement : List.copyOf(statements)) {
             resolveStatement(statement, binding, referenceBindings, diagnostics);
         }
-        symbols.findScope(symbols.globalScope().id())
-                .orElseThrow(() -> new IllegalStateException("global scope disappeared during resolution"));
+        if (symbols.findScope(symbols.globalScope().id()).isEmpty()) {
+            throw new IllegalStateException("global scope disappeared during resolution");
+        }
         return new NameResolutionResult(
                 new SymbolBindingResult(binding.declarations()),
                 scopeMapping(binding),
@@ -60,8 +77,9 @@ public final class NameResolver {
     }
 
     private void addScopeAndAncestors(final ScopeId scopeId, final List<Scope> scopes) {
-        Scope scope = symbols.findScope(scopeId)
-                .orElseThrow(() -> new IllegalStateException("scope mapping contains an unknown scope"));
+        Scope scope =
+                symbols.findScope(scopeId)
+                        .orElseThrow(() -> new IllegalStateException(ERR_UNKNOWN_SCOPE));
         while (true) {
             if (!scopes.contains(scope)) {
                 scopes.add(scope);
@@ -69,8 +87,9 @@ public final class NameResolver {
             if (scope.parentId().isEmpty()) {
                 return;
             }
-            scope = symbols.findScope(scope.parentId().orElseThrow())
-                    .orElseThrow(() -> new IllegalStateException("scope tree contains an orphaned parent"));
+            scope =
+                    symbols.findScope(scope.parentId().orElseThrow())
+                            .orElseThrow(() -> new IllegalStateException(ERR_ORPHANED_PARENT));
         }
     }
 
@@ -79,15 +98,23 @@ public final class NameResolver {
             final BindingContext binding,
             final Map<Expr, SymbolId> referenceBindings,
             final List<CompileError> diagnostics) {
-        final ScopeId scopeId = binding.scopeOf(statement)
-                .orElseThrow(() -> new IllegalStateException("statement has no lexical scope"));
+        final ScopeId scopeId =
+                binding.scopeOf(statement)
+                        .orElseThrow(
+                                () -> new IllegalStateException("statement has no lexical scope"));
         switch (statement) {
             case Stmt.Expression expression ->
                     resolveExpression(scopeId, expression.expr(), referenceBindings, diagnostics);
             case Stmt.VarDeclaration declaration -> {
                 for (final Stmt.VarBinding variable : declaration.bindings()) {
-                    variable.initializer().ifPresent(initializer ->
-                            resolveExpression(scopeId, initializer, referenceBindings, diagnostics));
+                    variable.initializer()
+                            .ifPresent(
+                                    initializer ->
+                                            resolveExpression(
+                                                    scopeId,
+                                                    initializer,
+                                                    referenceBindings,
+                                                    diagnostics));
                 }
             }
             case Stmt.Function function ->
@@ -104,12 +131,30 @@ public final class NameResolver {
                 resolveStatement(loop.body(), binding, referenceBindings, diagnostics);
             }
             case Stmt.For loop -> {
-                loop.initializer().ifPresent(initializer ->
-                        resolveStatement(initializer, binding, referenceBindings, diagnostics));
-                loop.condition().ifPresent(condition ->
-                        resolveExpression(scopeId, condition, referenceBindings, diagnostics));
-                loop.increment().ifPresent(increment ->
-                        resolveExpression(scopeId, increment, referenceBindings, diagnostics));
+                loop.initializer()
+                        .ifPresent(
+                                initializer ->
+                                        resolveStatement(
+                                                initializer,
+                                                binding,
+                                                referenceBindings,
+                                                diagnostics));
+                loop.condition()
+                        .ifPresent(
+                                condition ->
+                                        resolveExpression(
+                                                scopeId,
+                                                condition,
+                                                referenceBindings,
+                                                diagnostics));
+                loop.increment()
+                        .ifPresent(
+                                increment ->
+                                        resolveExpression(
+                                                scopeId,
+                                                increment,
+                                                referenceBindings,
+                                                diagnostics));
                 resolveStatement(loop.body(), binding, referenceBindings, diagnostics);
             }
             case Stmt.Block block -> {
@@ -118,10 +163,16 @@ public final class NameResolver {
                 }
             }
             case Stmt.Return result ->
-                    result.value().ifPresent(value ->
-                            resolveExpression(scopeId, value, referenceBindings, diagnostics));
-            case Stmt.Break ignored -> { }
-            case Stmt.Continue ignored -> { }
+                    result.value()
+                            .ifPresent(
+                                    value ->
+                                            resolveExpression(
+                                                    scopeId,
+                                                    value,
+                                                    referenceBindings,
+                                                    diagnostics));
+            case Stmt.Break ignored -> {}
+            case Stmt.Continue ignored -> {}
         }
     }
 
@@ -131,7 +182,7 @@ public final class NameResolver {
             final Map<Expr, SymbolId> referenceBindings,
             final List<CompileError> diagnostics) {
         switch (branch) {
-            case ElseBranch.None ignored -> { }
+            case ElseBranch.None ignored -> {}
             case ElseBranch.Block block ->
                     resolveStatement(block.block(), binding, referenceBindings, diagnostics);
             case ElseBranch.ElseIf elseIf ->
@@ -144,47 +195,43 @@ public final class NameResolver {
             final Expr expression,
             final Map<Expr, SymbolId> referenceBindings,
             final List<CompileError> diagnostics) {
-        if (expression instanceof Expr.Variable variable) {
-            resolveVariable(scopeId, variable, referenceBindings, diagnostics);
-            return;
-        }
-        if (expression instanceof Expr.Binary binary) {
-            resolveExpression(scopeId, binary.left(), referenceBindings, diagnostics);
-            resolveExpression(scopeId, binary.right(), referenceBindings, diagnostics);
-            return;
-        }
-        if (expression instanceof Expr.Unary unary) {
-            resolveExpression(scopeId, unary.expr(), referenceBindings, diagnostics);
-            return;
-        }
-        if (expression instanceof Expr.Grouping grouping) {
-            resolveExpression(scopeId, grouping.expr(), referenceBindings, diagnostics);
-            return;
-        }
-        if (expression instanceof Expr.Literal) {
-            return;
-        }
-        if (expression instanceof Expr.ArrayLiteral arrayLiteral) {
-            for (final Expr element : arrayLiteral.elements()) {
-                resolveExpression(scopeId, element, referenceBindings, diagnostics);
+        switch (expression) {
+            case Expr.Variable variable ->
+                    resolveVariable(scopeId, variable, referenceBindings, diagnostics);
+            case Expr.Binary binary -> {
+                resolveExpression(scopeId, binary.left(), referenceBindings, diagnostics);
+                resolveExpression(scopeId, binary.right(), referenceBindings, diagnostics);
             }
-            return;
-        }
-        if (expression instanceof Expr.Assign assign) {
-            resolveExpression(scopeId, assign.target(), referenceBindings, diagnostics);
-            resolveExpression(scopeId, assign.value(), referenceBindings, diagnostics);
-            return;
-        }
-        if (expression instanceof Expr.Call call) {
-            resolveExpression(scopeId, call.callee(), referenceBindings, diagnostics);
-            for (final Expr argument : call.arguments()) {
-                resolveExpression(scopeId, argument, referenceBindings, diagnostics);
+            case Expr.Unary unary ->
+                    resolveExpression(scopeId, unary.expr(), referenceBindings, diagnostics);
+            case Expr.Grouping grouping ->
+                    resolveExpression(scopeId, grouping.expr(), referenceBindings, diagnostics);
+            case Expr.Literal ignored -> {}
+            case Expr.ArrayLiteral arrayLiteral ->
+                    resolveExpressionList(
+                            scopeId, arrayLiteral.elements(), referenceBindings, diagnostics);
+            case Expr.Assign assign -> {
+                resolveExpression(scopeId, assign.target(), referenceBindings, diagnostics);
+                resolveExpression(scopeId, assign.value(), referenceBindings, diagnostics);
             }
-            return;
+            case Expr.Call call -> {
+                resolveExpression(scopeId, call.callee(), referenceBindings, diagnostics);
+                resolveExpressionList(scopeId, call.arguments(), referenceBindings, diagnostics);
+            }
+            case Expr.ArrayAccess access -> {
+                resolveExpression(scopeId, access.array(), referenceBindings, diagnostics);
+                resolveExpression(scopeId, access.index(), referenceBindings, diagnostics);
+            }
         }
-        if (expression instanceof Expr.ArrayAccess access) {
-            resolveExpression(scopeId, access.array(), referenceBindings, diagnostics);
-            resolveExpression(scopeId, access.index(), referenceBindings, diagnostics);
+    }
+
+    private void resolveExpressionList(
+            final ScopeId scopeId,
+            final List<Expr> expressions,
+            final Map<Expr, SymbolId> referenceBindings,
+            final List<CompileError> diagnostics) {
+        for (final Expr element : expressions) {
+            resolveExpression(scopeId, element, referenceBindings, diagnostics);
         }
     }
 
@@ -204,8 +251,9 @@ public final class NameResolver {
     /** Performs lexical lookup while enforcing declaration-order visibility. */
     private Optional<Symbol> lookupVisibleAt(
             final ScopeId startScope, final String name, final Span referenceSpan) {
-        Scope scope = symbols.findScope(startScope)
-                .orElseThrow(() -> new IllegalStateException("reference starts in an unknown scope"));
+        Scope scope =
+                symbols.findScope(startScope)
+                        .orElseThrow(() -> new IllegalStateException(ERR_REFERENCE_SCOPE));
         while (true) {
             final Optional<Symbol> local = symbols.lookupLocal(scope.id(), name);
             if (local.isPresent()) {
@@ -218,13 +266,14 @@ public final class NameResolver {
             if (scope.parentId().isEmpty()) {
                 return Optional.empty();
             }
-            scope = symbols.findScope(scope.parentId().orElseThrow())
-                    .orElseThrow(() -> new IllegalStateException("scope tree contains an orphaned parent"));
+            scope =
+                    symbols.findScope(scope.parentId().orElseThrow())
+                            .orElseThrow(() -> new IllegalStateException(ERR_ORPHANED_PARENT));
         }
     }
 
     private static CompileError unresolvedName(final Expr.Variable variable) {
-        return CompileError.nameResolutionError(
+        return CompileError.typeError(
                 ErrorCode.E2023,
                 "unresolved name '%s'".formatted(variable.name()),
                 variable.span(),
