@@ -9,7 +9,6 @@ import org.dersbian.compiler.error.ErrorCode;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.Expr;
-import org.dersbian.compiler.syntax.ast.Parameter;
 import org.dersbian.compiler.syntax.ast.Stmt;
 import org.dersbian.compiler.syntax.ast.Type;
 import org.junit.jupiter.api.Test;
@@ -25,12 +24,11 @@ class NameResolverTest {
         final Expr.Variable outerReference = reference("x", 20);
         final Stmt.Block block = new Stmt.Block(
                 List.of(variable("x", 30), expression(reference("x", 50))), SPAN);
-        final List<Stmt> program = List.of(global, expression(outerReference), block);
+        final NameResolutionResult result = new NameResolver(table).resolve(
+                List.of(global, expression(outerReference), block), Mutability.IMMUTABLE);
 
-        final NameResolutionResult result = new NameResolver(table).resolve(program, Mutability.IMMUTABLE);
-
-        final Symbol globalSymbol = ((DeclarationResult.Declared) result.declarations().declarations().get(0)).symbol();
-        final Symbol innerSymbol = ((DeclarationResult.Declared) result.declarations().declarations().get(1)).symbol();
+        final Symbol globalSymbol = declared(result, 0);
+        final Symbol innerSymbol = declared(result, 1);
         assertThat(result.bindingOf(outerReference)).contains(globalSymbol.id());
         final Expr.Variable innerReference = (Expr.Variable) ((Stmt.Expression) block.statements().get(1)).expr();
         assertThat(result.bindingOf(innerReference)).contains(innerSymbol.id());
@@ -41,11 +39,11 @@ class NameResolverTest {
     @Test
     void rejectsForwardReferenceWithoutFallingBackToOuterScope() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final Symbol outer = declaredVariable(table, "x");
+        declaredVariable(table, "x");
         final Stmt.Block block = new Stmt.Block(
                 List.of(expression(reference("x", 10)), variable("x", 20)), SPAN);
-        final NameResolutionResult result =
-                new NameResolver(table).resolve(List.of(block), Mutability.IMMUTABLE);
+        final NameResolutionResult result = new NameResolver(table).resolve(
+                List.of(block), Mutability.IMMUTABLE);
 
         final Expr.Variable reference = (Expr.Variable) ((Stmt.Expression) block.statements().get(0)).expr();
         assertThat(result.bindingOf(reference)).isEmpty();
@@ -54,21 +52,21 @@ class NameResolverTest {
             assertThat(error.code()).contains(ErrorCode.E2023);
             assertThat(error.span()).contains(reference.span());
         });
-        assertThat(outer).isNotNull();
     }
 
     @Test
     void supportsDirectFunctionRecursionButRejectsIndirectForwardReference() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Expr.Variable recursiveReference = reference("a", 30);
-        final Stmt.Function a = function("a", expression(new Expr.Call(recursiveReference, List.of(), SPAN)));
+        final Stmt.Function a = function("a", 0,
+                expression(new Expr.Call(recursiveReference, List.of(), SPAN)));
         final Expr.Variable forwardReference = reference("b", 10);
-        final Stmt.Function b = function("b", expression(new Expr.Call(reference("a", 60), List.of(), SPAN)));
+        final Stmt.Function b = function("b", 40,
+                expression(new Expr.Call(reference("a", 60), List.of(), SPAN)));
 
-        final NameResolutionResult result =
-                new NameResolver(table).resolve(List.of(
-                        expression(new Expr.Call(forwardReference, List.of(), SPAN)), a, b),
-                        Mutability.IMMUTABLE);
+        final NameResolutionResult result = new NameResolver(table).resolve(
+                List.of(expression(new Expr.Call(forwardReference, List.of(), SPAN)), a, b),
+                Mutability.IMMUTABLE);
 
         assertThat(result.bindingOf(recursiveReference)).isNotEmpty();
         assertThat(result.bindingOf(forwardReference)).isEmpty();
@@ -84,11 +82,10 @@ class NameResolverTest {
         final Expr.Variable value = reference("y", 12);
         final Expr.Variable index = reference("x", 14);
         final Expr.ArrayAccess access = new Expr.ArrayAccess(target, index, SPAN);
-        final Expr.Assign assignment = new Expr.Assign(access, value, SPAN);
-        final Stmt.Expression statement = expression(assignment);
+        final Stmt.Expression statement = expression(new Expr.Assign(access, value, SPAN));
 
-        final NameResolutionResult result =
-                new NameResolver(table).resolve(List.of(statement), Mutability.IMMUTABLE);
+        final NameResolutionResult result = new NameResolver(table).resolve(
+                List.of(statement), Mutability.IMMUTABLE);
 
         assertThat(result.bindingOf(target)).contains(x.id());
         assertThat(result.bindingOf(index)).contains(x.id());
@@ -111,14 +108,19 @@ class NameResolverTest {
         return new Expr.Variable(name, span);
     }
 
-    private static Stmt.Function function(final String name, final Stmt bodyStatement) {
-        final Stmt.Block body = new Stmt.Block(List.of(bodyStatement), SPAN);
-        return new Stmt.Function(name, List.<Parameter>of(), new Type.VoidT(), body, SPAN);
+    private static Stmt.Function function(final String name, final long offset, final Stmt bodyStatement) {
+        final Span span = Span.point(SourceLocation.create(1, Math.toIntExact(offset + 1), offset));
+        final Stmt.Block body = new Stmt.Block(List.of(bodyStatement), span);
+        return new Stmt.Function(name, List.of(), new Type.VoidT(), body, span);
     }
 
     private static Symbol declaredVariable(final DefaultSymbolTable table, final String name) {
         final DeclarationResult result = table.declareVariable(name, new Type.I32(), Mutability.IMMUTABLE, SPAN);
         assertThat(result).isInstanceOf(DeclarationResult.Declared.class);
         return ((DeclarationResult.Declared) result).symbol();
+    }
+
+    private static Symbol declared(final NameResolutionResult result, final int index) {
+        return ((DeclarationResult.Declared) result.declarations().declarations().get(index)).symbol();
     }
 }
