@@ -19,7 +19,8 @@ import org.dersbian.compiler.syntax.ast.Stmt;
     "PMD.LongVariable",
     "PMD.CouplingBetweenObjects",
     "PMD.AvoidInstantiatingObjectsInLoops",
-    "PMD.UseConcurrentHashMap"
+    "PMD.UseConcurrentHashMap",
+    "PMD.TooManyMethods",
 })
 public final class NameResolver {
     /** Error message used when a scope id cannot be found in the symbol table. */

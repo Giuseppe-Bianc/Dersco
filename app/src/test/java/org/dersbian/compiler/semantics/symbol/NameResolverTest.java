@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
     "PMD.UnitTestContainsTooManyAsserts",
     "PMD.LongVariable",
     "PMD.ShortVariable",
+    "PMD.TooManyMethods",
 })
 class NameResolverTest {
     /** Reusable single-point source span for test fixtures. */
@@ -66,7 +67,8 @@ class NameResolverTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Expr.Variable reference = reference("missing", 10);
         final NameResolutionResult result =
-                new NameResolver(table).resolve(List.of(expression(reference)), Mutability.IMMUTABLE);
+                new NameResolver(table)
+                        .resolve(List.of(expression(reference)), Mutability.IMMUTABLE);
 
         assertThat(result.bindingOf(reference)).isEmpty();
         assertThat(result.diagnostics())
