@@ -23,13 +23,7 @@ public final class NameResolver {
         this.symbols = Objects.requireNonNull(symbols, "symbols must not be null");
     }
 
-    /**
-     * Binds declarations and resolves every name reference in source order.
-     *
-     * @param statements program statements
-     * @param parameterMutability mutability assigned to parameters
-     * @return complete name-resolution result
-     */
+    /** Binds declarations and resolves every name reference in source order. */
     public NameResolutionResult resolve(
             final List<Stmt> statements, final Mutability parameterMutability) {
         Objects.requireNonNull(statements, "statements must not be null");
@@ -42,7 +36,6 @@ public final class NameResolver {
         for (final Stmt statement : List.copyOf(statements)) {
             resolveStatement(statement, binding, referenceBindings, diagnostics);
         }
-
         symbols.findScope(symbols.globalScope().id())
                 .orElseThrow(() -> new IllegalStateException("global scope disappeared during resolution"));
         return new NameResolutionResult(
@@ -54,28 +47,31 @@ public final class NameResolver {
 
     private ScopeMapping scopeMapping(final BindingContext binding) {
         final List<Scope> scopes = new ArrayList<>();
+        for (final ScopeId scopeId : binding.statementScopes().values()) {
+            addScopeAndAncestors(scopeId, scopes);
+        }
         for (final DeclarationResult declaration : binding.declarations()) {
             if (declaration instanceof DeclarationResult.Declared declared) {
-                symbols.findScope(declared.symbol().scopeId()).ifPresent(scope -> {
-                    if (!scopes.contains(scope)) {
-                        scopes.add(scope);
-                    }
-                });
+                addScopeAndAncestors(declared.symbol().scopeId(), scopes);
             }
         }
-        symbols.findScope(symbols.globalScope().id()).ifPresent(scope -> {
+        addScopeAndAncestors(symbols.globalScope().id(), scopes);
+        return new ScopeMapping(binding.statementScopes(), scopes);
+    }
+
+    private void addScopeAndAncestors(final ScopeId scopeId, final List<Scope> scopes) {
+        Scope scope = symbols.findScope(scopeId)
+                .orElseThrow(() -> new IllegalStateException("scope mapping contains an unknown scope"));
+        while (true) {
             if (!scopes.contains(scope)) {
                 scopes.add(scope);
             }
-        });
-        for (final ScopeId scopeId : binding.statementScopes().values()) {
-            symbols.findScope(scopeId).ifPresent(scope -> {
-                if (!scopes.contains(scope)) {
-                    scopes.add(scope);
-                }
-            });
+            if (scope.parentId().isEmpty()) {
+                return;
+            }
+            scope = symbols.findScope(scope.parentId().orElseThrow())
+                    .orElseThrow(() -> new IllegalStateException("scope tree contains an orphaned parent"));
         }
-        return new ScopeMapping(binding.statementScopes(), scopes);
     }
 
     private void resolveStatement(
@@ -94,8 +90,10 @@ public final class NameResolver {
                             resolveExpression(scopeId, initializer, referenceBindings, diagnostics));
                 }
             }
-            case Stmt.Function function -> resolveFunction(function, binding, referenceBindings, diagnostics);
-            case Stmt.MainFunction main -> resolveMain(main, binding, referenceBindings, diagnostics);
+            case Stmt.Function function ->
+                    resolveStatement(function.body(), binding, referenceBindings, diagnostics);
+            case Stmt.MainFunction main ->
+                    resolveStatement(main.body(), binding, referenceBindings, diagnostics);
             case Stmt.If conditional -> {
                 resolveExpression(scopeId, conditional.condition(), referenceBindings, diagnostics);
                 resolveStatement(conditional.thenBranch(), binding, referenceBindings, diagnostics);
@@ -125,22 +123,6 @@ public final class NameResolver {
             case Stmt.Break ignored -> { }
             case Stmt.Continue ignored -> { }
         }
-    }
-
-    private void resolveFunction(
-            final Stmt.Function function,
-            final BindingContext binding,
-            final Map<Expr, SymbolId> referenceBindings,
-            final List<CompileError> diagnostics) {
-        resolveStatement(function.body(), binding, referenceBindings, diagnostics);
-    }
-
-    private void resolveMain(
-            final Stmt.MainFunction main,
-            final BindingContext binding,
-            final Map<Expr, SymbolId> referenceBindings,
-            final List<CompileError> diagnostics) {
-        resolveStatement(main.body(), binding, referenceBindings, diagnostics);
     }
 
     private void resolveElse(
@@ -219,10 +201,7 @@ public final class NameResolver {
         diagnostics.add(unresolvedName(variable));
     }
 
-    /**
-     * Performs lexical lookup while enforcing the version-one declaration-order rule.
-     * A declaration in the nearest scope shadows outer declarations even before it becomes visible.
-     */
+    /** Performs lexical lookup while enforcing declaration-order visibility. */
     private Optional<Symbol> lookupVisibleAt(
             final ScopeId startScope, final String name, final Span referenceSpan) {
         Scope scope = symbols.findScope(startScope)
