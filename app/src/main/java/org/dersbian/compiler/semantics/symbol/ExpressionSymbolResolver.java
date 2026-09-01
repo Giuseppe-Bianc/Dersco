@@ -112,8 +112,9 @@ public final class ExpressionSymbolResolver {
     /** Performs lexical lookup while enforcing declaration-order visibility. */
     private Optional<Symbol> lookupVisibleAt(
             final ScopeId startScope, final String name, final Span referenceSpan) {
-        Scope scope = symbolTable.findScope(startScope).orElse(null);
-        while (scope != null) {
+        Optional<Scope> current = symbolTable.findScope(startScope);
+        while (current.isPresent()) {
+            final Scope scope = current.orElseThrow();
             final Optional<Symbol> local = symbolTable.lookupLocal(scope.id(), name);
             if (local.isPresent()) {
                 final Symbol symbol = local.orElseThrow();
@@ -121,10 +122,10 @@ public final class ExpressionSymbolResolver {
                     return local;
                 }
             }
-            scope =
-                    scope.parentId().isEmpty()
-                            ? null
-                            : symbolTable.findScope(scope.parentId().orElseThrow()).orElse(null);
+            current =
+                    scope.parentId().isPresent()
+                            ? symbolTable.findScope(scope.parentId().orElseThrow())
+                            : Optional.empty();
         }
         return Optional.empty();
     }

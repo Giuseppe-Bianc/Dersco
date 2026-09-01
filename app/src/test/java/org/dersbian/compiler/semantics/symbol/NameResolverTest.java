@@ -32,6 +32,12 @@ class NameResolverTest {
     /** Reusable single-point source span for test fixtures. */
     private static final Span SPAN = Span.point(SourceLocation.create(1, 1, 0));
 
+    /** Variable name constant used across resolution test fixtures. */
+    private static final String NAME_VALUE = "value";
+
+    /** Variable name constant used across control-flow resolution test fixtures. */
+    private static final String NAME_CONDITION = "condition";
+
     @Test
     void resolvesGlobalAndShadowedReferencesByStableIdentity() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
@@ -152,9 +158,9 @@ class NameResolverTest {
     @Test
     void resolvesParametersInsideFunctionAndPreservesFunctionScopeHistory() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final Expr.Variable parameterReference = reference("value", 30);
+        final Expr.Variable parameterReference = reference(NAME_VALUE, 30);
         final Parameter parameter =
-                new Parameter("value", new Type.I32(), reference("p", 5).span());
+                new Parameter(NAME_VALUE, new Type.I32(), reference("p", 5).span());
         final Stmt.Function function =
                 new Stmt.Function(
                         "identity",
@@ -178,9 +184,9 @@ class NameResolverTest {
     @Test
     void duplicateParametersProduceDeclarationDiagnostic() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final Parameter first = new Parameter("value", new Type.I32(), reference("a", 0).span());
+        final Parameter first = new Parameter(NAME_VALUE, new Type.I32(), reference("a", 0).span());
         final Parameter duplicate =
-                new Parameter("value", new Type.I64(), reference("b", 10).span());
+                new Parameter(NAME_VALUE, new Type.I64(), reference("b", 10).span());
         final Stmt.Function function =
                 new Stmt.Function(
                         "f",
@@ -247,14 +253,14 @@ class NameResolverTest {
     @Test
     void traversesControlFlowBranchesAndLoopExpressions() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        final Symbol condition = declaredVariable(table, "condition");
-        final Symbol value = declaredVariable(table, "value");
-        final Expr.Variable ifCondition = reference("condition", 10);
-        final Expr.Variable thenReference = reference("value", 20);
-        final Expr.Variable elseReference = reference("condition", 30);
-        final Expr.Variable whileCondition = reference("condition", 40);
-        final Expr.Variable forCondition = reference("condition", 50);
-        final Expr.Variable increment = reference("value", 60);
+        final Symbol condition = declaredVariable(table, NAME_CONDITION);
+        final Symbol value = declaredVariable(table, NAME_VALUE);
+        final Expr.Variable ifCondition = reference(NAME_CONDITION, 10);
+        final Expr.Variable thenReference = reference(NAME_VALUE, 20);
+        final Expr.Variable elseReference = reference(NAME_CONDITION, 30);
+        final Expr.Variable whileCondition = reference(NAME_CONDITION, 40);
+        final Expr.Variable forCondition = reference(NAME_CONDITION, 50);
+        final Expr.Variable increment = reference(NAME_VALUE, 60);
         final Stmt.If nestedElseIf =
                 new Stmt.If(
                         elseReference,
@@ -278,7 +284,7 @@ class NameResolverTest {
                         Optional.of(variable("i", 45)),
                         Optional.of(forCondition),
                         Optional.of(increment),
-                        new Stmt.Block(List.of(expression(reference("condition", 70))), SPAN),
+                        new Stmt.Block(List.of(expression(reference(NAME_CONDITION, 70))), SPAN),
                         SPAN);
 
         final NameResolutionResult result =
