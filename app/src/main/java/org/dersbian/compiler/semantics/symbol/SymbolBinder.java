@@ -164,7 +164,7 @@ public final class SymbolBinder {
                 // No scope exists for an absent else branch.
             }
             case ElseBranch.Block block -> bindBlock(block.block(), parameterMutability);
-            case ElseBranch.ElseIf elseIf -> bindIf(elseIf.ifStmt(), parameterMutability);
+            case ElseBranch.ElseIf elseIf -> bindStatement(elseIf.ifStmt(), parameterMutability);
         }
     }
 

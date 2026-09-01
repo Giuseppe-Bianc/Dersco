@@ -3,6 +3,8 @@ package org.dersbian.compiler.semantics.symbol;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +29,8 @@ import org.junit.jupiter.api.Test;
     "PMD.LongVariable",
     "PMD.ShortVariable",
     "PMD.TooManyMethods",
+    "PMD.CouplingBetweenObjects",
+    "PMD.UseConcurrentHashMap",
 })
 class NameResolverTest {
     /** Reusable single-point source span for test fixtures. */
@@ -218,10 +222,17 @@ class NameResolverTest {
         final Expr composite =
                 new Expr.Grouping(
                         new Expr.Binary(
-                                new Expr.Unary(
-                                        UnaryOp.NEGATE, UnaryOpSide.PREFIX, unaryReference, SPAN),
+                                new Expr.Binary(left, BinaryOp.ADD, right, SPAN),
                                 BinaryOp.ADD,
-                                array,
+                                new Expr.Binary(
+                                        new Expr.Unary(
+                                                UnaryOp.NEGATE,
+                                                UnaryOpSide.PREFIX,
+                                                unaryReference,
+                                                SPAN),
+                                        BinaryOp.ADD,
+                                        array,
+                                        SPAN),
                                 SPAN),
                         SPAN);
         final Expr.Variable target = reference("x", 18);
@@ -391,9 +402,13 @@ class NameResolverTest {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Stmt statement = expression(reference("x", 10));
         final Scope global = table.globalScope();
-        assertThatThrownBy(() -> new ScopeMapping(Map.of(statement, null), List.of(global)))
+        final Map<Stmt, ScopeId> nullValue = new LinkedHashMap<>();
+        nullValue.put(statement, null);
+        assertThatThrownBy(() -> new ScopeMapping(nullValue, List.of(global)))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new ScopeMapping(Map.of(), List.of((Scope) null)))
+        final List<Scope> nullScope = new ArrayList<>();
+        nullScope.add(null);
+        assertThatThrownBy(() -> new ScopeMapping(Map.of(), nullScope))
                 .isInstanceOf(IllegalArgumentException.class);
         final ScopeMapping mapping =
                 new ScopeMapping(Map.of(statement, global.id()), List.of(global));

@@ -134,8 +134,11 @@ public final class NameResolver {
                                                     diagnostics));
                 }
             }
-            case Stmt.Function function ->
+            case Stmt.Function function -> {
+                if (binding.scopeOf(function.body()).isPresent()) {
                     resolveStatement(function.body(), binding, referenceBindings, diagnostics);
+                }
+            }
             case Stmt.MainFunction main ->
                     resolveStatement(main.body(), binding, referenceBindings, diagnostics);
             case Stmt.If conditional -> {

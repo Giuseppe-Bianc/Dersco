@@ -1,5 +1,7 @@
 package org.dersbian.compiler.semantics.symbol;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -12,14 +14,16 @@ public record ScopeMapping(Map<Stmt, ScopeId> statementScopes, List<Scope> scope
     public ScopeMapping {
         Objects.requireNonNull(statementScopes, "statementScopes must not be null");
         Objects.requireNonNull(scopes, "scopes must not be null");
-        if (statementScopes.entrySet().stream()
-                .anyMatch(entry -> entry.getKey() == null || entry.getValue() == null)) {
-            throw new IllegalArgumentException("statementScopes must not contain null entries");
+        for (final Map.Entry<Stmt, ScopeId> entry : statementScopes.entrySet()) {
+            if (entry.getKey() == null || entry.getValue() == null) {
+                throw new IllegalArgumentException("statementScopes must not contain null entries");
+            }
         }
         if (scopes.stream().anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("scopes must not contain null elements");
         }
-        statementScopes = Map.copyOf(statementScopes);
+        final Map<Stmt, ScopeId> copy = new LinkedHashMap<>(statementScopes);
+        statementScopes = Collections.unmodifiableMap(copy);
         scopes = List.copyOf(scopes);
     }
 
