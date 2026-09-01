@@ -50,6 +50,47 @@ class ExpressionSymbolResolverTest {
     }
 
     @Test
+    void resolvesOuterDeclarationBeforeInnerShadowingDeclaration() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Symbol outer = declaredVariable(table, "x", new Type.I32());
+        final Scope block = table.enterScope(ScopeKind.BLOCK);
+        final Expr.Variable reference =
+                new Expr.Variable("x", Span.point(SourceLocation.create(1, 2, 1)));
+        table.declareVariable(
+                "x",
+                new Type.I64(),
+                Mutability.IMMUTABLE,
+                Span.point(SourceLocation.create(1, 3, 2)));
+
+        final ExpressionBindingResult result =
+                new ExpressionSymbolResolver(table).resolveFrom(block.id(), reference);
+
+        assertThat(result.symbolOf(reference)).contains(outer.id());
+        table.exitScope();
+        table.assertConsistent();
+    }
+
+    @Test
+    void leavesFutureDeclarationUnresolvedWhenNoOuterDeclarationExists() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Scope block = table.enterScope(ScopeKind.BLOCK);
+        final Expr.Variable reference =
+                new Expr.Variable("x", Span.point(SourceLocation.create(1, 2, 1)));
+        table.declareVariable(
+                "x",
+                new Type.I64(),
+                Mutability.IMMUTABLE,
+                Span.point(SourceLocation.create(1, 3, 2)));
+
+        final ExpressionBindingResult result =
+                new ExpressionSymbolResolver(table).resolveFrom(block.id(), reference);
+
+        assertThat(result.symbolOf(reference)).isEmpty();
+        table.exitScope();
+        table.assertConsistent();
+    }
+
+    @Test
     void leavesMissingVariableUnresolved() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
         final Expr.Variable reference = new Expr.Variable("missing", SPAN);

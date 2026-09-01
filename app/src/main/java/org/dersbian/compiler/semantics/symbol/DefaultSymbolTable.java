@@ -422,14 +422,7 @@ public final class DefaultSymbolTable implements SymbolTable {
 
     private List<ParameterDescriptor> validateParameters(
             final List<ParameterDescriptor> parameters) {
-        final List<ParameterDescriptor> copy = List.copyOf(parameters);
-        final Map<String, Boolean> names = new LinkedHashMap<>();
-        for (final ParameterDescriptor parameter : copy) {
-            if (names.put(parameter.name(), Boolean.TRUE) != null) {
-                throw new IllegalArgumentException("function parameters must have unique names");
-            }
-        }
-        return copy;
+        return List.copyOf(parameters);
     }
 
     private SymbolId nextSymbolId() {
