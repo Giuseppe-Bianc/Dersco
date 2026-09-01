@@ -49,6 +49,11 @@ public final class NameResolver {
         final BindingContext binding = binder.bindContext(statements, parameterMutability);
         final Map<Expr, SymbolId> referenceBindings = new LinkedHashMap<>();
         final List<CompileError> diagnostics = new ArrayList<>();
+        for (final DeclarationResult declaration : binding.declarations()) {
+            if (declaration instanceof DeclarationResult.AlreadyDeclared duplicate) {
+                diagnostics.add(duplicateDeclaration(duplicate));
+            }
+        }
         for (final Stmt statement : List.copyOf(statements)) {
             resolveStatement(statement, binding, referenceBindings, diagnostics);
         }
@@ -261,7 +266,6 @@ public final class NameResolver {
                 if (symbol.declarationSpan().start().offset() <= referenceSpan.start().offset()) {
                     return local;
                 }
-                return Optional.empty();
             }
             if (scope.parentId().isEmpty()) {
                 return Optional.empty();
@@ -278,5 +282,15 @@ public final class NameResolver {
                 "unresolved name '%s'".formatted(variable.name()),
                 variable.span(),
                 "Declare the name before using it or ensure it is in scope.");
+    }
+
+    private static CompileError duplicateDeclaration(
+            final DeclarationResult.AlreadyDeclared duplicate) {
+        final Symbol existing = duplicate.existingSymbol();
+        return CompileError.typeError(
+                ErrorCode.E2032,
+                "duplicate declaration of '%s'".formatted(duplicate.name()),
+                existing.declarationSpan(),
+                "Remove the duplicate declaration or rename it.");
     }
 }
