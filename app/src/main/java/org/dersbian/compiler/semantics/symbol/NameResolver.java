@@ -1,6 +1,7 @@
 package org.dersbian.compiler.semantics.symbol;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,14 +51,11 @@ public final class NameResolver {
         final BindingContext binding = binder.bindContext(statements, parameterMutability);
         final Map<Expr, SymbolId> referenceBindings = new LinkedHashMap<>();
         final List<CompileError> diagnostics = new ArrayList<>();
-        for (final DeclarationResult declaration : binding.declarations()) {
-            if (declaration instanceof DeclarationResult.AlreadyDeclared duplicate) {
-                diagnostics.add(duplicateDeclaration(duplicate));
-            }
-        }
+        collectDeclarationDiagnostics(binding.declarations(), diagnostics);
         for (final Stmt statement : List.copyOf(statements)) {
             resolveStatement(statement, binding, referenceBindings, diagnostics);
         }
+        diagnostics.sort(Comparator.comparingLong(NameResolver::diagnosticOffset));
         if (symbols.findScope(symbols.globalScope().id()).isEmpty()) {
             throw new IllegalStateException("global scope disappeared during resolution");
         }
@@ -66,6 +64,19 @@ public final class NameResolver {
                 scopeMapping(binding),
                 referenceBindings,
                 diagnostics);
+    }
+
+    private static void collectDeclarationDiagnostics(
+            final List<DeclarationResult> declarations, final List<CompileError> diagnostics) {
+        for (final DeclarationResult declaration : declarations) {
+            if (declaration instanceof DeclarationResult.AlreadyDeclared duplicate) {
+                diagnostics.add(duplicateDeclaration(duplicate));
+            }
+        }
+    }
+
+    private static long diagnosticOffset(final CompileError diagnostic) {
+        return diagnostic.span().map(span -> span.start().offset()).orElse(Long.MAX_VALUE);
     }
 
     private ScopeMapping scopeMapping(final BindingContext binding) {
