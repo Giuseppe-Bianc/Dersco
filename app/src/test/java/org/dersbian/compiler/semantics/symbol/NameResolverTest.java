@@ -48,16 +48,26 @@ class NameResolverTest {
     }
 
     @Test
-    void rejectsForwardReferenceWithoutFallingBackToOuterScope() {
+    void fallsBackToOuterDeclarationBeforeInnerShadowingDeclaration() {
         final DefaultSymbolTable table = new DefaultSymbolTable();
-        declaredVariable(table, "x");
+        final Symbol outer = declaredVariable(table, "x");
+        final Expr.Variable reference = reference("x", 10);
         final Stmt.Block block =
-                new Stmt.Block(List.of(expression(reference("x", 10)), variable("x", 20)), SPAN);
+                new Stmt.Block(List.of(expression(reference), variable("x", 20)), SPAN);
         final NameResolutionResult result =
                 new NameResolver(table).resolve(List.of(block), Mutability.IMMUTABLE);
 
-        final Expr.Variable reference =
-                (Expr.Variable) ((Stmt.Expression) block.statements().get(0)).expr();
+        assertThat(result.bindingOf(reference)).contains(outer.id());
+        assertThat(result.diagnostics()).isEmpty();
+    }
+
+    @Test
+    void rejectsReferenceWhenNoDeclarationExists() {
+        final DefaultSymbolTable table = new DefaultSymbolTable();
+        final Expr.Variable reference = reference("missing", 10);
+        final NameResolutionResult result =
+                new NameResolver(table).resolve(List.of(expression(reference)), Mutability.IMMUTABLE);
+
         assertThat(result.bindingOf(reference)).isEmpty();
         assertThat(result.diagnostics())
                 .singleElement()
