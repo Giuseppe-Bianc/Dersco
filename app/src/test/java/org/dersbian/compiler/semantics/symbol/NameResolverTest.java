@@ -11,6 +11,7 @@ import org.dersbian.compiler.error.ErrorCode;
 import org.dersbian.compiler.lexer.token.SourceLocation;
 import org.dersbian.compiler.lexer.token.Span;
 import org.dersbian.compiler.syntax.ast.BinaryOp;
+import org.dersbian.compiler.syntax.ast.ElseBranch;
 import org.dersbian.compiler.syntax.ast.Expr;
 import org.dersbian.compiler.syntax.ast.Parameter;
 import org.dersbian.compiler.syntax.ast.Stmt;
@@ -224,7 +225,12 @@ class NameResolverTest {
 
         final NameResolutionResult result =
                 new NameResolver(table)
-                        .resolve(List.of(conditional, loop, forLoop, new Stmt.Return(Optional.empty(), SPAN)),
+                        .resolve(
+                                List.of(
+                                        conditional,
+                                        loop,
+                                        forLoop,
+                                        new Stmt.Return(Optional.empty(), SPAN)),
                                 Mutability.IMMUTABLE);
 
         assertThat(result.bindingOf(ifCondition)).contains(condition.id());
