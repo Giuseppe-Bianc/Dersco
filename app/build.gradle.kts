@@ -16,7 +16,7 @@ plugins {
     checkstyle
     pmd
     id("com.github.spotbugs") version "6.5.11"
-    id("net.ltgt.errorprone") version "5.1.1"
+    id("net.ltgt.errorprone") version "5.2.0"
     id("com.diffplug.spotless") version "8.10.1"
     id("com.gradleup.shadow") version "9.6.1"
     jacoco
